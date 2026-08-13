@@ -54,6 +54,16 @@ export function montarTimeline(raiz: HTMLElement): Timeline {
       scrub: 1,
       invalidateOnRefresh: true,
       anticipatePin: 1,
+      /**
+       * Este pin refresca ANTES de todo o resto.
+       *
+       * Ele insere quase dezesseis alturas de tela de espaçamento, então
+       * tudo que vem depois muda de lugar. Qualquer gatilho criado antes
+       * dele mediu a página sem esse espaço: o gráfico do impacto nasceu
+       * com início em 450 quando o elemento está em 12.941, e completava o
+       * traço muito antes de aparecer.
+       */
+      refreshPriority: 1,
     },
   })
 
@@ -149,6 +159,16 @@ export function montarTimeline(raiz: HTMLElement): Timeline {
       sceneState.saidaDoAto = 0
     },
   })
+
+  /**
+   * Recalcula todo mundo agora que o pin existe.
+   *
+   * `refreshPriority` só ordena os refreshes que acontecerem daqui em
+   * diante; os gatilhos das seções pós-pin já haviam sido criados e
+   * medidos antes. Sem esta chamada, eles ficam com as posições de uma
+   * página que não tem o espaçador do pin.
+   */
+  ScrollTrigger.refresh()
 
   return {
     destruir: () => {

@@ -299,10 +299,18 @@ export const CONTENT = {
     paragraph:
       'Trocar descartáveis por recarregáveis reduz resíduo e custo ao mesmo tempo. ' +
       'A conta fecha já no médio prazo.',
+    /**
+     * `conta` marca o que sobe do zero com a rolagem. A tensão fica de
+     * fora: contar até 1,5 V não tem drama nenhum e ainda daria a
+     * impressão de que a tensão varia, que é o oposto do argumento.
+     */
     stats: [
-      { value: '1.200', label: 'descartáveis substituídas por unidade' },
-      { value: '3400', label: 'mWh na AA' },
-      { value: '1,5 V', label: 'tensão constante' },
+      { value: '1.200', label: 'descartáveis substituídas por unidade', conta: 1200 },
+      { value: '3400', label: 'mWh na AA', conta: 3400 },
+      // `conta: undefined` explícito: com `as const` o TypeScript trata
+      // cada item como um tipo próprio, e omitir a chave faz a união
+      // perder a propriedade inteira
+      { value: '1,5 V', label: 'tensão constante', conta: undefined },
     ],
   },
 
@@ -322,6 +330,18 @@ export const CONTENT = {
     warranty: '3 meses contra defeitos de fabricação',
     email: 'marketing@gorilashield.com.br',
     site: 'gorilashield.com.br',
+    /**
+     * PENDÊNCIA: os endereços seguem o caminho padrão da loja e precisam
+     * ser conferidos.
+     *
+     * Não escrevi o texto das políticas: é documento jurídico, e inventar
+     * conteúdo legal é pior do que não ter. Estes links apontam para as
+     * páginas que a loja já mantém.
+     */
+    politicas: [
+      { rotulo: 'Política de privacidade', href: 'https://www.gorilashield.com.br/politica-de-privacidade' },
+      { rotulo: 'Trocas e devoluções', href: 'https://www.gorilashield.com.br/trocas-e-devolucoes' },
+    ],
   },
 } as const
 

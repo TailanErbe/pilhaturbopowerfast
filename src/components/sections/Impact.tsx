@@ -1,5 +1,6 @@
 import { CONTENT } from '@/data/products'
 import { SectionBg } from '@/components/layout/Layer'
+import { GraficoImpacto } from './GraficoImpacto'
 
 /** Beat 7 — impacto. Sai do pin. */
 export function Impact() {
@@ -15,12 +16,20 @@ export function Impact() {
           {CONTENT.impact.paragraph}
         </p>
 
+        <GraficoImpacto />
+
         <dl className="mt-16 grid gap-10 sm:grid-cols-3">
           {CONTENT.impact.stats.map((s) => (
             <div key={s.label} className="border-t border-white/25 pt-4">
               <dt className="sr-only">{s.label}</dt>
               <dd>
-                <span className="block font-display text-[clamp(2.5rem,7vw,5rem)] leading-none text-brand-orange">
+                {/* O valor final já vem no HTML: sem JS a seção continua
+                    dizendo o que precisa dizer (§6.11). O contador zera e
+                    sobe só depois que o script assume. */}
+                <span
+                  data-count-target={s.conta}
+                  className="block font-display text-[clamp(2.5rem,7vw,5rem)] leading-none text-brand-orange"
+                >
                   {s.value}
                 </span>
                 <span className="texto-nota mt-2 block text-white/60">{s.label}</span>

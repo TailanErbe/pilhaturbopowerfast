@@ -806,15 +806,29 @@ O `aria-label` com o texto original é preservado pelo plugin: verificado, o lei
 
 ---
 
-### Sprint 6 — Seções finais · *3 dias*
-**Objetivo:** pós-pin.
+### Sprint 6 — Seções finais · ✅ **CONCLUÍDO 13/08/2026**
 
-- [ ] Beat 7 (impacto): contador animado + SVG com trace
-- [ ] Beat 8 (compra): headline, render, CTA com seta animada
-- [ ] Beat 9 (footer) completo
-- [ ] Modais/páginas de política de privacidade
+- [x] **Beat 7 (impacto): contador ligado ao scrub + SVG com trace** — `GraficoImpacto.tsx`
+- [x] **Beat 8 (compra):** render de apoio ao lado do CTA, seta que atravessa o botão no hover
+- [x] **Beat 9 (footer):** régua de políticas separada do aviso de direitos
+- [x] Políticas: **linkadas**, não escritas. Ver abaixo
 
-**DoD:** a saída do pin para o conteúdo normal não tem salto nem sobreposição.
+**O gráfico diz uma coisa e não inventa número nenhum.** As duas linhas saem do MESMO ponto e o que as separa é o descarte: a dos descartáveis sobe uma unidade por ciclo, a da Gshield fica deitada em uma, porque é sempre a mesma pilha voltando. O vão entre elas é o argumento. Tudo vem da ficha (1.200 ciclos, uma unidade); nada de custo, que não temos.
+
+**Política de privacidade: linkada, não escrita.** É documento jurídico, e inventar conteúdo legal é pior do que não ter. Os links apontam para as páginas que a loja já mantém, com os caminhos padrão. **Pendência: conferir os endereços.**
+
+**DoD verificado:** o espaçador do pin termina em 12.580 e o impacto começa em 12.580. Lacuna de 0px, e `sobrepoe: false` nas cinco amostras ao longo da costura. A cena chega em opacidade 0 antes do fim do pin, então nada do produto fica pendurado sobre o conteúdo normal.
+
+**Um bug estrutural apareceu aqui, e valia por si só.**
+
+O gatilho do gráfico nasceu com início em **450** enquanto o elemento está em **12.941** — a diferença é exatamente a altura do pin. Todo gatilho criado ANTES do pin mede uma página que ainda não tem o espaçador de quase dezesseis alturas de tela, e ninguém o avisa depois.
+
+Duas correções, as duas necessárias:
+
+1. `refreshPriority: 1` no pin, para ele recalcular antes de todos os outros.
+2. `ScrollTrigger.refresh()` no fim de `montarTimeline`, porque `refreshPriority` só ordena os refreshes que acontecerem daí em diante, e os gatilhos pós-pin já tinham sido medidos.
+
+Isso vale para **qualquer** gatilho abaixo do pin, não só o do gráfico. Segunda armadilha do mesmo dia: âncora `end: 'bottom …'` numa seção mais alta que a tela faz a janela depender da altura da seção. Nas duas âncoras no elemento que anima, a janela é sempre a mesma fração de tela.
 
 ---
 

@@ -52,12 +52,26 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 14px como o resto do rodapé. Em 12px era o único tamanho de corpo
-            da página inteira, e um degrau que aparece uma vez só não é
-            hierarquia, é ruído. */}
-        <p className="texto-nota mt-12 text-white/40">
-          © {new Date().getFullYear()} Gshield. Todos os direitos reservados.
-        </p>
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-white/20 pt-6">
+          {/* 14px como o resto do rodapé. Em 12px era o único tamanho de
+              corpo da página inteira, e um degrau que aparece uma vez só
+              não é hierarquia, é ruído. */}
+          <p className="texto-nota text-white/40">
+            © {new Date().getFullYear()} Gshield. Todos os direitos reservados.
+          </p>
+
+          <nav aria-label="Políticas">
+            <ul className="texto-nota flex flex-wrap gap-x-6 gap-y-2 text-white/50">
+              {CONTENT.footer.politicas.map((p) => (
+                <li key={p.href}>
+                  <a href={p.href} className="underline hover:text-white/80">
+                    {p.rotulo}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </div>
     </footer>
   )
