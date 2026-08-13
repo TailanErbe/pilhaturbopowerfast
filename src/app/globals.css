@@ -1,0 +1,257 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   Design tokens — Gshield
+   Fonte: brand/manual_marca_gshield.pdf  ·  Regras: REGRAS.md §5
+   =========================================================================== */
+
+@theme {
+  /* --- Paleta oficial. NÃO ALTERAR. -------------------------------------
+     #FFA400 · PANTONE 137 C · CMYK 0/45/100/0
+     Nota: a loja no ar usa #FFA300. O manual é normativo — ver REGRAS.md §9.7 */
+  --color-brand-orange: #ffa400;
+  --color-brand-black: #000000;
+  --color-brand-white: #ffffff;
+
+  /* --- Rampa de superfície: só luminância, nenhum matiz novo ------------- */
+  --color-surface-000: #000000;
+  --color-surface-050: #0a0a0a;
+  --color-surface-100: #141414;
+  --color-surface-200: #1f1f1f;
+  --color-surface-300: #2e2e2e;
+
+  /* --- Stops de gradiente presentes no manual ---------------------------- */
+  --color-orange-light: #ffb736;
+  --color-orange-deep: #f59c00;
+
+  /* --- Tipografia -------------------------------------------------------- */
+  --font-display: var(--font-bebas), "Arial Narrow", Impact, sans-serif;
+  --font-body: var(--font-montserrat), system-ui, -apple-system, sans-serif;
+
+  --leading-display: 1;
+  --leading-heading: 1.1;
+  --leading-subtitle: 1.2;
+  --leading-body: 1.4;
+
+  /* --- Escala tipográfica -------------------------------------------------
+     DOIS degraus de display e DOIS de corpo, e nada fora disso.
+
+     A página chegou a ter quatro tamanhos de título (104, 96, 88 e 80) e
+     três de corpo (18, 16 e 14) para os mesmos papéis, cada seção com o
+     seu. Isso é o que se enxerga como "diagramação amadora" antes de
+     conseguir apontar o motivo: sem degraus repetidos, nada estabelece
+     hierarquia, porque tudo é um tamanho diferente de tudo.
+
+     display-1  abre a página e a chamada final
+     display-2  abre cada seção
+     lead       a frase de destaque de cada painel
+     body       texto corrido
+     nota       apoio, legenda, régua de meta */
+  --text-display-1: clamp(2.75rem, 6.4vw, 6.5rem);
+  --text-display-2: clamp(2.25rem, 4.6vw, 4.5rem);
+  --text-lead: clamp(1.375rem, 2.1vw, 2.125rem);
+  --text-body: clamp(1rem, 1.05vw, 1.125rem);
+  --text-nota: 0.875rem;
+
+  /* --- Breakpoints iguais aos da referência ------------------------------ */
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1440px;
+  --breakpoint-xl: 1920px;
+
+  /* --- Espaçamento ------------------------------------------------------- */
+  --spacing-gutter: clamp(16px, 4vw, 48px);
+  /**
+   * Respiro vertical das seções fora do pin.
+   *
+   * O token existia e ninguém usava: cada seção escrevia o seu próprio
+   * clamp (80/14vh/160 numa, 56/10vh/120 noutra), então o intervalo entre
+   * blocos mudava de tamanho ao longo da página sem nenhum motivo. Ritmo
+   * vertical irregular é metade da sensação de "diagramação amadora".
+   */
+  --spacing-section: clamp(64px, 11vh, 152px);
+}
+
+/* ===========================================================================
+   Base
+   =========================================================================== */
+
+@layer base {
+  html {
+    background-color: var(--color-surface-000);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface-000);
+    color: var(--color-brand-white);
+    font-family: var(--font-body);
+    /* Restrição do manual: nada abaixo de "medium" (500) */
+    font-weight: 500;
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    line-height: var(--leading-display);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  /* Foco visível sempre — auditoria do Sprint 7 */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-orange);
+    outline-offset: 3px;
+  }
+
+  /**
+   * O Tailwind v4 mudou o padrão de `cursor: pointer` para `cursor: default`
+   * em botões. Sem isto o elemento não parece clicável — some a "mãozinha".
+   */
+  button:not(:disabled),
+  summary,
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  /* REGRAS.md §6.10 — obrigatório, não opcional */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ===========================================================================
+   Utilitários
+   =========================================================================== */
+
+/**
+ * Faixa de conteúdo: ocupa a LARGURA TODA, com respiro nas bordas.
+ *
+ * Sem `max-width` de propósito. A referência vai de borda a borda — a
+ * navegação encosta no canto esquerdo e o "Buy" no direito. Um teto de
+ * 1920px deixava faixas mortas de 320px de cada lado em telas de 2560.
+ *
+ * `width: 100%` é obrigatório: sem ele, `margin-inline: auto` num item
+ * flex desativa o `stretch` do eixo cruzado, o elemento vira `fit-content`
+ * e se autocentraliza — foi o que jogou a headline do hero para o meio da
+ * tela quando ela deveria estar encostada à esquerda.
+ */
+@utility container-gutter {
+  width: 100%;
+  padding-inline: var(--spacing-gutter);
+}
+
+/**
+ * Texto corrido: tamanho, entrelinha e MEDIDA num pacote só.
+ *
+ * A medida é a parte que faltava. A nota do "onde comprar" corria a
+ * largura inteira da tela: 1.789px a 14px dá cerca de 256 caracteres por
+ * linha, quando o olho perde a linha seguinte acima de 75. Não é questão
+ * de gosto, é o motivo de um bloco parecer ilegível mesmo com contraste
+ * perfeito.
+ *
+ * A entrelinha vem junto porque o Tailwind muda o padrão dela conforme o
+ * tamanho: o mesmo parágrafo saía em 1,43, 1,50 ou 1,56 dependendo da
+ * classe usada. Um valor só, e o ritmo vertical para de oscilar.
+ */
+@utility texto-corpo {
+  font-size: var(--text-body);
+  line-height: 1.55;
+  max-width: 62ch;
+}
+
+@utility texto-nota {
+  font-size: var(--text-nota);
+  line-height: 1.5;
+  max-width: 52ch;
+}
+
+/**
+ * Máscara do clip-reveal.
+ *
+ * O conteúdo entra por baixo de uma borda dura, sem mudar de opacidade: é
+ * o gesto que faz o painel parecer que MONTA, em vez de aparecer pronto.
+ * O corte é do pai, porque um elemento não pode se cortar e se mover ao
+ * mesmo tempo.
+ *
+ * O par `padding-bottom` + `margin-bottom` negativo existe por causa das
+ * descidas. Colando o `overflow: hidden` na linha de base, o rabo do "Q"
+ * da Bebas e o "p" e o "ç" da Montserrat ficam decepados no estado final,
+ * quando a animação já terminou. A folga devolve o espaço para desenhar e
+ * a margem negativa tira o mesmo tanto do fluxo, então o layout não muda.
+ */
+@utility mascara-clip {
+  display: block;
+  overflow: hidden;
+
+  /**
+   * `height: fit-content` porque a máscara costuma ser item de grade, e
+   * item de grade estica por padrão. Esticada, ela ficava com 314px de
+   * altura para 78px de texto: o `translateY(100%)` movia o conteúdo 78px,
+   * bem dentro da área visível, e não escondia coisa nenhuma.
+   */
+  height: fit-content;
+
+  /**
+   * A folga da descida vem em PIXELS, por variável, e cada uso declara a
+   * sua.
+   *
+   * A primeira versão usava `0.18em`, e `em` resolve na fonte da própria
+   * máscara — 16px — não na do título, que tem 88px. A folga saía 2,88px,
+   * longe do rabo do "Q" da Bebas. Valor grande demais também não serve:
+   * a área extra fica visível durante a animação e o texto aparece antes
+   * da hora.
+   */
+  padding-bottom: var(--folga-descida, 4px);
+  margin-bottom: calc(var(--folga-descida, 4px) * -1);
+}
+
+/** A frase de destaque dos painéis. Um tamanho só, em todos eles. */
+@utility texto-lead {
+  font-family: var(--font-display);
+  font-size: var(--text-lead);
+  line-height: 1.15;
+  max-width: 24ch;
+}
+
+/**
+ * Entrada dos itens da pílula: sobem com desfoque e escalonamento.
+ *
+ * Na referência os itens não aparecem de uma vez — cada um entra um pouco
+ * depois do anterior, o que dá a sensação de lista se desdobrando em vez
+ * de painel piscando na tela.
+ *
+ * O atraso vem de `--i`, definido em cada item.
+ */
+@keyframes subir-item {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility item-pilula {
+  animation: subir-item 380ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-pilula {
+    animation: none;
+  }
+}
