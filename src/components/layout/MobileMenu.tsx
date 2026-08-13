@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { Logo } from './Logo'
+import { LinkDeBeat } from './LinkDeBeat'
 import { CONTENT, PRODUCTS } from '@/data/products'
 
 /**
@@ -74,7 +75,7 @@ export function MobileMenu() {
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
-          className="fixed inset-x-5 top-5 z-40 grid gap-8 rounded-2xl bg-brand-white p-6 text-brand-black sm:hidden"
+          className="superficie-clara fixed inset-x-5 top-5 z-40 grid gap-8 rounded-2xl bg-brand-white p-6 text-brand-black sm:hidden"
         >
           <div className="flex items-start justify-between">
             <Logo variant="positiva" width={44} />
@@ -95,13 +96,13 @@ export function MobileMenu() {
             <ul className="grid gap-2">
               {PRODUCTS.map((p) => (
                 <li key={p.index}>
-                  <a
-                    href={`#produto-${p.index}`}
-                    onClick={() => setOpen(false)}
+                  <LinkDeBeat
+                    beat={`produto-${p.index}`}
+                    onNavegar={() => setOpen(false)}
                     className="font-display text-3xl"
                   >
                     {p.name}
-                  </a>
+                  </LinkDeBeat>
                 </li>
               ))}
             </ul>

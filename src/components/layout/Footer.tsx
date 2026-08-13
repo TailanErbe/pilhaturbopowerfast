@@ -1,6 +1,7 @@
 import { CONTENT, PRODUCTS } from '@/data/products'
 import { SectionBg } from './Layer'
 import { Logo } from './Logo'
+import { LinkDeBeat } from './LinkDeBeat'
 
 /** Beat 9 — footer. */
 export function Footer() {
@@ -19,9 +20,12 @@ export function Footer() {
             <ul className="texto-nota grid gap-1">
               {PRODUCTS.map((p) => (
                 <li key={p.index}>
-                  <a href={`#produto-${p.index}`} className="hover:opacity-70">
+                  <LinkDeBeat
+                    beat={`produto-${p.index}`}
+                    className="hover:opacity-70"
+                  >
                     {p.name}
-                  </a>
+                  </LinkDeBeat>
                 </li>
               ))}
             </ul>

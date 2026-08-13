@@ -72,7 +72,7 @@ export function ProductPill() {
       {aberto && (
         <ul
           id={painelId}
-          className="pointer-events-auto grid w-[min(88vw,260px)] gap-1 rounded-2xl bg-brand-white p-2 text-brand-black shadow-lg"
+          className="superficie-clara pointer-events-auto grid w-[min(88vw,260px)] gap-1 rounded-2xl bg-brand-white p-2 text-brand-black shadow-lg"
         >
           {PRODUCTS.map((p, i) => {
             const selecionado = p.index === ativo
@@ -140,7 +140,7 @@ export function ProductPill() {
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-controls={painelId}
-        className="pointer-events-auto flex items-center gap-3 rounded-full bg-brand-white py-2.5 pr-3 pl-5 text-brand-black shadow-lg transition-transform hover:scale-[1.02]"
+        className="superficie-clara pointer-events-auto flex items-center gap-3 rounded-full bg-brand-white py-2.5 pr-3 pl-5 text-brand-black shadow-lg transition-transform hover:scale-[1.02]"
       >
         <span className="font-display text-lg whitespace-nowrap">{rotulo}</span>
         <span

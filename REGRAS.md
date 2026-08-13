@@ -832,6 +832,35 @@ Isso vale para **qualquer** gatilho abaixo do pin, não só o do gráfico. Segun
 
 ---
 
+### Sprint 7 — auditoria de 13/08/2026
+
+Seis frentes auditadas em paralelo, cada achado passado por um cético que tentou refutá-lo. O que sobreviveu, e o que foi feito:
+
+| Achado (confirmado) | Medida | Correção |
+|---|---|---|
+| Seis dos sete beats fora da árvore de acessibilidade | conteúdo comercial inteiro | `ResumoDoAto`, bloco linear `sr-only` montado a partir de `data/products.ts` |
+| Anel de foco laranja sobre painel laranja | **1,00:1** | anel de dois tons, branco+preto, invertido em superfície clara |
+| Anel sobre superfícies brancas | 1,99:1 | idem |
+| Accent laranja no painel 03 | **2,18:1** | accent preto; o "OU" virou chapado laranja com tinta preta (10,56:1) |
+| Cena na FRENTE do texto no retrato, e engolindo o toque | medido em 390×844 | `-z-10` no retrato e `pointer-events: none` no próprio canvas |
+| Painel do kit cortando conteúdo | **62px**, "Compatibilidade" fora da tela | guarda estendida para `max-height: 910px` |
+| VRAM em texturas de rótulo | **209,7 MB** | mapas reduzidos a 1024 de largura: **52,4 MB** |
+| Sem JS os sete beats se sobrepõem | reprova §6.11 | regras de desempilhamento no `<noscript>` |
+| Movimento reduzido: cena congelada cobrindo a página | reprova §6.10 | a cena não monta nesse modo |
+| SplitText escrevia `aria-label` em `<p>` | proibido pela ARIA 1.2 | `aria: 'hidden'` na configuração |
+| Nove âncoras internas levando ao painel errado | | `LinkDeBeat`, que converte o clique em posição de scroll |
+| Canvas renderizando com Bloom depois de invisível | | `frameloop: 'never'`, com despertador por evento de scroll |
+
+**Três lições que valem além deste projeto:**
+
+**`autoAlpha` acerta o foco e erra o leitor de tela.** Ele aplica `visibility: hidden`, o que corretamente tira os beats invisíveis da ordem de tabulação. Mas a mesma propriedade os tira da árvore de acessibilidade, e num trecho pinado a única forma de revelar o próximo é rolar a janela. Scrollytelling precisa de uma versão linear do conteúdo, sempre.
+
+**Dentro de um pin, todo `z-index` é local.** O elemento pinado ganha `position: fixed` e um `transform`, e cada um cria contexto de empilhamento: o `z-2` do conteúdo passa a valer só dentro dele. Qualquer z positivo numa camada irmã fica por cima de tudo. Só valor negativo resolve sem depender de quem cria contexto.
+
+**`pointer-events: none` no container não alcança o canvas.** O R3F cria um div interno e o `<canvas>` com `pointer-events: auto`, e o filho vence o pai. A cena cobria o texto E engolia o toque.
+
+---
+
 ### Sprint 7 — Mobile, performance e acessibilidade · *4–5 dias*
 **Objetivo:** funcionar de verdade fora do MacBook do dev.
 

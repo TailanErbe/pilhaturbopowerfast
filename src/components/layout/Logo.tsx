@@ -27,10 +27,21 @@ import Image from 'next/image'
  */
 type Variant = 'positiva' | 'negativa' | 'mono'
 
+/**
+ * `marca-*` e não `logo-*` de propósito.
+ *
+ * Os arquivos antigos com esse nome eram só o desenho do gorila, na
+ * proporção 2,3:1. Os novos são a marca completa, com o logotipo escrito,
+ * em 4,06:1. Trocar o CONTEÚDO mantendo o caminho deixa o navegador
+ * servindo o arquivo velho por tempo indeterminado, e o header apareceu
+ * renderizando 132×57 quando a proporção nova pede 132×33 (§4j).
+ *
+ * Conteúdo novo, caminho novo. Sempre.
+ */
 const ARQUIVOS = {
-  positiva: '/brand/logo-positiva.png',
-  negativa: '/brand/logo-negativa.png',
-  mono: '/brand/logo-mono-negativa.png',
+  positiva: '/brand/marca-positiva.png',
+  negativa: '/brand/marca-negativa.png',
+  mono: '/brand/marca-mono-negativa.png',
 } as const
 
 /** Proporção real dos três arquivos: 2000 × 493 */

@@ -102,10 +102,42 @@
     font-weight: 400;
   }
 
-  /* Foco visível sempre — auditoria do Sprint 7 */
+  /**
+   * Anel de foco de DOIS TONS, e não laranja.
+   *
+   * O anel era `2px solid #FFA400`, a mesma cor do fundo do painel 02:
+   * contraste 1,00:1, foco literalmente invisível. Sobre as superfícies
+   * brancas (dropdown da pílula, menu mobile, painel 03) dava 1,99:1,
+   * abaixo do mínimo de 3:1 da WCAG 2.2 SC 1.4.11, e reprovando o
+   * SC 2.4.7 (foco visível).
+   *
+   * Branco por dentro, preto por fora: um dos dois sempre contrasta,
+   * seja o fundo preto, laranja ou branco. É a mesma solução que sistemas
+   * operacionais usam no cursor de texto, e pelo mesmo motivo.
+   *
+   * `box-shadow` e não um segundo `outline` porque só existe um outline
+   * por elemento, e a sombra acompanha o `border-radius` de graça.
+   */
   :focus-visible {
-    outline: 2px solid var(--color-brand-orange);
-    outline-offset: 3px;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 0 6px #fff;
+    border-radius: 2px;
+  }
+
+  /**
+   * Em superfícies claras o par se inverte.
+   *
+   * Sem isto o anel branco de dentro some no branco do painel e sobra só
+   * o preto, que funciona mas fica fino demais para o olho encontrar.
+   */
+  .superficie-clara :focus-visible {
+    outline-color: #000;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 6px #000;
   }
 
   /**

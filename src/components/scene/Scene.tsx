@@ -74,12 +74,29 @@ const RECUO = 0.55
 
 function SaidaDoAto() {
   const ultimo = useRef(-1)
+  const setFrameloop = useThree((s) => s.setFrameloop)
+
   useFrame(() => {
     // As duas causas multiplicam: sair do ato e recuar num beat são
     // independentes, e uma não deve cancelar a outra
     const presenca = (1 - sceneState.saidaDoAto) * (1 - sceneState.atenuacao * RECUO)
     const o = Math.round(presenca * 100) / 100
     if (o === ultimo.current) return
+
+    /**
+     * Invisível deixa de desenhar.
+     *
+     * O laço era sempre 'always', então depois do fim do ato a cena
+     * continuava renderizando oito pilhas com Bloom, sessenta vezes por
+     * segundo, por trás do impacto, da compra e do rodapé. Ninguém vê e a
+     * GPU paga.
+     *
+     * Só o DESLIGAR mora aqui. Ligar de volta é impossível daqui: com o
+     * laço parado este `useFrame` não roda mais, então quem reacende é o
+     * ouvinte de scroll abaixo, que independe do laço de render.
+     */
+    if (o <= 0) setFrameloop('never')
+
     ultimo.current = o
     // Busca no DOM em vez de partir do `gl`: o compilador do React proíbe
     // mutar qualquer coisa alcançável a partir do retorno de um hook. Como
@@ -89,6 +106,22 @@ function SaidaDoAto() {
     el.style.opacity = String(o)
     el.style.visibility = o <= 0 ? 'hidden' : ''
   })
+
+  /**
+   * O despertador.
+   *
+   * Eventos de scroll continuam chegando com o laço de render parado, e é
+   * por eles que a cena volta a desenhar quando o usuário sobe de volta
+   * para dentro do ato. `passive` porque não cancelamos nada.
+   */
+  useEffect(() => {
+    const acordar = () => {
+      if (sceneState.saidaDoAto < 1) setFrameloop('always')
+    }
+    window.addEventListener('scroll', acordar, { passive: true })
+    return () => window.removeEventListener('scroll', acordar)
+  }, [setFrameloop])
+
   return null
 }
 
@@ -125,6 +158,17 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
   return (
     <div className={className} data-cena>
       <Canvas
+        /**
+         * `pointer-events: none` PRECISA vir aqui também.
+         *
+         * O container tem a classe, mas o R3F cria um div interno e o
+         * próprio <canvas> com `pointer-events: auto`, e o valor do filho
+         * vence o do pai. Medido no celular: um toque sobre o "Ficha
+         * técnica" acertava o canvas e o accordion não abria. A cena não
+         * só cobria o texto, ela engolia o toque.
+         */
+        className="!pointer-events-none"
+        style={{ pointerEvents: 'none' }}
         // Em toque, resolução menor: o corpo é fosco e quase não mostra
         // a diferença, mas o custo de fill rate cai pela metade.
         dpr={coarse ? [1, 1.5] : [1, 2]}

@@ -35,11 +35,33 @@ const THEMES = {
     section: 'text-brand-black',
     rule: 'border-black/20',
     muted: 'text-black/70',
-    accent: 'text-orange-deep',
+    /**
+     * PRETO, não laranja.
+     *
+     * `text-orange-deep` é #F59C00, que sobre branco dá 2,18:1. Reprova
+     * até no limiar de texto grande (3:1), e o accent aqui é justamente o
+     * numeral do título e o "OU", os dois em corpo grande.
+     *
+     * Nenhum laranja da paleta salva: #FFA400 dá 1,99:1 e os mais claros,
+     * menos ainda. Sobre branco o laranja da marca só funciona como
+     * CHAPADO de fundo com tinta preta por cima (10,56:1), nunca como
+     * tinta de texto.
+     */
+    accent: 'text-brand-black',
   },
 } as const
 
 type Tema = (typeof THEMES)[keyof typeof THEMES]
+
+/**
+ * Marca o painel como superfície clara para o anel de foco se inverter.
+ *
+ * O anel padrão é branco por dentro e preto por fora; sobre fundo claro
+ * o branco de dentro some e sobra um filete preto fino demais. A classe
+ * troca a ordem dos dois. Ver `:focus-visible` em globals.css.
+ */
+const claro = (tema: Product['theme']) =>
+  tema === 'dark' ? '' : 'superficie-clara'
 
 function Fichas({ product, t }: { product: Product; t: Tema }) {
   return (
@@ -147,7 +169,7 @@ export function ProductPanel({ product }: { product: Product }) {
     return (
       <section
         id={`produto-${product.index}`}
-        className={`relative flex h-full min-h-dvh overflow-hidden ${t.section}`}
+        className={`relative flex h-full min-h-dvh overflow-hidden ${t.section} ${claro(product.theme)}`}
       >
         <SectionBg className={t.bg} />
 
@@ -188,9 +210,18 @@ export function ProductPanel({ product }: { product: Product }) {
                * pilhas, longe do vão que ele nomeia.
                */}
               <FaixaDaCena className="relative aspect-[2.8/1] max-h-full w-full min-h-0">
+                {/**
+                 * O "OU" é CHAPADO laranja com tinta preta, não texto
+                 * laranja.
+                 *
+                 * Sobre o branco deste painel, laranja como tinta dá
+                 * 2,18:1 e reprova. Invertendo, o mesmo laranja vira fundo
+                 * e a tinta preta sobre ele dá 10,56:1. A marca continua
+                 * presente e a leitura passa.
+                 */}
                 <span
                   aria-hidden
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-display leading-none ${t.accent} text-[clamp(1.75rem,3.4vw,3rem)]`}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-orange px-[0.5em] py-[0.12em] font-display text-[clamp(1.75rem,3.4vw,3rem)] leading-none text-brand-black"
                 >
                   OU
                 </span>
@@ -236,7 +267,19 @@ export function ProductPanel({ product }: { product: Product }) {
                * Nada se perde: a descrição logo abaixo diz por escrito que
                * são dois cabos, de duas e de quatro pontas.
                */}
-              <div className="grid grid-cols-2 gap-x-[3%] [@media(max-height:699px)_and_(max-width:767px)]:hidden">
+              {/**
+               * O corte cobre a faixa inteira de celular, não só os baixos.
+               *
+               * A condição era `max-height: 699px`, e num 390×844 comum o
+               * painel estourava 62px: a última linha da ficha técnica ficava
+               * cortada e "Compatibilidade" caía fora da tela. Como a seção é
+               * `overflow-hidden` dentro do pin, o excedente não vira barra de
+               * rolagem, vira conteúdo perdido (§4g).
+               *
+               * Medido: em 390×844 o estouro é 62px, em 412×915 é zero. O teto
+               * de 910px cobre 800, 844 e 852, que é onde estão os aparelhos.
+               */}
+              <div className="grid grid-cols-2 gap-x-[3%] [@media(max-height:910px)_and_(max-width:767px)]:hidden">
                 {product.cabos?.map((cabo) => (
                   <figure key={cabo.pontas} className="flex flex-col">
                     {/**
@@ -293,7 +336,7 @@ export function ProductPanel({ product }: { product: Product }) {
   return (
     <section
       id={`produto-${product.index}`}
-      className={`relative flex h-full min-h-dvh items-center overflow-hidden ${t.section}`}
+      className={`relative flex h-full min-h-dvh items-center overflow-hidden ${t.section} ${claro(product.theme)}`}
     >
       <SectionBg className={t.bg} />
 

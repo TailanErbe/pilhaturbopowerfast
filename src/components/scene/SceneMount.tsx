@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
 import { POSES, sceneState } from '@/lib/scene-state'
 import { useClientValue } from '@/lib/client-value'
+import { prefersReducedMotion } from '@/lib/motion'
 
 /**
  * Ponto de montagem da cena.
@@ -88,21 +89,44 @@ const lerDebug = () =>
 
 export function SceneMount() {
   const debug = useClientValue(lerDebug, false)
+  const reduzido = useClientValue(prefersReducedMotion, false)
+
+  /**
+   * Com movimento reduzido a cena NÃO monta.
+   *
+   * Quem escreve `progress` e `saidaDoAto` é a timeline, e a timeline não
+   * é montada nesse modo (PinnedAct). O canvas ficava então parado na pose
+   * do beat 1, com opacidade 1, `fixed inset-0` e `z-9` no desktop: uma
+   * pilha imóvel cobrindo a faixa central do impacto, da compra e do
+   * rodapé pelo resto da página.
+   *
+   * A regra §6.10 pede "documento vertical normal com todo o conteúdo
+   * visível", e um objeto 3D congelado por cima do texto é o contrário
+   * disso. Sem timeline a cena não conta história nenhuma: só atrapalha.
+   */
+  if (reduzido) return null
 
   return (
     <>
-      {/* Mesma escolha responsiva da referência (klimtwine usa `z_3 lg:z_9`
-          no container do canvas, com conteúdo em z_4 e painéis em z_8):
-
-            mobile  → z-1, a pilha passa ATRÁS do texto
-            desktop → z-9, a pilha passa NA FRENTE do texto
-
-          No retrato a tela é estreita e o produto por cima cobriria a
-          leitura; no desktop sobra largura e a passagem à frente é o que
-          dá a sensação de objeto real. O header (z-20) fica acima nos dois. */}
+      {/**
+       * No retrato a cena fica ATRÁS de tudo; no desktop, à frente.
+       *
+       * O `z-1` de antes não colocava a cena atrás de nada. O ato pinado
+       * ganha `position: fixed` e um `transform` do GSAP, e cada um deles
+       * já cria contexto de empilhamento próprio: o `z-2` do conteúdo
+       * passa a valer só DENTRO do ato, e lá fora o ato inteiro conta como
+       * nível 0. Qualquer z positivo na cena a colocava por cima do texto,
+       * inclusive no celular, onde ela cobria a frase de destaque e metade
+       * da descrição em preto sobre o corpo preto da pilha.
+       *
+       * `-z-10` resolve na raiz do problema: negativo fica abaixo do
+       * conteúdo em qualquer contexto, sem depender de quem cria stacking
+       * context. No desktop sobra largura e a passagem à frente é o que dá
+       * a sensação de objeto real, então lá o valor volta a ser positivo.
+       */}
       <Scene
         debug={debug}
-        className={`pointer-events-none fixed inset-0 ${debug ? 'z-[800] bg-surface-000' : 'z-1 md:z-9'}`}
+        className={`pointer-events-none fixed inset-0 ${debug ? 'z-[800] bg-surface-000' : '-z-10 md:z-9'}`}
       />
       {debug && <DebugPanel />}
     </>

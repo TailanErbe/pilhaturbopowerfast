@@ -62,9 +62,23 @@ export function revelarTextos(
        * navegador passa a poder quebrar linha no meio de qualquer palavra.
        * As linhas e palavras existem só para segurar a quebra no lugar.
        */
+      /**
+       * `aria: 'hidden'` e não o padrão `'auto'`.
+       *
+       * No modo automático o plugin escreve `aria-label` no elemento
+       * dividido e marca os filhos com `aria-hidden`. Os alvos aqui são
+       * `<p>`, e o papel `paragraph` tem "name from: prohibited" na
+       * ARIA 1.2: o `aria-label` é inválido e ignorado, então sobra um
+       * parágrafo com todo o conteúdo escondido e nenhum nome. O texto
+       * simplesmente some do leitor de tela.
+       *
+       * Com `'hidden'` o plugin marca só os filhos e não escreve o rótulo
+       * proibido; o `<p>` continua expondo o próprio texto.
+       */
       const split = new SplitText(alvo, {
         type: 'lines,words,chars',
         linesClass: 'linha-revelada',
+        aria: 'hidden',
       })
       divisoes.push(split)
 

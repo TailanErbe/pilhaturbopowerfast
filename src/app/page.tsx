@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer'
 import { ProductPill } from '@/components/layout/ProductPill'
 import { SceneMount } from '@/components/scene/SceneMount'
 import { PinnedAct } from '@/components/PinnedAct'
+import { ResumoDoAto } from '@/components/a11y/ResumoDoAto'
 import { Hero } from '@/components/sections/Hero'
 import { UsbC } from '@/components/sections/UsbC'
 import { Cycles } from '@/components/sections/Cycles'
@@ -54,6 +55,11 @@ export default function Home() {
             </div>
           ))}
         </PinnedAct>
+
+        {/* Os beats invisíveis saem da árvore de acessibilidade, e a única
+            forma de revelar o próximo é rolar a janela. Sem este resumo, o
+            leitor de tela não encontra nada entre o hero e o impacto. */}
+        <ResumoDoAto />
 
         {/* --- Pós-pin (beats 7 e 8) --- */}
         <Impact />

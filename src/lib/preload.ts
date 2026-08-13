@@ -22,9 +22,9 @@ export type PreloadTask = { label: string; run: () => Promise<unknown> }
 
 /** Imagens que precisam estar prontas antes do primeiro beat. */
 const CRITICAL_IMAGES = [
-  '/brand/logo-negativa.png',
-  '/brand/logo-positiva.png',
-  '/brand/logo-mono-negativa.png',
+  '/brand/marca-negativa.png',
+  '/brand/marca-positiva.png',
+  '/brand/marca-mono-negativa.png',
   '/brand/icone-negativo.png',
   '/brand/icone-positivo.png',
 ]

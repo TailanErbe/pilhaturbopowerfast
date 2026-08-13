@@ -1,5 +1,6 @@
 import { Logo } from './Logo'
 import { MobileMenu } from './MobileMenu'
+import { LinkDeBeat } from './LinkDeBeat'
 import { CONTENT, PRODUCTS } from '@/data/products'
 
 /**
@@ -31,20 +32,23 @@ export function Header() {
           <ul className="flex flex-col gap-1">
             {PRODUCTS.map((p) => (
               <li key={p.index}>
-                <a
-                  href={`#produto-${p.index}`}
+                {/* Âncora comum não chega ao painel: dentro do pin os sete
+                    ocupam a mesma posição. Ver LinkDeBeat. */}
+                <LinkDeBeat
+                  beat={`produto-${p.index}`}
                   className="text-sm whitespace-nowrap transition-opacity hover:opacity-70"
                 >
                   {p.name}
-                </a>
+                </LinkDeBeat>
               </li>
             ))}
           </ul>
         </nav>
 
-        <a href="#topo" className="justify-self-center" aria-label="Gshield, início">
+        <LinkDeBeat beat="topo" className="justify-self-center">
+          <span className="sr-only">Gshield, início</span>
           <Logo variant="negativa" width={132} priority />
-        </a>
+        </LinkDeBeat>
 
         <div className="justify-self-end">
           <a
