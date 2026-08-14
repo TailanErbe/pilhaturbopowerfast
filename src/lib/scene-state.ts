@@ -142,8 +142,22 @@ export const POSES: Pose[] = [
   // Beat 1 — hero: em pé na faixa direita, marca de frente
   { at: 0.06, screenX: FAIXA, position: [0.3, 0], rotation: [0.06, FACE_MARCA, 0.04], scale: 1 },
 
-  // Beat 2 — USB-C (centro do beat: 0,22): aproxima e inclina para expor a porta
-  { at: 0.22, screenX: FAIXA, position: [-0.4, 2.6 * AFASTAMENTO], rotation: [-0.5, FACE_MARCA + 0.28, 0.02], scale: 1.1 },
+  /**
+   * Beat 2 — USB-C (centro do beat: 0,22): inclina o suficiente para expor
+   * a porta, e nada além disso.
+   *
+   * Aqui havia um mergulho: z ia a 2,6 e voltava a 0,4 no beat seguinte, com
+   * a pilha caindo 0,4 e tombando meio radiano. O objeto avançava, recuava e
+   * só então o cabo saía, quando o ACONTECIMENTO deste beat é a retirada do
+   * cabo (0,09 a 0,24) — o movimento da pilha estava abafando justamente o
+   * que se queria mostrar. No celular, com o produto menor, o vaivém não
+   * lia como aproximação: lia como travada.
+   *
+   * Agora o z quase não muda entre o herói (0), este beat e o próximo
+   * (0,4), então o produto só respira para a frente enquanto gira um
+   * pouco. Quem se move é o cabo.
+   */
+  { at: 0.22, screenX: FAIXA, position: [0.15, 0.5 * AFASTAMENTO], rotation: [-0.16, FACE_MARCA + 0.28, 0.02], scale: 1.03 },
 
   // Beat 3 — 1.200 recargas (0,37): deita na diagonal
   { at: 0.37, screenX: FAIXA, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
@@ -209,6 +223,28 @@ export function poseAt(progress: number): Omit<Pose, 'at'> {
 }
 
 /**
+ * Teto do produto no retrato: a linha, em fração da tela, onde o texto do
+ * beat atual começa.
+ *
+ * Interpola entre beats como `poseAt`, com a mesma suavização, para o
+ * produto descer e subir junto com a virada em vez de saltar.
+ */
+export function tetoEm(progress: number, tetos: number[]): number {
+  const p = Math.max(0, Math.min(1, progress))
+
+  let i = 0
+  while (i < POSES.length - 2 && POSES[i + 1].at < p) i++
+
+  const a = tetos[i] ?? 1
+  const b = tetos[i + 1] ?? a
+  const span = POSES[i + 1].at - POSES[i].at
+  const t = span <= 0 ? 0 : (p - POSES[i].at) / span
+  const e = t * t * (3 - 2 * t)
+
+  return lerp(a, b, Math.max(0, Math.min(1, e)))
+}
+
+/**
  * Fonte única do progresso. Um objeto mutável simples em vez de estado do
  * React: a timeline escreve a 60 fps e re-renderizar a árvore nesse ritmo
  * seria desperdício.
@@ -233,6 +269,19 @@ export const sceneState = {
     topo: number
     base: number
   } | null,
+  /**
+   * Onde o texto começa em cada beat, em fração da altura da tela. Escrito
+   * pelo <TetosDoRetrato />, lido pela <Battery /> só no retrato.
+   *
+   * Um valor por beat, na ordem de POSES. É o que separa "a pilha nunca
+   * cobre o texto" de "a pilha fica sempre no alto": o pior beat pede a
+   * faixa de cima inteira, mas o herói tem duas linhas de título e sobra
+   * meia tela. Com um teto por beat o produto desce onde há espaço, em vez
+   * de ficar colado no cabeçalho a viagem toda.
+   *
+   * Nulo até medir; enquanto isso vale o palpite conservador do pior caso.
+   */
+  tetosDoRetrato: null as number[] | null,
   /**
    * Saída do ato, 0→1. Escrita pela timeline logo depois que o pin solta.
    *

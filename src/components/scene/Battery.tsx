@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { AAA_SCALE, DIMENSIONS } from '@/data/products'
-import { kitPresenca, poseAt, sceneState, variantEm } from '@/lib/scene-state'
+import { kitPresenca, poseAt, sceneState, tetoEm, variantEm } from '@/lib/scene-state'
 import { asset } from '@/lib/site'
 import { Cable } from './Cable'
 import { BatteryMesh } from './BatteryMesh'
@@ -38,25 +38,41 @@ const ANGULO_PORTA = 0.29 * Math.PI * 2
  * (ver SceneMount), então a diagramação é que separa os dois: o texto
  * encosta na base (`base-do-retrato`) e o produto ocupa a faixa de cima.
  *
- * Escala FIXA não resolve, e é o erro que estas constantes desfazem. O
- * texto tem altura em pixels, não em porcentagem: o painel mais alto pede
- * seus 400 px em qualquer aparelho. Numa tela de 844 sobra bastante para
- * o produto; numa de 640, com os mesmos 400 px de texto e a pílula, sobra
- * um quarto da tela. Uma constante calibrada na tela grande punha a pilha
- * por cima do texto na pequena.
+ * Constante fixa não resolve. O texto tem altura em PIXELS, não em
+ * porcentagem: o painel mais alto pede seus 400 px em qualquer aparelho.
+ * Numa tela de 844 sobra bastante para o produto; numa de 640, com os
+ * mesmos 400 px de texto e a pílula, sobra um quarto da tela. Um valor
+ * calibrado na tela grande punha a pilha por cima do texto na pequena.
  *
- * Daí a conta ser sempre a mesma: reserva o que o texto precisa, e o
- * produto recebe o resto.
+ * Nem o mesmo teto para todos os beats resolve. O herói tem duas linhas
+ * de título; o painel tem título, régua, destaque, descrição e fichas.
+ * Calibrar pelo pior deixava a pilha colada no cabeçalho a viagem toda,
+ * com meia tela vazia embaixo dela nos beats de texto curto.
+ *
+ * Então:
+ *   TAMANHO   do beat mais apertado, e por isso constante. Um produto que
+ *             cresce e encolhe a cada virada denuncia o truque.
+ *   POSIÇÃO   do beat atual, medida no DOM (ver TetosDoRetrato). É o que
+ *             faz o produto descer para o meio da tela onde há espaço.
  */
 const RETRATO = {
-  /** Altura do bloco de texto mais alto (painel) somada à da pílula fixa */
-  reserva: 520,
+  /**
+   * Respiro entre a base do produto e a primeira linha de texto.
+   *
+   * Não é margem estética: a flutuação do respiro move o objeto cerca de
+   * 2% da tela, o amortecimento chega ao alvo por aproximação, e as poses
+   * dos painéis ainda somam 5% de escala por conta própria. Sem essa
+   * reserva, os três juntos encostavam a base da pilha no título.
+   */
+  folga: 0.08,
   /** Respiro acima do produto, em fração da tela */
   margem: 0.045,
   /** Fração da tela que o produto ocuparia com escala 1, medida no retrato */
   fracaoCheia: 0.76,
   /** Piso: em tela muito baixa o produto encolhe, mas não some */
-  minimo: 0.2,
+  minimo: 0.22,
+  /** Palpite conservador enquanto a medida do DOM não chega */
+  tetoPadrao: 0.42,
 }
 
 /**
@@ -222,15 +238,30 @@ export function Battery() {
      */
     /**
      * A faixa que sobra para o produto, em fração da altura da tela.
-     * Vai de `margem` até `teto`; o resto é do texto e da pílula.
+     *
+     * `tetoAqui` é a linha do beat ATUAL, e move o produto. `tetoPior` é a
+     * do beat mais apertado, e fixa o tamanho. O piso impede que uma tela
+     * muito baixa reduza a pilha a um ponto.
      */
-    const teto = Math.max(
-      RETRATO.minimo,
-      (size.height - RETRATO.reserva) / size.height,
-    )
-    const retratoEscala = retrato
-      ? (teto - RETRATO.margem) / RETRATO.fracaoCheia
-      : 1
+    const tetos = sceneState.tetosDoRetrato
+    const linha = (t: number) => Math.max(RETRATO.minimo, t - RETRATO.folga)
+    const tetoAqui = tetos
+      ? linha(tetoEm(sceneState.progress, tetos))
+      : RETRATO.tetoPadrao
+    /**
+     * O ÚLTIMO beat fica de fora do pior caso.
+     *
+     * É o painel do kit, e lá o título fica no topo da tela: o teto dele é
+     * 0,08, o piso engolia tudo e a protagonista saía com um quinto do
+     * tamanho a página inteira. Mas nesse beat ela já se dissolveu nas oito
+     * (kitPresenca = 1) e quem ocupa a tela é o <Kit />, que tem faixa
+     * própria medida pelo painel. Ela não disputa espaço com aquele texto.
+     */
+    const tetoPior = tetos
+      ? linha(Math.min(...tetos.slice(0, -1)))
+      : RETRATO.tetoPadrao
+    const alturaNaTela = tetoPior - RETRATO.margem
+    const retratoEscala = retrato ? alturaNaTela / RETRATO.fracaoCheia : 1
     const aplicados = axialAtual * Math.max(0.001, 1 - kit) * retratoEscala
     const anterior = g.scale.y / aplicados
     const base = THREE.MathUtils.damp(anterior, alvo.scale, s, delta)
@@ -281,9 +312,9 @@ export function Battery() {
      * faixa que o texto não usa. É o mesmo arranjo da referência no
      * celular: produto em cima, texto embaixo, sem cruzamento.
      */
-    // Centra o produto DENTRO da faixa que sobrou, não na tela
+    // Centra o produto DENTRO da faixa livre deste beat, não na tela
     const alturaVisivel = meiaAltura * 2
-    const centroDaFaixa = (RETRATO.margem + teto) / 2
+    const centroDaFaixa = (RETRATO.margem + tetoAqui) / 2
     const subida = retrato ? alturaVisivel * (0.5 - centroDaFaixa) : 0
 
     g.position.y = THREE.MathUtils.damp(g.position.y, alvo.position[0] + flutua + subida, s, delta)

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { montarTimeline, type Timeline } from '@/motion/timeline'
 import { registrarTimeline } from '@/motion/registro'
 import { prefersReducedMotion } from '@/lib/motion'
+import { TetosDoRetrato } from './scene/TetosDoRetrato'
 
 /**
  * O ato pinado: hero, USB-C, recargas, chip e os três painéis.
@@ -80,6 +81,9 @@ export function PinnedAct({ children }: { children: React.ReactNode }) {
       className="relative h-dvh overflow-hidden [&>[data-beat]]:absolute [&>[data-beat]]:inset-0 motion-reduce:h-auto motion-reduce:overflow-visible motion-reduce:[&>[data-beat]]:static"
     >
       {children}
+      {/* Mede onde o texto de cada beat começa, para o produto 3D descer
+          até onde houver espaço no retrato */}
+      <TetosDoRetrato />
     </div>
   )
 }
