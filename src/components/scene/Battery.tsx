@@ -86,7 +86,16 @@ const RETRATO = {
  */
 const LARGURA_RETRATO = 768
 
-export function Battery() {
+/**
+ * `estatico`: movimento reduzido, uma foto por beat (ver CenaEstatica).
+ *
+ * Duas coisas mudam, e as duas são movimento que este componente inventa
+ * por conta própria, sem o scroll pedir: o amortecimento, que faz o produto
+ * VIAJAR até a pose, e o respiro, que o mantém flutuando parado. Sem elas
+ * a pose é aplicada crua, no primeiro quadro, e a imagem congela idêntica
+ * quadro a quadro — que é o que permite ao laço parar logo em seguida.
+ */
+export function Battery({ estatico = false }: { estatico?: boolean }) {
   const grupo = useRef<THREE.Group>(null)
   const corpo = useRef<THREE.Mesh>(null)
   /** Último formato aplicado, para trocar os mapas só quando muda */
@@ -198,12 +207,24 @@ export function Battery() {
     const fracao = retrato ? 0.5 : alvo.screenX
     const alvoX = (fracao * 2 - 1) * meiaLargura
 
-    // Amortecimento: a pose vem do scroll, mas a chegada é suave
+    /**
+     * Amortecimento: a pose vem do scroll, mas a chegada é suave.
+     *
+     * Parado, `chegar` devolve o alvo direto. Não dá para conseguir isso
+     * com um lambda enorme: `damp` é lerp(a, b, 1 - e^(-λ·dt)), e num
+     * quadro com dt = 0 — que acontece quando o laço acorda e desenha dois
+     * quadros no mesmo instante — o fator zera e o produto não sai do
+     * lugar. O atalho tem de ser explícito.
+     */
     const s = 6
-    g.position.x = THREE.MathUtils.damp(g.position.x, alvoX, s, delta)
-    g.position.z = THREE.MathUtils.damp(g.position.z, z, s, delta)
-    g.rotation.x = THREE.MathUtils.damp(g.rotation.x, alvo.rotation[0], s, delta)
-    g.rotation.z = THREE.MathUtils.damp(g.rotation.z, alvo.rotation[2], s, delta)
+    const chegar = estatico
+      ? (_atual: number, alvo: number) => alvo
+      : (atual: number, alvo: number) => THREE.MathUtils.damp(atual, alvo, s, delta)
+
+    g.position.x = chegar(g.position.x, alvoX)
+    g.position.z = chegar(g.position.z, z)
+    g.rotation.x = chegar(g.rotation.x, alvo.rotation[0])
+    g.rotation.z = chegar(g.rotation.z, alvo.rotation[2])
 
     /**
      * Troca de formato, no meio do giro.
@@ -264,7 +285,7 @@ export function Battery() {
     const retratoEscala = retrato ? alturaNaTela / RETRATO.fracaoCheia : 1
     const aplicados = axialAtual * Math.max(0.001, 1 - kit) * retratoEscala
     const anterior = g.scale.y / aplicados
-    const base = THREE.MathUtils.damp(anterior, alvo.scale, s, delta)
+    const base = chegar(anterior, alvo.scale)
     const radial = formato.current === 'AAA' ? AAA_SCALE.radial : 1
 
     /**
@@ -295,7 +316,9 @@ export function Battery() {
      * ângulos chegava a raspar na tampa. A flutuação vertical pode ser mais
      * generosa — ela não gira nada.
      */
-    const t = clock.elapsedTime
+    // Parado, respiro nenhum: é movimento que a cena inventa sozinha, e
+    // sem scroll pedindo ele seria a única coisa se mexendo na tela
+    const t = estatico ? 0 : clock.elapsedTime
     const flutua = Math.sin(t * 0.55) * 0.14
     const balanca = Math.sin(t * 0.31) * 0.05
 
@@ -317,8 +340,8 @@ export function Battery() {
     const centroDaFaixa = (RETRATO.margem + tetoAqui) / 2
     const subida = retrato ? alturaVisivel * (0.5 - centroDaFaixa) : 0
 
-    g.position.y = THREE.MathUtils.damp(g.position.y, alvo.position[0] + flutua + subida, s, delta)
-    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, alvo.rotation[1] + balanca, s, delta)
+    g.position.y = chegar(g.position.y, alvo.position[0] + flutua + subida)
+    g.rotation.y = chegar(g.rotation.y, alvo.rotation[1] + balanca)
   })
 
   return (

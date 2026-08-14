@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { Battery } from './Battery'
-import { sceneState } from '@/lib/scene-state'
+import { POSES, sceneState } from '@/lib/scene-state'
 import { isCoarsePointer, prefersReducedMotion } from '@/lib/motion'
 import { useClientValue } from '@/lib/client-value'
 
@@ -139,6 +139,147 @@ function SaidaDoAto() {
 }
 
 /**
+ * Quantos quadros desenhar antes de congelar.
+ *
+ * Um só não basta: o <Environment> do drei monta o cubemap de iluminação
+ * no primeiro quadro e o EffectComposer redimensiona os seus buffers, então
+ * a primeira imagem sai sem luz de ambiente e sem Bloom. Meia dúzia cobre
+ * as duas coisas com folga e ainda assim é um piscar de olho de GPU — e
+ * como a pose não interpola no modo estático, os seis quadros são
+ * idênticos: nada disso é visível como movimento.
+ */
+const QUADROS_ESTATICOS = 6
+
+/**
+ * Movimento reduzido: uma FOTO por beat.
+ *
+ * Aqui não existe timeline escrevendo `progress` (o PinnedAct não a monta
+ * nesse modo), então quem diz em que pose a cena está é este componente:
+ * ele olha qual beat cobre o meio da tela e escreve o `at` daquele beat,
+ * cru. Sem scrub, sem interpolação — a pose troca no CORTE, que é
+ * justamente o que a §6.10 pede no lugar de uma animação.
+ *
+ * O laço fica parado o tempo todo e só acorda para os quadros de uma
+ * troca. É o oposto do modo normal, e de propósito: quem desliga animação
+ * no sistema costuma estar numa máquina que agradece por uma GPU ociosa.
+ *
+ * Passado o último beat, o canvas some. Sem isso a pilha ficaria pendurada
+ * em `fixed inset-0` por cima do impacto, da compra e do rodapé — foi
+ * exatamente esse defeito que um dia levou a cena a nem montar aqui.
+ */
+function CenaEstatica() {
+  const setFrameloop = useThree((s) => s.setFrameloop)
+  /** Quadros que ainda faltam desenhar nesta troca */
+  const restantes = useRef(QUADROS_ESTATICOS)
+  /** Laço ligado? Lembrado para chamar `setFrameloop` só na transição */
+  const ligado = useRef(true)
+
+  useFrame(() => {
+    if (restantes.current > 0) {
+      restantes.current--
+      return
+    }
+    /**
+     * Só o DESLIGAR mora aqui, como no <SaidaDoAto>: com o laço parado
+     * este callback não roda mais, então quem religa é o ouvinte abaixo.
+     */
+    if (ligado.current) {
+      ligado.current = false
+      setFrameloop('never')
+    }
+  })
+
+  useEffect(() => {
+    /** Nenhum beat na tela ainda — e nem -1, que é "passou do último" */
+    let atual = -2
+    let agendado = 0
+
+    const desenhar = () => {
+      restantes.current = QUADROS_ESTATICOS
+      if (!ligado.current) {
+        ligado.current = true
+        setFrameloop('always')
+      }
+    }
+
+    const medir = () => {
+      agendado = 0
+
+      /**
+       * O beat que cobre o MEIO da tela, não o primeiro que aparece.
+       *
+       * Fora do pin cada beat ocupa uma altura de tela inteira, então em
+       * qualquer rolagem há dois visíveis e um só mandando na composição.
+       * O meio da tela decide sem empate e troca na metade da passagem,
+       * que é onde o beat novo já domina a leitura.
+       */
+      const beats = document.querySelectorAll('[data-beat]')
+      const meio = window.innerHeight / 2
+      let i = -1
+      beats.forEach((beat, k) => {
+        const r = beat.getBoundingClientRect()
+        if (r.top <= meio && r.bottom > meio) i = k
+      })
+      if (i === atual) return
+      atual = i
+
+      const el = document.querySelector<HTMLElement>('[data-cena]')
+      if (el) {
+        el.style.opacity = i < 0 ? '0' : '1'
+        el.style.visibility = i < 0 ? 'hidden' : ''
+      }
+
+      // Invisível não precisa de quadro nenhum: deixa o laço dormindo
+      if (i < 0) return
+
+      sceneState.progress = POSES[Math.min(i, POSES.length - 1)].at
+      desenhar()
+    }
+
+    /**
+     * O scroll só AGENDA; quem mede é o quadro seguinte. Medir dentro do
+     * ouvinte faria um `getBoundingClientRect` por evento, e a leitura de
+     * geometria no meio da rolagem é exatamente o que trava a rolagem.
+     */
+    const agendar = () => {
+      if (!agendado) agendado = requestAnimationFrame(medir)
+    }
+
+    /**
+     * Redimensionar muda o aspecto da câmera e as medidas do retrato, e o
+     * beat pode nem ter mudado. Zerar a memória força o redesenho.
+     */
+    const refazer = () => {
+      atual = -2
+      agendar()
+    }
+
+    medir()
+    window.addEventListener('scroll', agendar, { passive: true })
+    window.addEventListener('resize', refazer)
+
+    /**
+     * O texto reflui depois da primeira pintura — webfont que troca,
+     * imagem que chega — e com ele mudam os tetos do retrato que a
+     * <Battery /> usa para decidir onde o produto cabe. Num laço vivo isso
+     * se corrige sozinho no quadro seguinte; congelado, ficaria uma foto
+     * feita com a medida velha, com a pilha por cima do título.
+     */
+    const obs = new ResizeObserver(refazer)
+    document.querySelectorAll('[data-beat] section').forEach((b) => obs.observe(b))
+
+    return () => {
+      cancelAnimationFrame(agendado)
+      obs.disconnect()
+      window.removeEventListener('scroll', agendar)
+      window.removeEventListener('resize', refazer)
+    }
+  }, [setFrameloop])
+
+  return null
+}
+
+/**
  * Ponteiro normalizado para o parallax do cabo.
  *
  * Escrito direto no objeto de estado, sem passar por React: isto atualiza a
@@ -211,8 +352,16 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
          */
         camera={{ position: [0, 0, 22.6], fov: 20 }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        // Sem movimento reduzido a cena não precisa redesenhar sozinha.
-        frameloop={reduzido ? 'demand' : 'always'}
+        /**
+         * Sempre 'always' na partida, inclusive com movimento reduzido.
+         *
+         * 'demand' seria o natural para uma cena parada, mas ali o primeiro
+         * quadro sai antes de o <Environment> ter montado o cubemap, e não
+         * há um segundo quadro para corrigir: a foto congela sem luz de
+         * ambiente. O <CenaEstatica> resolve melhor — deixa correr meia
+         * dúzia de quadros idênticos e então para o laço de vez.
+         */
+        frameloop="always"
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.35} />
@@ -243,8 +392,8 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
           </Environment>
 
           {/* O formato vem do progresso, não de prop: ver variantEm() */}
-          <Battery />
-          <SaidaDoAto />
+          <Battery estatico={reduzido} />
+          {reduzido ? <CenaEstatica /> : <SaidaDoAto />}
           {debug && <DebugHook />}
 
           {/**

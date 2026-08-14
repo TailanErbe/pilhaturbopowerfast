@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
 import { POSES, sceneState } from '@/lib/scene-state'
 import { useClientValue } from '@/lib/client-value'
-import { prefersReducedMotion } from '@/lib/motion'
 
 /**
  * Ponto de montagem da cena.
@@ -89,23 +88,31 @@ const lerDebug = () =>
 
 export function SceneMount() {
   const debug = useClientValue(lerDebug, false)
-  const reduzido = useClientValue(prefersReducedMotion, false)
 
   /**
-   * Com movimento reduzido a cena NÃO monta.
+   * Com movimento reduzido a cena MONTA — parada.
    *
-   * Quem escreve `progress` e `saidaDoAto` é a timeline, e a timeline não
-   * é montada nesse modo (PinnedAct). O canvas ficava então parado na pose
-   * do beat 1, com opacidade 1, `fixed inset-0` e `z-9` no desktop: uma
-   * pilha imóvel cobrindo a faixa central do impacto, da compra e do
-   * rodapé pelo resto da página.
+   * Ela já chegou a não montar, e o motivo era legítimo: sem a timeline
+   * (que o PinnedAct não monta nesse modo) ninguém escrevia `progress` nem
+   * `saidaDoAto`, então o canvas ficava congelado na pose do beat 1, com
+   * opacidade 1 e `fixed inset-0`, cobrindo o impacto, a compra e o rodapé
+   * pelo resto da página. Cortar a cena resolvia isso.
    *
-   * A regra §6.10 pede "documento vertical normal com todo o conteúdo
-   * visível", e um objeto 3D congelado por cima do texto é o contrário
-   * disso. Sem timeline a cena não conta história nenhuma: só atrapalha.
+   * Só que cobrava caro demais. No Windows, desligar "mostrar animações"
+   * — que muita gente desliga por desempenho, sem nenhuma intenção de
+   * acessibilidade — liga `prefers-reduced-motion`, e a página inteira
+   * ficava sem produto: um site de pilha sem a pilha.
+   *
+   * A §6.10 pede que a página vire um documento vertical normal, sem
+   * scroll sequestrado e sem animação. NÃO pede que o produto suma. Um
+   * render 3D parado é uma FOTO, e foto não é movimento.
+   *
+   * Então a cena vira exatamente isso: uma foto por beat. O <CenaEstatica>
+   * dentro do Scene troca a pose no CORTE, sem interpolação, quando outro
+   * beat toma a tela, desenha um punhado de quadros e para o laço; passado
+   * o último beat, esconde o canvas — que é o que a timeline faria com
+   * `saidaDoAto`.
    */
-  if (reduzido) return null
-
   return (
     <>
       {/**
