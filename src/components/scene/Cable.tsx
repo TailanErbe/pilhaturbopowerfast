@@ -114,14 +114,43 @@ function criarCorpoPlugue(largura: number, altura: number, profundidade: number)
   })
 }
 
+/**
+ * Onde a onda para, na foto do modo estático.
+ *
+ * Congelando num instante qualquer do relógio, o cabo saía com neon ou
+ * sem neon a cada carregamento, na sorte — a primeira publicação pegou
+ * justo um quadro apagado, com o cabo preto e sem argumento nenhum.
+ *
+ * O valor foi MEDIDO, varrendo o ciclo com o composer ligado, porque duas
+ * coisas enganam a conta.
+ *
+ * A primeira é o enquadramento: a cabeça passa boa parte do ciclo dentro
+ * do cabo, mas o cabo é muito mais comprido que o quadro, e no herói só o
+ * último trecho antes do conector aparece. Até 0,6 a onda está fora de
+ * quadro e o cabo lê apagado.
+ *
+ * A segunda é o Bloom. Quanto mais perto do conector, mais perto da
+ * câmera, e a mesma cabeça cobre muito mais pixels: em 0,75 ela chega à
+ * porta e a névoa toma o quadro inteiro, tingindo o fundo de âmbar e
+ * lavando o contraste do próprio produto — num quadro que passa voando
+ * isso nem se nota, mas esta imagem fica na tela.
+ *
+ * 0,70 é o meio: o traço percorre a parte visível, o halo fica contido no
+ * cabo e o fundo continua preto atrás do título.
+ */
+const FLUXO_PARADO = 0.7
+
 export function Cable({
   raio,
   anguloPorta,
   yPorta,
+  estatico = false,
 }: {
   raio: number
   anguloPorta: number
   yPorta: number
+  /** Movimento reduzido: uma foto, com a onda num ponto escolhido */
+  estatico?: boolean
 }) {
   const grupo = useRef<THREE.Group>(null)
   /**
@@ -403,7 +432,7 @@ export function Cable({
       // A onda só corre enquanto está PLUGADO. Desconectado não há mais
       // carga entrando, e manter o neon aceso contaria uma mentira.
       if (saida.conectado) {
-        u.uFluxo.value = (clock.elapsedTime * 0.28) % 1
+        u.uFluxo.value = estatico ? FLUXO_PARADO : (clock.elapsedTime * 0.28) % 1
       }
     }
 

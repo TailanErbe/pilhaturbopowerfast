@@ -356,7 +356,12 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
 
         {/* Cabo: filho do grupo da pilha para continuar plugado na porta
             mesmo enquanto o produto gira */}
-        <Cable raio={raio} anguloPorta={ANGULO_PORTA} yPorta={yPorta} />
+        <Cable
+          raio={raio}
+          anguloPorta={ANGULO_PORTA}
+          yPorta={yPorta}
+          estatico={estatico}
+        />
 
         {/**
          * A PORTA NÃO TEM GEOMETRIA PRÓPRIA: é desenhada no rótulo.
