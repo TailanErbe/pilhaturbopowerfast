@@ -898,6 +898,14 @@ Seis frentes auditadas em paralelo, cada achado passado por um cético que tento
 
 **Verificado servindo o `out/` no subcaminho:** zero respostas 4xx, oito texturas em 200, cinco imagens resolvidas, e a cena desenhando (9 chamadas, 20.352 triângulos).
 
+**Recorte de fundo: a franja é para COMER, não para adivinhar.**
+
+A primeira versão apagava pixels acima de 232 de luminância e considerava opaco todo o resto. Mas a franja anti-serrilhado de um objeto escuro sobre branco percorre a faixa inteira: um pixel com 40% de cobertura fica em torno de 160. Ele não entrava no fundo, saía opaco e cinza-claro, e sobre a página preta virava um halo em volta de cada peça. Sobre branco isso é invisível, que é exatamente por que passou: **a conferência tem de ser feita no fundo em que a imagem vai aparecer.**
+
+O tratamento correto é retirar dois pixels da borda com alfa em rampa e **substituir a cor deles pela do interior**. Assim não sobra mistura com o fundo antigo em canal nenhum. Dois pixels em 600 é invisível; um halo claro sobre preto não é.
+
+**E buraco de fundo não se distingue de tinta branca por limiar.** Uma passagem que apagava toda região clara cercada pelo objeto comeu o "POWERFAST" impresso no corpo preto da pilha. Os dois se separam por TAMANHO e UNIFORMIDADE: o vão interno de um cabo enrolado é enorme e chapado, porque é o infinito do estúdio; uma letra é pequena e tem sombreado, porque é tinta recebendo luz. Como as cartelas têm tinta clara e os cabos não, os limites são por imagem, não globais.
+
 **Performance, no mesmo sprint.** O FPS caiu para ~21 e a causa era minha: o despertador do laço de render chamava `setFrameloop` a cada evento de scroll, e cada chamada escreve no store do R3F e re-renderiza a árvore do Canvas. Custo aparecendo exatamente durante a rolagem, que é o único momento em que a suavidade importa. Corrigido lembrando o modo num ref, para a chamada só acontecer na transição.
 
 Junto, três medidas de custo por pixel, que é o que limita esta cena (nove chamadas de desenho, mas cada pixel passa pelo Bloom):
