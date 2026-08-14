@@ -31,6 +31,45 @@ const MM = 0.1
  */
 const ANGULO_PORTA = 0.29 * Math.PI * 2
 
+/**
+ * O acerto do retrato: o produto fica com a altura que o texto não usa.
+ *
+ * A cena fica NA FRENTE do conteúdo no celular e não existe meio-termo
+ * (ver SceneMount), então a diagramação é que separa os dois: o texto
+ * encosta na base (`base-do-retrato`) e o produto ocupa a faixa de cima.
+ *
+ * Escala FIXA não resolve, e é o erro que estas constantes desfazem. O
+ * texto tem altura em pixels, não em porcentagem: o painel mais alto pede
+ * seus 400 px em qualquer aparelho. Numa tela de 844 sobra bastante para
+ * o produto; numa de 640, com os mesmos 400 px de texto e a pílula, sobra
+ * um quarto da tela. Uma constante calibrada na tela grande punha a pilha
+ * por cima do texto na pequena.
+ *
+ * Daí a conta ser sempre a mesma: reserva o que o texto precisa, e o
+ * produto recebe o resto.
+ */
+const RETRATO = {
+  /** Altura do bloco de texto mais alto (painel) somada à da pílula fixa */
+  reserva: 520,
+  /** Respiro acima do produto, em fração da tela */
+  margem: 0.045,
+  /** Fração da tela que o produto ocuparia com escala 1, medida no retrato */
+  fracaoCheia: 0.76,
+  /** Piso: em tela muito baixa o produto encolhe, mas não some */
+  minimo: 0.2,
+}
+
+/**
+ * O mesmo 768 do `md:` do Tailwind, e não `largura < altura`.
+ *
+ * Os dois critérios discordam justo no tablet em pé: 768×1024 é retrato
+ * pela proporção, mas `md:` já vale e o CSS entrega o layout de duas
+ * colunas com o vão central reservado ao produto. A pilha ia para o
+ * centro, encolhida, enquanto a diagramação a esperava no vão.
+ * Um limiar só, e as duas metades contam a mesma história.
+ */
+const LARGURA_RETRATO = 768
+
 export function Battery() {
   const grupo = useRef<THREE.Group>(null)
   const corpo = useRef<THREE.Mesh>(null)
@@ -134,10 +173,10 @@ export function Battery() {
      * sempre na mesma faixa visual, seja em 1280 ou em 2560 de largura.
      *
      * Em retrato a coluna de texto ocupa a largura toda, então o produto
-     * volta ao centro e passa atrás (ver z-index em SceneMount).
+     * volta ao centro no eixo horizontal.
      */
     const cam = camera as THREE.PerspectiveCamera
-    const retrato = size.width < size.height
+    const retrato = size.width < LARGURA_RETRATO
     const meiaAltura = Math.tan((cam.fov * Math.PI) / 360) * (cam.position.z - z)
     const meiaLargura = meiaAltura * (size.width / size.height)
     const fracao = retrato ? 0.5 : alvo.screenX
@@ -171,7 +210,29 @@ export function Battery() {
     }
 
     const axialAtual = formato.current === 'AAA' ? AAA_SCALE.axial : 1
-    const anterior = g.scale.y / (axialAtual * Math.max(0.001, 1 - kit))
+
+    /**
+     * TODO fator aplicado na saída precisa ser descontado na leitura.
+     *
+     * O amortecimento lê `g.scale.y` do quadro anterior para continuar de
+     * onde parou. Se a saída multiplica por algo que a leitura não divide,
+     * esse algo se acumula a cada quadro: o fator de retrato entrou como
+     * 0,72 na saída e ficou de fora aqui, e em quatrocentos quadros a
+     * pilha encolheu para 0,72^n, ou seja, sumiu da tela.
+     */
+    /**
+     * A faixa que sobra para o produto, em fração da altura da tela.
+     * Vai de `margem` até `teto`; o resto é do texto e da pílula.
+     */
+    const teto = Math.max(
+      RETRATO.minimo,
+      (size.height - RETRATO.reserva) / size.height,
+    )
+    const retratoEscala = retrato
+      ? (teto - RETRATO.margem) / RETRATO.fracaoCheia
+      : 1
+    const aplicados = axialAtual * Math.max(0.001, 1 - kit) * retratoEscala
+    const anterior = g.scale.y / aplicados
     const base = THREE.MathUtils.damp(anterior, alvo.scale, s, delta)
     const radial = formato.current === 'AAA' ? AAA_SCALE.radial : 1
 
@@ -183,7 +244,9 @@ export function Battery() {
      * multiplicação. Cortar de um quadro para o outro, ou apagar por
      * transparência, entregaria a troca de cena.
      */
-    const restante = base * (1 - kit)
+    // Ver o comentário da subida, adiante: no retrato o produto cede
+    // espaço ao texto encolhendo junto com a mudança de altura
+    const restante = base * (1 - kit) * retratoEscala
     g.scale.set(restante * radial, restante * axialAtual, restante * radial)
 
     // Respiro: flutuação e balanço leves somados à pose.
@@ -205,7 +268,25 @@ export function Battery() {
     const flutua = Math.sin(t * 0.55) * 0.14
     const balanca = Math.sin(t * 0.31) * 0.05
 
-    g.position.y = THREE.MathUtils.damp(g.position.y, alvo.position[0] + flutua, s, delta)
+    /**
+     * No retrato o produto SOBE e encolhe, para o texto ter onde morar.
+     *
+     * A cena fica na frente do conteúdo em qualquer largura (não há
+     * meio-termo possível, ver SceneMount), então quem tem de sair do
+     * caminho é a composição. Numa tela de 390 de largura a pilha
+     * centralizada cobria a frase de destaque e metade da descrição, preto
+     * sobre preto.
+     *
+     * Subindo para o terço superior e reduzindo para 72%, ela ocupa a
+     * faixa que o texto não usa. É o mesmo arranjo da referência no
+     * celular: produto em cima, texto embaixo, sem cruzamento.
+     */
+    // Centra o produto DENTRO da faixa que sobrou, não na tela
+    const alturaVisivel = meiaAltura * 2
+    const centroDaFaixa = (RETRATO.margem + teto) / 2
+    const subida = retrato ? alturaVisivel * (0.5 - centroDaFaixa) : 0
+
+    g.position.y = THREE.MathUtils.damp(g.position.y, alvo.position[0] + flutua + subida, s, delta)
     g.rotation.y = THREE.MathUtils.damp(g.rotation.y, alvo.rotation[1] + balanca, s, delta)
   })
 

@@ -13,15 +13,18 @@ export function Chip() {
     <section className="relative flex h-full min-h-dvh items-center overflow-hidden">
       <SectionBg className="bg-surface-100" />
 
-      <div className="container-gutter">
+      <div className="container-gutter base-do-retrato">
         <EdgeColumn side="left">
-        <p className="mb-4 text-sm tracking-wide text-brand-orange">Chip inteligente</p>
+        <p className="mb-2 text-sm tracking-wide text-brand-orange md:mb-4">Chip inteligente</p>
 
         <h2 className="max-w-[14ch] text-[clamp(2.25rem,5.5vw,4.5rem)]">
           Seis proteções em cada pilha
         </h2>
 
-        <ul className="mt-12 grid gap-x-10 gap-y-4 sm:grid-cols-2">
+        {/* Duas colunas já no celular: são seis palavras curtas, e em coluna
+            única a lista sozinha comia um terço da tela que o produto 3D
+            precisa ocupar no retrato */}
+        <ul className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 sm:gap-x-10 md:mt-12 md:gap-y-4">
           {PROTECTIONS.map((p) => (
             <li
               key={p}

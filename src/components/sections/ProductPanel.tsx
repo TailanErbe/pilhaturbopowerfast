@@ -66,7 +66,7 @@ const claro = (tema: Product['theme']) =>
 function Fichas({ product, t }: { product: Product; t: Tema }) {
   return (
     <div>
-      <details className={`border-t py-4 ${t.rule}`}>
+      <details className={`border-t py-3 md:py-4 ${t.rule}`}>
         <summary className="cursor-pointer list-none text-sm font-bold">
           Ficha técnica
         </summary>
@@ -80,7 +80,7 @@ function Fichas({ product, t }: { product: Product; t: Tema }) {
         </dl>
       </details>
 
-      <details className={`border-t py-4 ${t.rule}`}>
+      <details className={`border-t py-3 md:py-4 ${t.rule}`}>
         <summary className="cursor-pointer list-none text-sm font-bold">
           Compatibilidade
         </summary>
@@ -343,10 +343,12 @@ export function ProductPanel({ product }: { product: Product }) {
       {/* Estrutura da referência: título em faixa larga no topo, régua de
           meta abaixo, e então DUAS colunas nas bordas — o vão central fica
           livre para o produto. */}
-      <div className="container-gutter relative z-2 py-[clamp(80px,14vh,160px)]">
+      <div className="container-gutter base-do-retrato relative z-2 md:py-[clamp(80px,14vh,160px)]">
         {cabecalho}
 
-        <div className="mt-12 grid gap-12 md:grid-cols-[38%_24%_38%] md:gap-0">
+        {/* No retrato o respiro entre os blocos é menor: com o produto
+            ocupando o terço de cima, o que sobra é altura, não largura */}
+        <div className="mt-3 grid gap-4 md:mt-12 md:grid-cols-[38%_24%_38%] md:gap-0">
           {/* Coluna esquerda: a frase de destaque */}
           <span className="mascara-clip [--folga-descida:8px]">
             <p data-clip className="texto-lead">
@@ -358,7 +360,7 @@ export function ProductPanel({ product }: { product: Product }) {
           <div aria-hidden className="hidden min-h-[clamp(280px,42vh,520px)] md:block" />
 
           {/* Coluna direita: descrição e fichas */}
-          <div className="grid gap-8">
+          <div className="grid gap-4 md:gap-8">
             <p className={`texto-corpo ${t.muted}`}>{product.description}</p>
             <Fichas product={product} t={t} />
           </div>

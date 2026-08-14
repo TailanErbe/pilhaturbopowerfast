@@ -23,15 +23,20 @@ export function UsbC() {
       <SectionBg className="bg-surface-000" />
 
       {/* Empilhado no mobile, onde não há corredor central a preservar */}
-      <div className="container-gutter relative z-2 grid w-full gap-12 md:hidden">
-        <p className="text-sm tracking-[0.2em] text-brand-orange uppercase">{apoio}</p>
+      {/* Mesma ideia de `base-do-retrato`, escrita em grid: o bloco encosta
+          na base para o produto 3D ter o terço de cima só para ele */}
+      <div className="container-gutter relative z-2 grid min-h-dvh w-full content-end gap-4 pb-[84px] md:hidden">
+        {/* O rótulo entra COLADO no primeiro título, não como linha própria
+            do grid: sozinho ele gastava um vão inteiro para vinte pixels de
+            texto, e é altura que o produto 3D precisa acima */}
         <div>
-          <h2 className="text-[clamp(1.75rem,7vw,2.5rem)]">{esquerda.titulo}</h2>
-          <p className="texto-corpo mt-3 text-white/70">{esquerda.texto}</p>
+          <p className="mb-2 text-sm tracking-[0.2em] text-brand-orange uppercase">{apoio}</p>
+          <h2 className="text-[clamp(1.5rem,7vw,2.5rem)]">{esquerda.titulo}</h2>
+          <p className="texto-corpo mt-2 text-white/70">{esquerda.texto}</p>
         </div>
         <div>
-          <h2 className="text-[clamp(1.75rem,7vw,2.5rem)]">{direita.titulo}</h2>
-          <p className="texto-corpo mt-3 text-white/70">{direita.texto}</p>
+          <h2 className="text-[clamp(1.5rem,7vw,2.5rem)]">{direita.titulo}</h2>
+          <p className="texto-corpo mt-2 text-white/70">{direita.texto}</p>
         </div>
       </div>
 

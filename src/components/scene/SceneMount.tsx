@@ -109,24 +109,27 @@ export function SceneMount() {
   return (
     <>
       {/**
-       * No retrato a cena fica ATRÁS de tudo; no desktop, à frente.
+       * Um z só, e a cena fica NA FRENTE em qualquer largura.
        *
-       * O `z-1` de antes não colocava a cena atrás de nada. O ato pinado
-       * ganha `position: fixed` e um `transform` do GSAP, e cada um deles
-       * já cria contexto de empilhamento próprio: o `z-2` do conteúdo
-       * passa a valer só DENTRO do ato, e lá fora o ato inteiro conta como
-       * nível 0. Qualquer z positivo na cena a colocava por cima do texto,
-       * inclusive no celular, onde ela cobria a frase de destaque e metade
-       * da descrição em preto sobre o corpo preto da pilha.
+       * Não existe meio-termo aqui, e vale registrar por quê: o ato pinado
+       * ganha `position: fixed` e um `transform` do GSAP, e cada um já cria
+       * contexto de empilhamento próprio. O `z-2` do conteúdo e o `z-0` do
+       * fundo das seções passam a valer só DENTRO do ato; visto de fora, o
+       * ato inteiro é um bloco no nível 0. A cena, que é irmã dele, fica
+       * ou acima de tudo, ou abaixo de tudo.
        *
-       * `-z-10` resolve na raiz do problema: negativo fica abaixo do
-       * conteúdo em qualquer contexto, sem depender de quem cria stacking
-       * context. No desktop sobra largura e a passagem à frente é o que dá
-       * a sensação de objeto real, então lá o valor volta a ser positivo.
+       * A tentativa de `-z-10` no retrato colocou a cena abaixo do FUNDO
+       * das seções, que é preto opaco: o 3D sumiu por completo no celular.
+       *
+       * Ficar na frente é também o que a referência faz no retrato. Lá o
+       * texto não é coberto porque a COMPOSIÇÃO o mantém fora do caminho
+       * do produto, não porque a ordem de pintura o proteja. É layout, não
+       * z-index, e é assim que se resolve aqui (ver a pose de retrato em
+       * scene-state.ts).
        */}
       <Scene
         debug={debug}
-        className={`pointer-events-none fixed inset-0 ${debug ? 'z-[800] bg-surface-000' : '-z-10 md:z-9'}`}
+        className={`pointer-events-none fixed inset-0 ${debug ? 'z-[800] bg-surface-000' : 'z-1'}`}
       />
       {debug && <DebugPanel />}
     </>

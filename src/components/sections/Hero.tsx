@@ -16,7 +16,7 @@ export function Hero() {
     >
       <SectionBg className="bg-surface-000" />
 
-      <div className="container-gutter">
+      <div className="container-gutter base-do-retrato">
         <EdgeColumn side="left">
           <p className="mb-4 text-sm tracking-wide text-white/70">
             {CONTENT.hero.kicker}

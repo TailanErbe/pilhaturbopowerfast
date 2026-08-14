@@ -185,6 +185,37 @@
 }
 
 /**
+ * A metade de baixo do retrato pertence ao texto.
+ *
+ * No celular a cena 3D fica NA FRENTE do conteúdo e não há como colocá-la
+ * atrás (o ato pinado é um contexto de empilhamento só, ver SceneMount).
+ * Quem tem de sair do caminho é a diagramação: o produto sobe para o terço
+ * de cima e o conteúdo do beat desce para a base, como na referência.
+ *
+ * `justify-content: flex-end` e não um `padding-top` fixo de propósito. O
+ * padding empurraria também o conteúdo alto, que então transbordaria o
+ * `overflow-hidden` da seção e sumiria pela borda de baixo; encostando na
+ * base, o bloco cresce para CIMA e o que falta é espaço, não conteúdo.
+ */
+@utility base-do-retrato {
+  @media (width < 48rem) {
+    display: flex;
+    min-height: 100dvh;
+    flex-direction: column;
+    justify-content: flex-end;
+    /**
+     * A pílula de navegação é FIXA e flutua sobre tudo.
+     *
+     * Encostar o texto na base do viewport punha a última linha do título
+     * debaixo dela, em branco sobre branco. O valor é a altura da pílula
+     * mais o afastamento dela até a borda, mais um respiro: é reserva de
+     * espaço, não decoração, e por isso está em px e não em dvh.
+     */
+    padding-bottom: 84px;
+  }
+}
+
+/**
  * Texto corrido: tamanho, entrelinha e MEDIDA num pacote só.
  *
  * A medida é a parte que faltava. A nota do "onde comprar" corria a

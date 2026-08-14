@@ -13,7 +13,7 @@ export function Cycles() {
     <section className="relative flex h-full min-h-dvh items-center overflow-hidden">
       <SectionBg className="bg-surface-100" />
 
-      <div className="container-gutter">
+      <div className="container-gutter base-do-retrato">
         <EdgeColumn side="left">
           <p className="flex items-baseline gap-4">
             <span
