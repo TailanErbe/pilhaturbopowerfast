@@ -30,7 +30,10 @@ export function DadosDoProduto() {
     manufacturer: { '@type': 'Organization', name: 'Gshield', url: LOJA },
     category: 'Pilhas recarregáveis',
     url: SITE,
-    image: [`${SITE}/produto/cartela-kit.png`, `${SITE}/produto/cartela-2.png`],
+    image: [
+      `${SITE}/produto/cartela-kit-v2.png`,
+      `${SITE}/produto/cartela-2-v2.png`,
+    ],
     /**
      * Cada formato vira uma variante, que é o que ele é de verdade: mesma
      * tecnologia, mesma tensão, capacidades e medidas diferentes.
