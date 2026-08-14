@@ -1,5 +1,13 @@
+import { asset } from '@/lib/site'
+
 /**
  * Conteúdo da landing — fonte única da verdade.
+ *
+ * Os caminhos de imagem passam por `asset()`. Com `images.unoptimized`,
+ * que é obrigatório no export estático, o `<Image>` do Next NÃO aplica o
+ * `basePath` no `src`: ele só o aplicava na URL do otimizador, que deixa
+ * de existir. Publicado num subcaminho, toda foto dava 404, e isso só
+ * aparece servindo o export de verdade.
  *
  * Regra de ouro (REGRAS.md §7): cada beat do scroll carrega UMA ideia.
  * A copy de e-commerce é longa por natureza; aqui ela vira frases curtas.
@@ -122,7 +130,7 @@ export const PRODUCTS: Product[] = [
     // A mesma foto serve aos painéis 01 e 02: é a cartela de 2 com o cabo,
     // e na miniatura da pílula a diferença de tamanho entre AA e palito
     // não seria legível de qualquer forma
-    miniatura: { src: '/produto/cartela-2.png', alt: 'Cartela de duas pilhas AA com cabo' },
+    miniatura: { src: asset('/produto/cartela-2.png'), alt: 'Cartela de duas pilhas AA com cabo' },
     highlight: 'Energia firme mesmo nos aparelhos que bebem mais.',
     description:
       'A AA entrega 3400 mWh de carga estável para dispositivos de alto consumo. ' +
@@ -142,7 +150,7 @@ export const PRODUCTS: Product[] = [
     subtitle: 'Palito',
     meta: { format: 'Pilha recarregável', capacity: '1100 mWh', period: '1,5 V' },
     dimensions: DIMENSIONS.AAA,
-    miniatura: { src: '/produto/cartela-2.png', alt: 'Cartela de duas pilhas palito com cabo' },
+    miniatura: { src: asset('/produto/cartela-2.png'), alt: 'Cartela de duas pilhas palito com cabo' },
     highlight: 'O mesmo padrão, no formato que cabe em tudo.',
     description:
       'A AAA, o palito, leva 1100 mWh e a mesma tecnologia Turbo PowerFast ' +
@@ -160,7 +168,7 @@ export const PRODUCTS: Product[] = [
     name: 'O KIT',
     subtitle: 'AA ou AAA',
     meta: { format: 'Cartela de 4', capacity: 'Um formato por kit', period: 'Cabo incluso' },
-    miniatura: { src: '/produto/cartela-kit.png', alt: 'Kit de pilhas recarregáveis com cabo de quatro pontas' },
+    miniatura: { src: asset('/produto/cartela-kit.png'), alt: 'Kit de pilhas recarregáveis com cabo de quatro pontas' },
     highlight: 'Quatro pilhas e um cabo. Todas carregando juntas.',
     /**
      * IMPORTANTE: o kit NÃO traz os dois formatos juntos.
@@ -184,7 +192,7 @@ export const PRODUCTS: Product[] = [
     cabos: [
       {
         pontas: '2 pontas Tipo-C',
-        imagem: '/produto/cabo-2-pontas.png',
+        imagem: asset('/produto/cabo-2-pontas.png'),
         alt: 'Cabo de recarga USB-A com duas pontas Tipo-C.',
       },
       {
@@ -193,7 +201,7 @@ export const PRODUCTS: Product[] = [
         // tinha ponta Lightning e micro-USB, e trocar o CONTEÚDO de um
         // caminho já visitado deixa o navegador servindo a versão velha.
         // Caminho novo, cache novo.
-        imagem: '/produto/cabo-4-pontas-tipoc.png',
+        imagem: asset('/produto/cabo-4-pontas-tipoc.png'),
         alt: 'Cabo de recarga USB-A com quatro pontas Tipo-C.',
       },
     ],

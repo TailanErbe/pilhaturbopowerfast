@@ -1,6 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { SITE } from '@/lib/site'
 
+/** Resolvida em tempo de build: no export estático não há servidor */
+export const dynamic = 'force-static'
+
 /**
  * A landing tem uma página só, e é isso mesmo.
  *

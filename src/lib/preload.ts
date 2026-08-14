@@ -18,16 +18,25 @@
  * dominar o tempo real, como deve ser.
  */
 
+import { asset } from './site'
+
 export type PreloadTask = { label: string; run: () => Promise<unknown> }
 
-/** Imagens que precisam estar prontas antes do primeiro beat. */
+/**
+ * Imagens que precisam estar prontas antes do primeiro beat.
+ *
+ * Passam por `asset()` porque o preloader monta a URL na mão, e o
+ * `basePath` do Next só é aplicado por quem usa `<Image>`. Sem o prefixo,
+ * publicado num subcaminho, as cinco falhariam e o preloader ficaria
+ * marcando progresso de arquivos que nunca chegam.
+ */
 const CRITICAL_IMAGES = [
   '/brand/marca-negativa.png',
   '/brand/marca-positiva.png',
   '/brand/marca-mono-negativa.png',
   '/brand/icone-negativo.png',
   '/brand/icone-positivo.png',
-]
+].map(asset)
 
 function loadImage(src: string) {
   return new Promise<void>((resolve) => {

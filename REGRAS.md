@@ -879,6 +879,35 @@ Seis frentes auditadas em paralelo, cada achado passado por um cético que tento
 
 ---
 
+### Sprint 8 — publicação estática (13/08/2026)
+
+**Decisão do projeto: não há domínio.** O destino é o GitHub Pages, num subcaminho (`/pilhaturbopowerfast`), e isso muda a natureza da entrega: não existe servidor Node do outro lado.
+
+| Consequência | O que foi feito |
+|---|---|
+| Sem rotas dinâmicas | `/api/dev-save` removida, junto com `gerar-rotulo.js` e o script de auditoria do rótulo |
+| Sem otimizador de imagem | `images.unoptimized`, e as fotos reduzidas ao tamanho em que aparecem |
+| A página não fica na raiz | `basePath` e `assetPrefix`, mais a função `asset()` |
+| Rotas de metadados | `export const dynamic = 'force-static'` em `robots.ts` e `sitemap.ts` |
+
+**Três armadilhas do export, todas invisíveis até servir o `out/` de verdade:**
+
+1. **`<Image>` com `unoptimized` NÃO aplica o `basePath`.** O prefixo só existia na URL do otimizador, que deixa de existir. Toda foto dava 404 no subcaminho. Por isso `asset()` é aplicado também no `src` de cada `<Image>`, e não só onde o arquivo é buscado na mão.
+2. **O Next não copia dotfiles de `public/`.** Um `.nojekyll` colocado ali nunca chega ao `out/`. Ele é criado no fluxo de publicação.
+3. **Quem busca o arquivo direto nunca recebe o prefixo.** O carregador de textura do Three.js e o pré-carregamento do preloader montam a URL na mão: sem `asset()`, a pilha apareceria sem rótulo e o preloader nunca chegaria a 100%, os dois em silêncio.
+
+**Verificado servindo o `out/` no subcaminho:** zero respostas 4xx, oito texturas em 200, cinco imagens resolvidas, e a cena desenhando (9 chamadas, 20.352 triângulos).
+
+**Performance, no mesmo sprint.** O FPS caiu para ~21 e a causa era minha: o despertador do laço de render chamava `setFrameloop` a cada evento de scroll, e cada chamada escreve no store do R3F e re-renderiza a árvore do Canvas. Custo aparecendo exatamente durante a rolagem, que é o único momento em que a suavidade importa. Corrigido lembrando o modo num ref, para a chamada só acontecer na transição.
+
+Junto, três medidas de custo por pixel, que é o que limita esta cena (nove chamadas de desenho, mas cada pixel passa pelo Bloom):
+
+- `resolutionScale={0.5}` no Bloom: o borrão é névoa, sem frequência alta a preservar. Corta 75% dos pixels processados.
+- `multisampling={0}` no composer: o padrão é 8 amostras resolvendo o buffer inteiro a cada quadro.
+- Teto de `dpr` em 1,75 no desktop: em tela retina, 2 quadruplica a área em relação a 1.
+
+---
+
 ### Sprint 8 — Polimento e entrega · *3 dias*
 **Objetivo:** os últimos 5% que separam "bom" de "igual à referência".
 

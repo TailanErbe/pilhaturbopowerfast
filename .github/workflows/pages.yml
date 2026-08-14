@@ -1,0 +1,63 @@
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permite publicar à mão pela aba Actions
+  workflow_dispatch:
+
+# O token precisa poder escrever nas Pages; `id-token` é exigido pelo
+# deploy oficial da GitHub para provar a origem do artefato.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez. `cancel-in-progress: false` porque cancelar um
+# deploy no meio deixa o site fora do ar até o próximo.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Gerar o site estático
+        env:
+          # Sem estas três o build sai para a raiz do domínio, e no
+          # GitHub Pages o projeto vive em /pilhaturbopowerfast:
+          # todo asset daria 404
+          NEXT_EXPORT: '1'
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: npm run build
+
+      # O Next NÃO copia dotfiles de `public/`, então este arquivo tem de
+      # nascer aqui. O deploy oficial das Pages já não passa pelo Jekyll,
+      # mas se um dia a publicação voltar a ser por branch, sem ele a pasta
+      # `_next` some inteira: o Jekyll ignora tudo que começa com `_`.
+      - run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

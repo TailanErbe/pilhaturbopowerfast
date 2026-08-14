@@ -74,6 +74,8 @@ const RECUO = 0.55
 
 function SaidaDoAto() {
   const ultimo = useRef(-1)
+  /** Modo do laço, lembrado para não reescrever o store a cada quadro */
+  const modo = useRef<'always' | 'never'>('always')
   const setFrameloop = useThree((s) => s.setFrameloop)
 
   useFrame(() => {
@@ -95,7 +97,10 @@ function SaidaDoAto() {
      * laço parado este `useFrame` não roda mais, então quem reacende é o
      * ouvinte de scroll abaixo, que independe do laço de render.
      */
-    if (o <= 0) setFrameloop('never')
+    if (o <= 0 && modo.current !== 'never') {
+      modo.current = 'never'
+      setFrameloop('never')
+    }
 
     ultimo.current = o
     // Busca no DOM em vez de partir do `gl`: o compilador do React proíbe
@@ -108,15 +113,23 @@ function SaidaDoAto() {
   })
 
   /**
-   * O despertador.
+   * O despertador, e o motivo de ele lembrar do estado.
    *
-   * Eventos de scroll continuam chegando com o laço de render parado, e é
-   * por eles que a cena volta a desenhar quando o usuário sobe de volta
-   * para dentro do ato. `passive` porque não cancelamos nada.
+   * A primeira versão chamava `setFrameloop('always')` a cada evento de
+   * scroll enquanto a cena estivesse visível, ou seja, dezenas de vezes
+   * por segundo durante a rolagem inteira. Cada chamada escreve no store
+   * do R3F e re-renderiza a árvore do Canvas: o custo aparecia como queda
+   * de quadros justamente quando o usuário está rolando, que é o único
+   * momento em que a suavidade importa.
+   *
+   * Com o modo lembrado num ref, a chamada só acontece na TRANSIÇÃO.
    */
   useEffect(() => {
     const acordar = () => {
-      if (sceneState.saidaDoAto < 1) setFrameloop('always')
+      if (sceneState.saidaDoAto < 1 && modo.current !== 'always') {
+        modo.current = 'always'
+        setFrameloop('always')
+      }
     }
     window.addEventListener('scroll', acordar, { passive: true })
     return () => window.removeEventListener('scroll', acordar)
@@ -169,9 +182,18 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
          */
         className="!pointer-events-none"
         style={{ pointerEvents: 'none' }}
-        // Em toque, resolução menor: o corpo é fosco e quase não mostra
-        // a diferença, mas o custo de fill rate cai pela metade.
-        dpr={coarse ? [1, 1.5] : [1, 2]}
+        /**
+         * Teto de 1,75 no desktop, não 2.
+         *
+         * A cena é limitada por FILL RATE, não por geometria: são 20 mil
+         * triângulos e nove chamadas de desenho, mas cada pixel passa
+         * pelo Bloom. Numa tela retina, `dpr: 2` quadruplica a área em
+         * relação a 1, e o Bloom paga essa conta inteira.
+         *
+         * 1,75 corta 23% dos pixels e a diferença não aparece num corpo
+         * fosco. Em toque, 1,5 pelo mesmo motivo, com margem maior.
+         */
+        dpr={coarse ? [1, 1.5] : [1, 1.75]}
         /**
          * Lente longa, câmera longe: é assim que se fotografa produto.
          *
@@ -233,7 +255,16 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
            * O limiar alto deixa o rótulo e a tampa laranja de fora — só o
            * brilho do cabo, que é emitido acima de 1, atravessa.
            */}
-          <EffectComposer enableNormalPass={false}>
+          {/**
+           * `multisampling={0}`: o MSAA do composer custa caro e não faz
+           * falta aqui.
+           *
+           * O padrão do EffectComposer é 8 amostras, e ele resolve o
+           * buffer inteiro a cada quadro. A cena tem nove chamadas de
+           * desenho sobre um cilindro liso: o serrilhado que sobra é o da
+           * silhueta, e o Bloom o suaviza de qualquer jeito.
+           */}
+          <EffectComposer enableNormalPass={false} multisampling={0}>
             <Bloom
               // Raio alto = a névoa se espalha longe do núcleo. É AQUI que
               // se controla o tamanho do halo, não na espessura da casca:
@@ -246,6 +277,17 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
               luminanceSmoothing={0.2}
               radius={0.96}
               mipmapBlur
+              /**
+               * O borrão é calculado em METADE da resolução.
+               *
+               * Bloom é o passo mais caro da cena porque toca cada pixel
+               * várias vezes, e é o único que pode ser barateado sem
+               * ninguém notar: o resultado é névoa, uma imagem sem
+               * nenhuma frequência alta para preservar. Meia resolução
+               * corta 75% dos pixels processados e a dispersão sai
+               * idêntica ao olho.
+               */
+              resolutionScale={0.5}
             />
           </EffectComposer>
         </Suspense>

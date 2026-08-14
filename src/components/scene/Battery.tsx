@@ -6,6 +6,7 @@ import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { AAA_SCALE, DIMENSIONS } from '@/data/products'
 import { kitPresenca, poseAt, sceneState, variantEm } from '@/lib/scene-state'
+import { asset } from '@/lib/site'
 import { Cable } from './Cable'
 import { BatteryMesh } from './BatteryMesh'
 import { Kit } from './Kit'
@@ -61,8 +62,13 @@ export function Battery() {
    * 01 para o 02. Carregando ambos, a troca é só apontar o material para
    * outro mapa, sem nenhum custo em tempo de execução.
    */
-  const base = '/produto/rotulo_aa'
-  const baseAAA = '/produto/rotulo_aaa'
+  /**
+   * `asset()` porque quem busca a textura é o carregador do Three.js, e
+   * ele não conhece o `basePath` do Next. Publicado num subcaminho, sem
+   * o prefixo a pilha apareceria sem rótulo nenhum, em silêncio.
+   */
+  const base = asset('/produto/rotulo_aa')
+  const baseAAA = asset('/produto/rotulo_aaa')
 
   /**
    * Quatro mapas, não um.

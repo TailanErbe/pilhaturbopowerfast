@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { CONTENT } from '@/data/products'
 import { SectionBg } from '@/components/layout/Layer'
+import { asset } from '@/lib/site'
 
 /** Beat 8 — compra. */
 export function Buy() {
@@ -58,7 +59,7 @@ export function Buy() {
         {/* Peça de apoio: o que a pessoa leva para casa, ao lado do botão
             que a leva para lá */}
         <Image
-          src="/produto/cartela-kit.png"
+          src={asset('/produto/cartela-kit.png')}
           alt="Kit de pilhas recarregáveis Gshield com cabo de recarga"
           width={520}
           height={482}

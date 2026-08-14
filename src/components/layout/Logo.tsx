@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { asset } from '@/lib/site'
 
 /**
  * Marca Gshield.
@@ -39,9 +40,9 @@ type Variant = 'positiva' | 'negativa' | 'mono'
  * Conteúdo novo, caminho novo. Sempre.
  */
 const ARQUIVOS = {
-  positiva: '/brand/marca-positiva.png',
-  negativa: '/brand/marca-negativa.png',
-  mono: '/brand/marca-mono-negativa.png',
+  positiva: asset('/brand/marca-positiva.png'),
+  negativa: asset('/brand/marca-negativa.png'),
+  mono: asset('/brand/marca-mono-negativa.png'),
 } as const
 
 /** Proporção real dos três arquivos: 2000 × 493 */
@@ -55,9 +56,9 @@ const PROPORCAO = 2000 / 493
  * todo laranja, sumiria por completo.
  */
 const ICONE = {
-  positiva: '/brand/icone-positivo.png',
-  negativa: '/brand/icone-negativo.png',
-  mono: '/brand/icone-positivo.png',
+  positiva: asset('/brand/icone-positivo.png'),
+  negativa: asset('/brand/icone-negativo.png'),
+  mono: asset('/brand/icone-positivo.png'),
 } as const
 
 export function Logo({
