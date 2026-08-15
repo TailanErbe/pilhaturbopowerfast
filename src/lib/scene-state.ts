@@ -159,11 +159,27 @@ export const POSES: Pose[] = [
    */
   { at: 0.22, screenX: FAIXA, position: [0.15, 0.5 * AFASTAMENTO], rotation: [-0.16, FACE_MARCA + 0.28, 0.02], scale: 1.03 },
 
-  // Beat 3 — 1.200 recargas (0,37): deita na diagonal
-  { at: 0.37, screenX: FAIXA, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
-
-  // Beat 4 — chip inteligente (0,52): endireita, preparando a apresentação
-  { at: 0.52, screenX: FAIXA, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
+  /**
+   * Beats 3 e 4 — recargas (0,37) e chip (0,52): saem do centro.
+   *
+   * Nestes dois o texto ocupa SÓ a coluna da esquerda, e a pilha deitada
+   * na diagonal é a pose mais larga de todas: medida em 1280, a coluna de
+   * texto termina em x=498 e o produto chegava a x=431. Eram 67 px de
+   * texto atrás do objeto, contra a §6.4c.
+   *
+   * O defeito é antigo e estava ESCONDIDO: havia uma atenuação que
+   * derrubava a cena para 45% justamente nestes dois beats, e o parágrafo
+   * era lido através do vulto. Tirada a atenuação, a sobreposição
+   * apareceu — o que é uma boa notícia, porque agora se resolve onde
+   * deveria, na composição.
+   *
+   * 0,57 desloca o produto o suficiente para a folga ficar em ~24 px na
+   * pose mais larga. É fração da tela, não pixel, então acompanha a
+   * coluna de texto, que também é percentual. Os painéis voltam a 0,5,
+   * porque lá o texto mora nas DUAS bordas e o vão central é do produto.
+   */
+  { at: 0.37, screenX: 0.57, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
+  { at: 0.52, screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
 
   /**
    * Painéis 01, 02 e 03, nos centros 0,67 / 0,81 / 0,95.
@@ -291,22 +307,6 @@ export const sceneState = {
    * sabia disso, porque `progress` satura em 1 e fica lá.
    */
   saidaDoAto: 0,
-  /**
-   * Atenuação da cena, 0→1. Escrita pela timeline nos beats em que o
-   * ARGUMENTO é o texto, não o produto.
-   *
-   * Nas recargas e no chip, quem carrega a página é o número e o
-   * parágrafo; a pilha ali é cenário. Sem recuar, ela continua sendo a
-   * coisa mais forte da tela e disputa a leitura com o que deveria estar
-   * lendo. Nos painéis de produto volta a 0, porque lá o objeto é o
-   * assunto.
-   *
-   * Escurece por opacidade sobre o fundo da seção, e não por uma camada
-   * preta por cima: uma camada acobertaria também o TEXTO, que é
-   * exatamente o que não deve recuar. Os dois beats usam `#141414`, então
-   * o produto se dissolve no próprio fundo.
-   */
-  atenuacao: 0,
   /**
    * Ponteiro normalizado (-1 a 1) para o parallax do cabo.
    * Na referência o galho reage ao mouse mesmo sem scroll — é o que impede

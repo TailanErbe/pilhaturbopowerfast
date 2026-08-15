@@ -108,18 +108,22 @@ export function montarTimeline(raiz: HTMLElement): Timeline {
   contarNoScrub(tl, beats, BEATS)
 
   /**
-   * A cena recua nos beats em que o argumento é o TEXTO.
+   * A CENA NÃO RECUA MAIS. O produto fica aceso do começo ao fim.
    *
-   * Recargas e chip: o número e o parágrafo é que carregam a página, e a
-   * pilha ali é cenário. Sem recuar, ela segue sendo a coisa mais forte da
-   * tela e disputa a leitura com o que deveria estar sendo lido.
+   * Havia aqui uma atenuação: nos beats das recargas e do chip a cena
+   * caía para 45% de opacidade, com o argumento de que ali quem carrega a
+   * página é o texto e a pilha é cenário.
    *
-   * Sobe junto com a entrada das recargas e volta a tempo do painel 01,
-   * onde o objeto volta a ser o assunto. Ligado ao scrub como todo o
-   * resto: subir de volta desfaz.
+   * O argumento estava errado, e o cliente viu antes de mim: a pilha é o
+   * PRODUTO. Ela não é cenário em beat nenhum, e apagá-la para o texto
+   * respirar troca a coisa mais valiosa da tela pela mais barata. Ainda
+   * por cima o fundo daqueles dois beats é `#141414`, quase o preto do
+   * corpo, então 45% não deixava o produto discreto: deixava um vulto.
+   *
+   * Se o texto precisar de mais leitura ali, o caminho é composição —
+   * tamanho, contraste, onde o bloco mora na tela —, nunca escurecer o
+   * objeto que a página existe para vender.
    */
-  tl.to(sceneState, { atenuacao: 1, duration: 0.045, ease: 'power2.inOut' }, 0.3)
-  tl.to(sceneState, { atenuacao: 0, duration: 0.045, ease: 'power2.inOut' }, 0.555)
 
   const gatilho = tl.scrollTrigger!
 
@@ -174,7 +178,6 @@ export function montarTimeline(raiz: HTMLElement): Timeline {
     destruir: () => {
       saida.kill()
       sceneState.saidaDoAto = 0
-      sceneState.atenuacao = 0
       gatilho.kill(true)
       tl.kill()
       // Depois de matar a timeline: reverter antes deixaria tweens

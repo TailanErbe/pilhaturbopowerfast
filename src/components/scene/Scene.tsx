@@ -69,9 +69,6 @@ function DebugHook() {
  * CSS resolve de graça. Só escreve quando o valor muda, para não forçar
  * recálculo de estilo a cada quadro.
  */
-/** Quanto a cena chega a recuar nos beats de texto. Não some: recua. */
-const RECUO = 0.55
-
 function SaidaDoAto() {
   const ultimo = useRef(-1)
   /** Modo do laço, lembrado para não reescrever o store a cada quadro */
@@ -79,10 +76,16 @@ function SaidaDoAto() {
   const setFrameloop = useThree((s) => s.setFrameloop)
 
   useFrame(() => {
-    // As duas causas multiplicam: sair do ato e recuar num beat são
-    // independentes, e uma não deve cancelar a outra
-    const presenca = (1 - sceneState.saidaDoAto) * (1 - sceneState.atenuacao * RECUO)
-    const o = Math.round(presenca * 100) / 100
+    /**
+     * A ÚNICA causa de a cena perder opacidade é o ato ter acabado.
+     *
+     * Havia uma segunda, que multiplicava aqui: uma atenuação de 45% nos
+     * beats das recargas e do chip, para o texto ter mais leitura. Saiu.
+     * A pilha é o produto que a página vende e não é cenário em beat
+     * nenhum; contra o fundo `#141414` daqueles dois beats, 45% não a
+     * deixava discreta, deixava um vulto.
+     */
+    const o = Math.round((1 - sceneState.saidaDoAto) * 100) / 100
     if (o === ultimo.current) return
 
     /**
