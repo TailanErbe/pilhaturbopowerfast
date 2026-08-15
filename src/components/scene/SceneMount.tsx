@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
-import { POSES, sceneState } from '@/lib/scene-state'
+import { ancoraDoBeat, sceneState } from '@/lib/scene-state'
+import { BEATS } from '@/motion/labels'
 import { useClientValue } from '@/lib/client-value'
 import { BrilhoDeCarga } from './BrilhoDeCarga'
 
@@ -65,20 +66,26 @@ function DebugPanel() {
         className="w-full accent-[#FFA400]"
       />
 
+      {/* Os botões seguem os BEATS, não as poses: hoje há mais poses que
+          beats (o herói tem duas âncoras e a virada do USB-C uma terceira),
+          e rotular pose como "beat n" mentia sobre onde o botão leva */}
       <div className="mt-2 flex flex-wrap gap-2">
-        {POSES.map((p, i) => (
-          <button
-            key={p.at}
-            type="button"
-            onClick={() => {
-              setProgress(p.at)
-              sceneState.progress = p.at
-            }}
-            className="rounded border border-white/25 px-2 py-1 text-xs hover:bg-white/10"
-          >
-            beat {i + 1}
-          </button>
-        ))}
+        {BEATS.map((b, i) => {
+          const at = ancoraDoBeat(b.id)
+          return (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => {
+                setProgress(at)
+                sceneState.progress = at
+              }}
+              className="rounded border border-white/25 px-2 py-1 text-xs hover:bg-white/10"
+            >
+              {i + 1} {b.nome}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

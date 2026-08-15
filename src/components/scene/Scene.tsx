@@ -5,7 +5,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { Battery } from './Battery'
-import { POSES, sceneState } from '@/lib/scene-state'
+import { ancoraDoBeat, sceneState } from '@/lib/scene-state'
+import { BEATS } from '@/motion/labels'
 import { isCoarsePointer, prefersReducedMotion } from '@/lib/motion'
 import { useClientValue } from '@/lib/client-value'
 
@@ -21,17 +22,46 @@ import { useClientValue } from '@/lib/client-value'
  * no corpo fosco.
  */
 
-/** WebGL disponível? Sem ele a página ainda conta a história (§6.8). */
+/**
+ * WebGL disponível? Sem ele a página ainda conta a história (§6.8).
+ *
+ * A RESPOSTA É LEMBRADA, e isso não é micro-otimização: é correção.
+ *
+ * Quem chama é `useClientValue`, que por baixo é `useSyncExternalStore`, e
+ * ele executa a leitura A CADA RENDERIZAÇÃO. Cada execução criava um
+ * <canvas> e pedia um contexto WebGL de verdade, que nunca era liberado.
+ * O navegador tem teto de contextos ativos e descarta os mais velhos: o
+ * console enchia de "Too many active WebGL contexts" e terminava em
+ * "THREE.WebGLRenderer: Context Lost" — o contexto derrubado era o da
+ * própria cena, e a pilha sumia da tela.
+ *
+ * Em desenvolvimento isso parecia culpa do Fast Refresh. Não era: basta
+ * o componente renderizar de novo umas dezenas de vezes, e a página tem
+ * quatro laços que mexem em estado.
+ *
+ * O próprio comentário de `useClientValue` já pedia isto em voz alta:
+ * "cacheie leituras caras no módulo".
+ */
+let webglLembrado: boolean | null = null
+
 function temWebGL() {
+  if (webglLembrado !== null) return webglLembrado
   try {
     const c = document.createElement('canvas')
-    return !!(
-      window.WebGLRenderingContext &&
-      (c.getContext('webgl2') || c.getContext('webgl'))
-    )
+    const ctx = c.getContext('webgl2') || c.getContext('webgl')
+    webglLembrado = !!(window.WebGLRenderingContext && ctx)
+    /**
+     * E o contexto de teste é DEVOLVIDO na hora.
+     *
+     * Ele já cumpriu a função no instante em que existiu. Mantê-lo vivo
+     * ocupa uma das poucas vagas que o navegador dá, e a vaga que falta é
+     * sempre a da cena.
+     */
+    ctx?.getExtension('WEBGL_lose_context')?.loseContext()
   } catch {
-    return false
+    webglLembrado = false
   }
+  return webglLembrado
 }
 
 /**
@@ -235,7 +265,8 @@ function CenaEstatica() {
       // Invisível não precisa de quadro nenhum: deixa o laço dormindo
       if (i < 0) return
 
-      sceneState.progress = POSES[Math.min(i, POSES.length - 1)].at
+      /* Pelo BEAT, não pelo índice da pose: ver `ancoraDoBeat` */
+      sceneState.progress = ancoraDoBeat(BEATS[Math.min(i, BEATS.length - 1)].id)
       desenhar()
     }
 

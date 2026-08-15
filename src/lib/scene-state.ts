@@ -337,6 +337,28 @@ export const POSES: Pose[] = [
   { at: centroDoBeat('produto-03'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0], scale: 1.05 },
 ]
 
+/**
+ * Em que progresso um beat se apresenta pronto, para quem precisa de UMA
+ * foto dele.
+ *
+ * Existe para o modo de movimento reduzido, onde a cena é uma foto por
+ * beat e alguém tem de dizer qual. Aquele código pegava `POSES[i].at` com
+ * o `i` do beat, o que só funcionava enquanto havia exatamente uma pose
+ * por beat — a mesma coincidência que quebrou `faixaEm`, e que morreu
+ * pelo mesmo motivo: o herói ganhou duas âncoras e a virada do USB-C uma
+ * terceira. Com nove poses para sete beats, as recargas recebiam a pose do
+ * USB-C, o chip recebia a do fim da virada, e o painel do kit recebia a do
+ * painel 01 — inclusive o FORMATO, que também sai do progresso, então o
+ * beat do kit mostrava uma AA sozinha.
+ *
+ * O herói é exceção: o centro dele (0,075) cai dentro de SAIDA_DO_HEROI,
+ * e a foto sairia com o produto no meio da virada. Ele se apresenta em
+ * qualquer ponto do trecho frontal, e zero é o começo dele.
+ */
+export function ancoraDoBeat(id: string): number {
+  return id === 'hero' ? 0 : centroDoBeat(id)
+}
+
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
 /** Pose interpolada para um progresso 0→1 */
