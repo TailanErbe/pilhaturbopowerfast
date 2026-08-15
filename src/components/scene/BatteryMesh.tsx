@@ -181,10 +181,34 @@ const CARGA = {
   yPorta: 5.05 * (0.5 - 0.18 * 0.58),
   /** Base do corpo */
   yBase: -5.05 / 2,
-  /** Fechamento da gaussiana. Alto = anel fino. */
-  aperto: 26,
-  /** Bem acima de 1: é a intensidade que alimenta o Bloom */
-  forca: 4.2,
+  /**
+   * Fechamento da gaussiana. Alto = anel fino.
+   *
+   * Esteve em 26, o que dá sigma de 0,139 unidade. O neon do cabo tem
+   * sigma de 0,68 em unidades de mundo (0,0408 de uv vezes 16,65 de
+   * traçado), ou seja a onda ENCOLHIA QUASE CINCO VEZES ao passar do cabo
+   * para a célula. Junto com a desaceleração que havia no curso, era o que
+   * o cliente sentiu como travada na passagem.
+   *
+   * Em 4,0 o sigma vai a 0,354: metade do caminho até o cabo. Igualar
+   * exatamente os 0,68 acenderia mais de meia pilha de uma vez, o que
+   * deixa de ser onda e vira a pilha inteira piscando. Metade do salto
+   * some com o degrau visível e mantém a leitura de anel correndo.
+   */
+  aperto: 4,
+  /**
+   * Bem acima de 1: é a intensidade que alimenta o Bloom.
+   *
+   * Caiu de 4,2 para 2,0 junto com o alargamento. Luz total é pico vezes
+   * largura, e a banda ficou 2,5 vezes mais larga: mantendo o pico, a
+   * quantidade de luz dobraria e o beat viraria uma lavagem laranja.
+   *
+   * O alvo não é um número bonito, é a quantidade que o cliente já tinha
+   * aprovado: 4,2 x 0,139 = 0,58. Aqui 2,0 x 0,354 = 0,71, um pouco acima
+   * de propósito, porque banda larga se espalha e lê mais suave que a
+   * conta sugere.
+   */
+  forca: 2,
 }
 
 export function useMaterialDoCorpo(

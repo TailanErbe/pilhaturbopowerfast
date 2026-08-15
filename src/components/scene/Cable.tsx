@@ -147,7 +147,32 @@ const FLUXO_PARADO = 0.7
  * é `vAoLongo = 0`. Logo pos = 0 quando fract(uFluxo) = 1,2/1,45.
  * Se aqueles dois números mudarem lá, este muda junto.
  */
-const CHEGADA = 1.2 / 1.55
+/**
+ * O CURSO da cabeça da onda, e por que ele vale isto.
+ *
+ * A cabeça vai de 1,2 até `1,2 - CURSO`. O trecho de 1,2 a 1,0 é a espera
+ * entre uma onda e a próxima; de 1,0 a 0 ela atravessa o cabo; abaixo de 0
+ * ela percorre o CORPO da pilha (ver `cargaNoCorpo`).
+ *
+ * O curso esteve em 1,55, escolhido supondo que o cabo tivesse por volta de
+ * 10,5 unidades de traçado. Medido, ele tem 16,65: a curva é bem mais longa
+ * que a distância entre as pontas dela. Com o número errado, a onda ENTRAVA
+ * NO CORPO 22% MAIS DEVAGAR do que vinha no cabo, e o cliente sentiu
+ * exatamente isso: "parece que dá uma travada quando sai do cabo e vai pra
+ * pilha".
+ *
+ * Para a velocidade de MUNDO ser a mesma dos dois lados, o trecho do corpo
+ * tem de ser proporcional ao comprimento dele:
+ *
+ *   corpo / cabo = 4,52 / 16,65 = 0,2715
+ *
+ * Então o curso é 1,2 (espera mais cabo) + 0,2715 (corpo) = 1,4715.
+ */
+const CURSO = 1.4715
+/** O trecho abaixo de zero, que é o corpo da pilha */
+const CURSO_NO_CORPO = CURSO - 1.2
+
+const CHEGADA = 1.2 / CURSO
 
 export function Cable({
   raio,
@@ -429,23 +454,21 @@ export function Cable({
            * a cabeça ainda não entrou no cabo e nada acende.
            */
           /**
-           * O curso ficou MAIOR: 1,55 no lugar de 1,45.
+           * O trecho abaixo de zero é o CORPO DA PILHA.
            *
-           * A cabeça agora vai de 1,2 até -0,35, e o trecho negativo não é
-           * sobra: é o CORPO DA PILHA. Ela sai do cabo pelo conector e
-           * continua percorrendo a célula, então o cabo precisa entregá-la
-           * e seguir contando. Ver cargaNoCorpo em scene-state.
+           * A cabeça sai do cabo pelo conector e continua percorrendo a
+           * célula, então o cabo precisa entregá-la e seguir contando. Ver
+           * cargaNoCorpo em scene-state, e CURSO logo acima para a conta
+           * que faz a velocidade ser a mesma dos dois lados.
            *
-           * Antes o curso terminava em -0,25 sem ninguém do outro lado: a
-           * energia chegava à porta e evaporava. O cliente leu isso como
-           * defeito, e era: o brilho do cabo tirava todo o brilho da pilha
-           * e parecia bug, não pilha carregando.
+           * Antes o curso terminava sem ninguém do outro lado: a energia
+           * chegava à porta e evaporava, o que lia como defeito.
            *
            * ATENÇÃO: isto está DENTRO do template do shader. Crase aqui
            * fecha a string e o arquivo deixa de compilar, com o erro
            * apontando dezenas de linhas abaixo.
            */
-          float pos = 1.2 - fract(uFluxo) * 1.55;
+          float pos = 1.2 - fract(uFluxo) * ${CURSO};
           float d = vAoLongo - pos;
 
           /**
@@ -515,22 +538,19 @@ export function Cable({
       /**
        * A onda CONTINUA no corpo da pilha, e é a mesma onda.
        *
-       * No shader a cabeça percorre `vAoLongo` de 1,2 a −0,35 conforme
+       * No shader a cabeça percorre `vAoLongo` de 1,2 para baixo conforme
        * `fract(uFluxo)` vai de 0 a 1. Ela chega ao conector em
-       * 1,2/1,55 = 0,774; dali em diante `pos` é negativo, e é esse trecho
-       * negativo que percorre a célula.
+       * 1,2/CURSO; dali em diante `pos` é negativo, e é esse trecho que
+       * percorre a célula.
        *
-       * A proporção não é arbitrária: o cabo tem cerca de 10,5 unidades de
-       * traçado e o corpo tem 4,5 da porta ao polo negativo, ou seja 43%.
-       * Dando 0,35 de curso contra 1,2, a onda leva 29% do tempo que levou
-       * no cabo — mais rápido, porque a célula é mais curta, e é assim que
-       * uma velocidade constante se lê em dois trechos de comprimentos
-       * diferentes.
+       * A proporção sai de MEDIDA, não de estimativa: o traçado do cabo
+       * tem 16,65 unidades e o corpo tem 4,52 da porta ao polo negativo.
+       * Ver CURSO no topo do arquivo.
        */
       const fase = u.uFluxo.value % 1
-      const pos = 1.2 - fase * 1.55
+      const pos = 1.2 - fase * CURSO
       sceneState.cargaNoCorpo =
-        saida.conectado && pos <= 0 ? Math.min(1, -pos / 0.35) : -1
+        saida.conectado && pos <= 0 ? Math.min(1, -pos / CURSO_NO_CORPO) : -1
 
       /**
        * E o HALO do fundo bate junto, na chegada.
