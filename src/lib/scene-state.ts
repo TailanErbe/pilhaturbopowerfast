@@ -14,7 +14,7 @@
  * comentário. Importar troca a cópia pela fonte.
  */
 
-import { beatPorId, centroDoBeat } from '@/motion/labels'
+import { beatPorId, centroDoBeat, SAIDA_DO_HEROI } from '@/motion/labels'
 
 export type Pose = {
   /** Posição no progresso global, 0→1 */
@@ -170,6 +170,25 @@ export function kitPresenca(progress: number): number {
  */
 const AFASTAMENTO = 22.6 / 14
 
+/**
+ * Onde a virada do herói para o beat do USB-C TERMINA.
+ *
+ * Ela terminava no centro do beat, 0,225, e era esse o defeito: a virada
+ * ocupava de 0,08 a 0,225, quase três alturas de tela, com smoothstep dos
+ * dois lados. Espalhado assim, o movimento fica abaixo do limiar do olho
+ * em qualquer ponto — o cliente rolava, o texto sumia, e a pilha parecia
+ * não ter recebido o recado.
+ *
+ * Concentrada até 0,16 ela acontece em 1,15 tela e se vê. E chega antes
+ * do cabo, que começa a entrar em 0,19 (ver CABO): a pilha está PARADA
+ * quando o plugue se aproxima, que é a condição para a aproximação ser
+ * uma linha limpa em vez de herdar o movimento dela.
+ *
+ * O trecho de 0,16 a 0,225 não é tempo morto: é a pose montada esperando
+ * o cabo, com o respiro e o parallax do ponteiro continuando.
+ */
+const POSE_PRONTA = 0.16
+
 export const POSES: Pose[] = [
   /**
    * Beat 1 — herói: em pé, de FRENTE, sozinha.
@@ -198,15 +217,57 @@ export const POSES: Pose[] = [
    * título e as duas linhas do rodapé, que ficam em 756.
    */
   /**
-   * A ÚNICA pose que não fica no centro do beat.
+   * O herói tem DUAS âncoras iguais, e não uma. É um TRECHO, não um ponto.
    *
-   * O herói dura 0,15 e o seu centro cairia em 0,075 — depois da janela em
-   * que a barra do herói cede lugar à pílula (0,055 a 0,105). O produto
-   * ainda estaria assentando enquanto a navegação troca, e a primeira tela
-   * teria duas coisas se mexendo ao mesmo tempo. Em 0,06 ele chega parado
-   * antes de a troca começar.
+   * ------------------------------------------------------------------
+   * O DEFEITO QUE ISTO CONSERTA
+   * ------------------------------------------------------------------
+   *
+   * Havia uma âncora só, em 0,06, e duas coisas se somavam a partir dela:
+   *
+   *   1. `poseAt` PRENDE o valor abaixo da primeira âncora. De 0 a 0,06 o
+   *      produto não recebia nada do scroll — 864 px, mais de uma tela.
+   *   2. Passando de 0,06, a interpolação é smoothstep, que sai com
+   *      derivada zero. O trecho seguinte também quase não se move.
+   *
+   * Enquanto isso a barra saía em 0,055 e o texto do herói em 0,105. O
+   * cliente descreveu exatamente o resultado: as informações somem e ainda
+   * faltam dois ou três giros de roda para a pilha começar a andar.
+   *
+   * Medido antes da correção, em 1280x800: de p=0 a p=0,10 a caixa do
+   * produto na tela ficou em 564..700, um pixel em 1440 px de rolagem. O
+   * que se via mexer era o RESPIRO, que tem amplitude maior que o
+   * movimento do scroll naquele trecho.
+   *
+   * ------------------------------------------------------------------
+   * POR QUE DUAS ÂNCORAS IGUAIS
+   * ------------------------------------------------------------------
+   *
+   * Simplesmente puxar a âncora para 0 resolveria o congelamento e criaria
+   * outro problema: o produto começaria a girar no primeiro pixel de
+   * rolagem, e a primeira tela existe justamente para mostrá-lo DE FRENTE.
+   *
+   * Com duas âncoras idênticas, o trecho entre elas é uma pose constante
+   * por construção, não por acidente de clamp: a pilha fica de frente
+   * enquanto o herói é lido. Da segunda em diante ela anda.
+   *
+   * A segunda âncora é o COMEÇO da saída do herói, e não o meio dela.
+   * Medido nas duas versões, a fração da virada já cumprida:
+   *
+   *   p        antes   pelo meio   pelo começo
+   *   0,105     18%       25%          50%
+   *   0,120     30%       50%          75%
+   *
+   * Ancorando no meio, o giro ainda nascia depois de a barra ter sumido:
+   * o começo perceptível ficava em 0,096 nas duas versões, porque o
+   * smoothstep sai com derivada zero e come o primeiro terço da janela.
+   * Amarrado ao começo, a barra apagando e a pilha girando são o MESMO
+   * gesto, e a metade da virada já aconteceu quando a barra termina de
+   * sair. É isso que o cliente estava pedindo ao dizer que as informações
+   * sumiam e a pilha demorava mais dois ou três giros de roda.
    */
-  { at: 0.06, screenX: FAIXA, position: [-0.6, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 0.92 },
+  { at: 0, screenX: FAIXA, position: [-0.6, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 0.92 },
+  { at: SAIDA_DO_HEROI.comeca, screenX: FAIXA, position: [-0.6, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 0.92 },
 
   /**
    * Beat 2 — USB-C (centro do beat: 0,22): inclina o suficiente para expor
@@ -223,6 +284,9 @@ export const POSES: Pose[] = [
    * (0,4), então o produto só respira para a frente enquanto gira um
    * pouco. Quem se move é o cabo.
    */
+  /* A virada TERMINA aqui, antes do cabo. Ver POSE_PRONTA. */
+  { at: POSE_PRONTA, screenX: FAIXA, position: [0.15, 0.5 * AFASTAMENTO], rotation: [-0.16, FACE_MARCA + 0.28, 0.02], scale: 1.03 },
+  /* E fica montada até o centro do beat, esperando o plugue */
   { at: centroDoBeat('usbc'), screenX: FAIXA, position: [0.15, 0.5 * AFASTAMENTO], rotation: [-0.16, FACE_MARCA + 0.28, 0.02], scale: 1.03 },
 
   /**
@@ -488,7 +552,12 @@ export type SaidaDoCabo = {
  *
  * Não é linha reta: o plugue faz uma barriga para a direita e sobe.
  * Nada disso é do cabo, é da pilha — e some sozinho se ele esperar ela
- * assentar. Em 0,19 a interpolação da pose já está em 97%.
+ * assentar.
+ *
+ * A garantia deixou de ser aritmética e virou estrutural: existe uma
+ * âncora de pose em POSE_PRONTA (0,16) que fixa a pose final do beat, e o
+ * `entra.de` fica depois dela. A pilha está PARADA quando o cabo chega,
+ * não 97% parada.
  */
 const CABO = {
   entra: { de: 0.19, ate: 0.24 },

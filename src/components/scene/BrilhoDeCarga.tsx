@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { BEATS } from '@/motion/labels'
+import { BEATS, SAIDA_DO_HEROI } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
 import { cabeSaida, sceneState } from '@/lib/scene-state'
 
@@ -71,7 +71,12 @@ const FORCA = 0.5
  * a barra do herói vira pílula, para não sobrar brilho sem dono no beat
  * seguinte.
  */
-const HALO = { forca: 0.72, some: { de: 0.055, ate: 0.105 }, forcaDoPulso: 0.4 }
+const HALO = {
+  forca: 0.72,
+  /* O mesmo instante da troca da barra pela pílula: ver SAIDA_DO_HEROI */
+  some: { de: SAIDA_DO_HEROI.comeca, ate: SAIDA_DO_HEROI.termina },
+  forcaDoPulso: 0.4,
+}
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))

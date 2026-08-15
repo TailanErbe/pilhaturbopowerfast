@@ -64,6 +64,33 @@ export const BEATS: Beat[] = [
 /** Quanto dura a passagem entre um beat e o seguinte, em progresso */
 export const CRUZAMENTO = 0.045
 
+/**
+ * A janela em que o herói ENTREGA a tela.
+ *
+ * Quatro peças precisam concordar sobre este instante e, até agora, cada
+ * uma trazia a sua cópia dos mesmos dois números:
+ *
+ *   a barra do herói sai e a pílula entra   (lib/no-heroi)
+ *   o halo forte do produto se apaga        (scene/BrilhoDeCarga)
+ *   o canvas desce de cima do ato para trás (scene/FundoDoAto)
+ *   o produto larga a pose frontal e gira   (lib/scene-state)
+ *
+ * Quatro cópias do mesmo instante é quatro chances de uma delas ficar
+ * para trás numa edição, e o sintoma seria dos mais difíceis: nada quebra,
+ * a primeira tela só passa a parecer desconjuntada.
+ *
+ * `meio` é onde a troca já aconteceu para o olho, e é por isso que o
+ * canvas troca de camada ali: no meio da dissolução ninguém percebe a
+ * mudança de ordem de pintura.
+ */
+export const SAIDA_DO_HEROI = {
+  comeca: 0.055,
+  termina: 0.105,
+  get meio() {
+    return (this.comeca + this.termina) / 2
+  },
+}
+
 /** Qual beat está ocupando a tela num dado progresso */
 export function beatEm(progress: number): Beat {
   const p = Math.max(0, Math.min(1, progress))

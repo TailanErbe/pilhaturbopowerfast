@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { BEATS, CRUZAMENTO } from '@/motion/labels'
+import { BEATS, CRUZAMENTO, SAIDA_DO_HEROI } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
 
 /**
@@ -65,8 +65,15 @@ const CORES: [number, number, number][] = [
   [255, 255, 255], // produto-03 — bg-brand-white (tema light)
 ]
 
-/** Enquanto o herói manda, o canvas fica acima do ato */
-const HEROI = { ate: 0.055, some: 0.105 }
+/**
+ * Enquanto o herói manda, o canvas fica acima do ato.
+ *
+ * A troca de camada acontece no MEIO da saída do herói, onde as duas
+ * navegações estão cruzando e ninguém está olhando para a ordem de
+ * pintura. Os números vêm de motion/labels, junto com os das outras três
+ * peças que dependem deste mesmo instante.
+ */
+const HEROI = SAIDA_DO_HEROI
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))
@@ -128,7 +135,7 @@ export function FundoDoAto() {
        * Escrito como string e comparado antes: mudar z-index a cada
        * quadro forçaria o compositor a refazer as camadas sem necessidade.
        */
-      const z = p < (HEROI.ate + HEROI.some) / 2 ? '3' : '1'
+      const z = p < HEROI.meio ? '3' : '1'
       if (z !== ultimoZ && cena) {
         ultimoZ = z
         cena.style.zIndex = z

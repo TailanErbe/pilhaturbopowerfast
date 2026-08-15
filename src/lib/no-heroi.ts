@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { obterTimeline } from '@/motion/registro'
 import { prefersReducedMotion } from '@/lib/motion'
+import { SAIDA_DO_HEROI } from '@/motion/labels'
 
 /**
  * Quanto o herói ainda ocupa a tela, de 1 a 0.
@@ -17,8 +18,13 @@ import { prefersReducedMotion } from '@/lib/motion'
  * opacidade em vez de piscar.
  */
 
-/** A troca acontece bem antes do fim do beat, longe do texto e do produto */
-const TROCA = { comeca: 0.055, termina: 0.105 }
+/**
+ * A troca acontece bem antes do fim do beat, longe do texto e do produto.
+ *
+ * Os números moram em motion/labels: o mesmo instante manda no halo, na
+ * camada do canvas e no momento em que o produto larga a pose frontal.
+ */
+const TROCA = SAIDA_DO_HEROI
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 
