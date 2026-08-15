@@ -325,8 +325,13 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
      */
     const uCarga = (
       corpo.current?.material as THREE.Material | undefined
-    )?.userData?.uniformesDaCarga as { uCarga: { value: number } } | undefined
-    if (uCarga) uCarga.uCarga.value = sceneState.cargaNoCorpo
+    )?.userData?.uniformesDaCarga as
+      | { uCarga: { value: number }; uCargaForca: { value: number } }
+      | undefined
+    if (uCarga) {
+      uCarga.uCarga.value = sceneState.cargaNoCorpo
+      uCarga.uCargaForca.value = sceneState.cargaForca
+    }
 
     const alvoFormato = variantEm(sceneState.progress)
     const mat = corpo.current?.material as THREE.MeshStandardMaterial | undefined

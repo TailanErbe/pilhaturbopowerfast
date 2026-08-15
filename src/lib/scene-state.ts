@@ -642,6 +642,18 @@ export const sceneState = {
    * do corpo. Passa por aqui porque são componentes irmãos.
    */
   cargaNoCorpo: -1,
+  /**
+   * Quanto a banda do corpo está acesa, de 0 a 1.
+   *
+   * Separada da posição porque os dois cortes secos do trajeto são de
+   * BRILHO, não de lugar: ela nasce na porta enquanto a cabeça do cabo
+   * ainda está acesa (é essa sobreposição que esconde os dois centímetros
+   * opacos do plugue), e apaga ao chegar no polo negativo.
+   *
+   * Sem o segundo, a banda chegava ao fim da célula em brilho máximo e o
+   * ciclo virava, apagando-a de uma vez. Um pop por ciclo, a cada 3,57 s.
+   */
+  cargaForca: 0,
 }
 
 /**

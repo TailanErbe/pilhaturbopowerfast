@@ -166,22 +166,23 @@ const FLUXO_PARADO = 0.7
  *    que a reta entre os extremos dela. Com o número errado, a onda entrava
  *    no corpo 22% mais devagar.
  *
- * 2. Corrigida a velocidade, sobrou uma travada menor: O PLUGUE. Ele tem
- *    2,1 unidades entre o fim do cabo e a superfície da célula, e ninguém
- *    acendia nele. A onda não desacelerava ali, ela SUMIA: 0,31 segundo de
- *    escuro total num ciclo de 3,57. O código já dizia isso em voz alta,
- *    no comentário de `saida`, e ninguém tinha ligado uma coisa à outra.
+ * 2. Corrigida a velocidade, sobrou o vão do PLUGUE: 2,1 unidades entre o
+ *    fim do cabo e a superfície da célula, sem ninguém aceso. A onda não
+ *    desacelerava ali, ela SUMIA por 0,31 s a cada ciclo.
+ *
+ * O plugue NÃO entra mais no curso, e não acende. Ele é uma peça opaca de
+ * dois centímetros, e a resposta certa não é iluminá-lo (conector não é
+ * lâmpada) nem esperar por ele (isso é a travada de volta): é a cabeça do
+ * cabo e a banda do corpo estarem acesas AO MESMO TEMPO na passagem. Sem
+ * quadro escuro, ninguém percebe que a luz pulou dois centímetros.
  */
 /** Traçado do cabo, medido com `curva.getLength()` */
 const CABO_EM_UNIDADES = 16.65
-/** Casca mais corpo mais alívio, do fim do cabo até a superfície */
-const PLUGUE_EM_UNIDADES = 2.1
 /** Da porta ao polo negativo */
 const CORPO_EM_UNIDADES = 4.52
 
-const CURSO_NO_PLUGUE = PLUGUE_EM_UNIDADES / CABO_EM_UNIDADES
 const CURSO_NO_CORPO = CORPO_EM_UNIDADES / CABO_EM_UNIDADES
-const CURSO = 1.2 + CURSO_NO_PLUGUE + CURSO_NO_CORPO
+const CURSO = 1.2 + CURSO_NO_CORPO
 
 const CHEGADA = 1.2 / CURSO
 
@@ -207,14 +208,6 @@ export function Cable({
   const tubo = useRef<THREE.Mesh>(null)
   /** Envolve cabo E plugue: os dois deixam a porta juntos */
   const conjunto = useRef<THREE.Group>(null)
-  /**
-   * Só o PLUGUE, para ele acender quando a onda o atravessa.
-   *
-   * Alcançado por ref e não pelos materiais do `useMemo`: o compilador do
-   * React proíbe mutar o que sai de um hook, e é o mesmo caminho que a
-   * <Battery /> usa para a banda do corpo.
-   */
-  const plugue = useRef<THREE.Group>(null)
 
   const {
     geometria,
@@ -572,37 +565,44 @@ export function Cable({
       const depois = -pos
 
       /**
-       * O PLUGUE ACENDE quando a onda passa por ele.
+       * A ONDA NÃO PARA E NÃO PISCA.
        *
-       * Sem isto a energia atravessava dois centímetros de conector no
-       * escuro, e era essa a travadinha que sobrou depois de igualar as
-       * velocidades. Um plugue é condutor: ele acender enquanto a carga
-       * passa não é licença poética, é o que a peça faz.
+       * Três tentativas antes desta, e cada uma consertou uma coisa
+       * medível deixando a leitura pior. Vale registrar as três, porque a
+       * lição é a mesma:
        *
-       * A rampa sobe e desce nas bordas do trecho para não haver degrau de
-       * brilho na entrada nem na saída dele.
+       *   1. Curso errado, calculado sobre a distância entre as pontas do
+       *      cabo em vez do traçado dele. A onda desacelerava 22%.
+       *   2. Corrigida a velocidade, sobrou o vão do plugue: 2,1 unidades
+       *      sem ninguém aceso, 0,31 s de escuro por ciclo.
+       *   3. Acendi o plugue inteiro para tapar o vão. Virou um bloco
+       *      piscando uma vez por ciclo, que o cliente leu como bug — com
+       *      razão: conector não é lâmpada, e o que se queria era
+       *      passagem, não interruptor.
+       *
+       * O erro comum às três foi tratar o percurso como trechos de peças
+       * diferentes. Aqui ele é UM: a cabeça sai do cabo e a banda nasce na
+       * porta no mesmo instante, com as duas acesas ao mesmo tempo. O
+       * plugue continua escuro, como um plugue de verdade, e ninguém
+       * percebe que a luz pulou dois centímetros porque nunca há um quadro
+       * sem luz.
+       *
+       * `entra` e `sai` matam os dois cortes secos. O de saída era um pop
+       * de verdade: a banda chegava ao polo negativo em brilho máximo e o
+       * ciclo virava, apagando-a de uma vez, uma vez a cada 3,57 s.
        */
-      const noPlugue = depois / CURSO_NO_PLUGUE
-      const aceso =
-        saida.conectado && noPlugue > -0.15 && noPlugue < 1.15
-          ? Math.exp(-Math.pow((noPlugue - 0.5) * 2.4, 2))
-          : 0
-
-      const g = plugue.current
-      if (g) {
-        g.traverse((o) => {
-          const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial
-          if (!m || !m.emissive) return
-          m.emissive.setHex(0xffa400)
-          m.emissiveIntensity = aceso * 2.2
-        })
+      const t = depois / CURSO_NO_CORPO
+      const suave = (x: number) => {
+        const c = Math.max(0, Math.min(1, x))
+        return c * c * (3 - 2 * c)
       }
+      const entra = suave(t / 0.08)
+      const saiu = 1 - suave((t - 0.82) / 0.18)
 
-      /* O corpo só começa DEPOIS do plugue */
       sceneState.cargaNoCorpo =
-        saida.conectado && depois >= CURSO_NO_PLUGUE
-          ? Math.min(1, (depois - CURSO_NO_PLUGUE) / CURSO_NO_CORPO)
-          : -1
+        saida.conectado && depois >= 0 ? Math.min(1, t) : -1
+      sceneState.cargaForca =
+        saida.conectado && depois >= 0 ? entra * saiu : 0
 
       /**
        * E o HALO do fundo bate junto, na chegada.
@@ -670,7 +670,6 @@ export function Cable({
       {/* Plugue Tipo-C encaixado na porta. A geometria é extrudada no eixo
           +Z local, então o grupo é girado para +Z apontar para FORA. */}
       <group
-        ref={plugue}
         position={[Math.sin(anguloPorta) * raio, yPorta, Math.cos(anguloPorta) * raio]}
         rotation={[0, anguloPorta, 0]}
       >

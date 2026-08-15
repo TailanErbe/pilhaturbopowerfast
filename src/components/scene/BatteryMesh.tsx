@@ -184,31 +184,27 @@ const CARGA = {
   /**
    * Fechamento da gaussiana. Alto = anel fino.
    *
-   * Esteve em 26, o que dá sigma de 0,139 unidade. O neon do cabo tem
-   * sigma de 0,68 em unidades de mundo (0,0408 de uv vezes 16,65 de
-   * traçado), ou seja a onda ENCOLHIA QUASE CINCO VEZES ao passar do cabo
-   * para a célula. Junto com a desaceleração que havia no curso, era o que
-   * o cliente sentiu como travada na passagem.
+   * Voltou a 20 depois de uma passagem por 4, que alargava o anel para
+   * sigma 0,354 tentando igualar a largura do neon do cabo.
    *
-   * Em 4,0 o sigma vai a 0,354: metade do caminho até o cabo. Igualar
-   * exatamente os 0,68 acenderia mais de meia pilha de uma vez, o que
-   * deixa de ser onda e vira a pilha inteira piscando. Metade do salto
-   * some com o degrau visível e mantém a leitura de anel correndo.
+   * Igualar a LARGURA foi o alvo errado. O que faz as duas luzes lerem
+   * como a mesma onda é o CARÁTER: o cabo é uma linha fina e muito
+   * brilhante que floresce no Bloom. Uma banda larga e macia na célula é
+   * outro tipo de luz, e a troca entre os dois tipos é justamente o que
+   * denuncia a costura, por mais que os números de largura se aproximem.
+   *
+   * Em 20 o sigma é 0,158, e o anel volta a ser linha.
    */
-  aperto: 4,
+  aperto: 20,
   /**
    * Bem acima de 1: é a intensidade que alimenta o Bloom.
    *
-   * Caiu de 4,2 para 2,0 junto com o alargamento. Luz total é pico vezes
-   * largura, e a banda ficou 2,5 vezes mais larga: mantendo o pico, a
-   * quantidade de luz dobraria e o beat viraria uma lavagem laranja.
-   *
-   * O alvo não é um número bonito, é a quantidade que o cliente já tinha
-   * aprovado: 4,2 x 0,139 = 0,58. Aqui 2,0 x 0,354 = 0,71, um pouco acima
-   * de propósito, porque banda larga se espalha e lê mais suave que a
-   * conta sugere.
+   * 5,5 e não os 2,0 da versão larga: linha fina precisa de intensidade
+   * para florescer, e é o florescimento que faz a luz sair da geometria e
+   * ocupar o ar em volta. Mesma lógica do neon do cabo, que emite 26 numa
+   * casca ainda mais fina.
    */
-  forca: 2,
+  forca: 5.5,
 }
 
 export function useMaterialDoCorpo(
@@ -247,12 +243,15 @@ export function useMaterialDoCorpo(
      */
     const uniformes = {
       uCarga: { value: -1 },
+      /** Acende e apaga nas duas pontas do trajeto: ver `cargaForca` */
+      uCargaForca: { value: 0 },
       uCorCarga: { value: new THREE.Color('#FFA400') },
     }
     m.userData.uniformesDaCarga = uniformes
 
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uCarga = uniformes.uCarga
+      shader.uniforms.uCargaForca = uniformes.uCargaForca
       shader.uniforms.uCorCarga = uniformes.uCorCarga
 
       shader.vertexShader = shader.vertexShader
@@ -268,6 +267,7 @@ export function useMaterialDoCorpo(
           `#include <common>
            varying float vYLocal;
            uniform float uCarga;
+           uniform float uCargaForca;
            uniform vec3 uCorCarga;`,
         )
         /**
@@ -278,11 +278,11 @@ export function useMaterialDoCorpo(
         .replace(
           '#include <emissivemap_fragment>',
           `#include <emissivemap_fragment>
-           if (uCarga >= 0.0) {
+           if (uCarga >= 0.0 && uCargaForca > 0.0) {
              float yOnda = ${CARGA.yPorta.toFixed(4)} + uCarga * (${CARGA.yBase.toFixed(4)} - ${CARGA.yPorta.toFixed(4)});
              float dOnda = vYLocal - yOnda;
              float banda = exp(-dOnda * dOnda * ${CARGA.aperto.toFixed(1)});
-             totalEmissiveRadiance += uCorCarga * banda * ${CARGA.forca.toFixed(1)};
+             totalEmissiveRadiance += uCorCarga * banda * ${CARGA.forca.toFixed(1)} * uCargaForca;
            }`,
         )
     }
