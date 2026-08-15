@@ -14,7 +14,16 @@ export function Cycles() {
       <SectionBg className="bg-surface-100" noAto />
 
       <div className="container-gutter base-do-retrato">
-        <EdgeColumn side="left">
+        {/**
+         * `data-coluna`: onde este texto TERMINA, para a chuva medir.
+         *
+         * A chuva de descartáveis rarefaz atrás da coluna de texto, e a
+         * borda dela precisa ser medida e não digitada: `container-gutter`
+         * é `clamp(16px, 4vw, 48px)` e a coluna é percentual, então o x
+         * onde ela acaba muda com a largura. Um 0,42 escrito à mão estaria
+         * errado em toda tela que não fosse a de quem escreveu.
+         */}
+        <EdgeColumn side="left" data-coluna>
           <p className="flex items-baseline gap-4">
             <span
               data-count-target={CONTENT.cycles.number}

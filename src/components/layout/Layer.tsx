@@ -77,16 +77,18 @@ export function EdgeColumn({
   side = 'left',
   children,
   className = '',
+  ...resto
 }: {
   side?: 'left' | 'right'
   children: React.ReactNode
   className?: string
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={`relative z-2 w-full md:w-[38%] ${
         side === 'right' ? 'md:ml-auto' : ''
       } ${className}`}
+      {...resto}
     >
       {children}
     </div>

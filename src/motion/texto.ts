@@ -1,6 +1,6 @@
 import gsap from 'gsap'
 import { SplitText } from 'gsap/SplitText'
-import { CRUZAMENTO, type Beat } from './labels'
+import { CRUZAMENTO, janelaDoContador, type Beat } from './labels'
 
 gsap.registerPlugin(SplitText)
 
@@ -173,17 +173,21 @@ export function contarNoScrub(
       const estado = { valor: 0 }
       alvo.textContent = '0'
 
+      /* A janela vem de `janelaDoContador`: a chuva de descartáveis usa o
+         mesmo eixo, e duas cópias andariam fora de compasso */
+      const janela = janelaDoContador(b.id)
+
       tl.to(
         estado,
         {
           valor: destino,
           ease: 'none',
-          duration: b.fim - CRUZAMENTO - (b.inicio + CRUZAMENTO),
+          duration: janela.ate - janela.de,
           onUpdate: () => {
             alvo.textContent = Math.round(estado.valor).toLocaleString('pt-BR')
           },
         },
-        b.inicio + CRUZAMENTO,
+        janela.de,
       )
     }
   }

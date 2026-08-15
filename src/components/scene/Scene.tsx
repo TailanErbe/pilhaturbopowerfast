@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { Battery } from './Battery'
+import { ChuvaDeDescartaveis } from './ChuvaDeDescartaveis'
 import { ancoraDoBeat, cabeSaida, sceneState } from '@/lib/scene-state'
 import { BEATS } from '@/motion/labels'
 import { isCoarsePointer, prefersReducedMotion } from '@/lib/motion'
@@ -559,6 +560,16 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
 
           {/* O formato vem do progresso, não de prop: ver variantEm() */}
           <Battery estatico={reduzido} />
+
+          {/**
+           * A chuva é IRMÃ da pilha, não filha dela.
+           *
+           * O grupo da <Battery /> carrega pose, amortecimento, respiro e a
+           * escala do retrato. A chuva não pode herdar nada disso: ela não
+           * é do produto, é do BEAT. Pendurada lá dentro, ela balançaria
+           * junto com o respiro e encolheria junto com a faixa do celular.
+           */}
+          <ChuvaDeDescartaveis estatico={reduzido} />
           {reduzido ? <CenaEstatica /> : <SaidaDoAto />}
           {debug && <DebugHook />}
 

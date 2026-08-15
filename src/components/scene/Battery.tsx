@@ -5,7 +5,14 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { AAA_SCALE, DIMENSIONS } from '@/data/products'
-import { faixaEm, kitPresenca, poseAt, sceneState, variantEm } from '@/lib/scene-state'
+import {
+  faixaEm,
+  kitPresenca,
+  LARGURA_RETRATO,
+  poseAt,
+  sceneState,
+  variantEm,
+} from '@/lib/scene-state'
 import { asset } from '@/lib/site'
 import { Cable } from './Cable'
 import { BatteryMesh, useMaterialDoCorpo, usePecasDaPilha } from './BatteryMesh'
@@ -85,30 +92,6 @@ const RETRATO = {
   tetoPadrao: 0.42,
 }
 
-/**
- * O mesmo limiar do `md:` do Tailwind, e não `largura < altura`.
- *
- * Os dois critérios discordam justo no tablet em pé: pela proporção ele é
- * retrato, mas se o `md:` já vale o CSS entrega o layout de duas colunas
- * com o vão central reservado ao produto. A pilha ia para o centro,
- * encolhida, enquanto a diagramação a esperava no vão. Um limiar só, e as
- * duas metades contam a mesma história.
- *
- * 1024 E NÃO 768. Este número já esteve em 768, com um comentário dizendo
- * que era "o mesmo do md: do Tailwind" — e não era: o projeto sobrescreve
- * os breakpoints no @theme, onde `sm` vale 768 e `md` vale 1024.
- *
- * O erro abria uma faixa inteira de larguras, de 768 a 1023, em que o CSS
- * empilhava o texto ocupando a largura toda (layout de retrato) enquanto a
- * cena se achava em paisagem e punha o produto no meio da tela. Resultado:
- * a pilha em cima do parágrafo, que é justamente a §6.4c. Medido em 785 de
- * largura: a descrição do painel 01 ia de x=32 a x=694 e o produto passava
- * bem no meio dela.
- *
- * A faixa pega notebook pequeno, tablet deitado e janela dividida ao meio,
- * que não é gente de menos.
- */
-const LARGURA_RETRATO = 1024
 
 /**
  * Quanto o produto sobe dentro da faixa livre, no retrato.

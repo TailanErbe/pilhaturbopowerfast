@@ -97,6 +97,24 @@ export function beatEm(progress: number): Beat {
   return BEATS.find((b) => p >= b.inicio && p < b.fim) ?? BEATS[BEATS.length - 1]
 }
 
+/**
+ * A janela em que o CONTADOR sobe, descontados os cruzamentos.
+ *
+ * O número não começa a subir no primeiro pixel do beat nem chega ao fim
+ * dele: os cruzamentos das pontas são passagem, com o texto ainda entrando
+ * ou já saindo. Contar ali seria contar no escuro.
+ *
+ * Isto existe porque a conta passou a ter mais de um dono. Era só do
+ * `contarNoScrub`, que a escrevia inline duas vezes; agora a chuva de
+ * descartáveis precisa do MESMO eixo, e as duas andando separadas seriam
+ * duas fontes para a mesma verdade — com o sintoma pior possível: a chuva
+ * engrossando fora de compasso com o número que ela ilustra.
+ */
+export function janelaDoContador(id: string): { de: number; ate: number } {
+  const b = beatPorId(id)
+  return { de: b.inicio + CRUZAMENTO, ate: b.fim - CRUZAMENTO }
+}
+
 /** O beat pelo id. Estoura se o id não existir: é erro de programação. */
 export function beatPorId(id: string): Beat {
   const b = BEATS.find((x) => x.id === id)
