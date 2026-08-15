@@ -139,8 +139,22 @@ export function kitPresenca(progress: number): number {
 const AFASTAMENTO = 22.6 / 14
 
 export const POSES: Pose[] = [
-  // Beat 1 — hero: em pé na faixa direita, marca de frente
-  { at: 0.06, screenX: FAIXA, position: [0.3, 0], rotation: [0.06, FACE_MARCA, 0.04], scale: 1 },
+  /**
+   * Beat 1 — herói: em pé, de FRENTE, sozinha.
+   *
+   * O desvio de três-quartos (FACE_MARCA) não é gosto, é conserto: com o
+   * produto de frente, o PLUGUE apontava para a câmera e virava um bloco
+   * preto achatado cobrindo a tampa. Girar um pouco resolvia.
+   *
+   * Só que agora o herói não tem cabo — ele chega no beat seguinte — e
+   * sem plugue não há o que esconder. O motivo do desvio desapareceu
+   * junto, e o que sobrava era um produto de esguelha na única tela em
+   * que ele está sozinho e deveria se apresentar inteiro.
+   *
+   * O giro até FACE_MARCA + 0,28 passa a acontecer NA CHEGADA do cabo,
+   * que é quando ele volta a fazer falta.
+   */
+  { at: 0.06, screenX: FAIXA, position: [0.3, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 1 },
 
   /**
    * Beat 2 — USB-C (centro do beat: 0,22): inclina o suficiente para expor
@@ -344,25 +358,59 @@ export type SaidaDoCabo = {
 }
 
 /**
- * A saída do cabo, encenada.
+ * Quando o cabo entra e quando sai.
+ *
+ * O HERÓI NÃO TEM CABO. Antes ele nascia plugado e a única coisa que
+ * acontecia no beat do USB-C era ele ir embora — o que punha dois
+ * assuntos na primeira tela (a pilha e um acessório) e deixava o segundo
+ * beat com um acontecimento negativo: tirar algo que já estava lá.
+ *
+ * Invertido, cada tela ganha um assunto só. O herói mostra o produto
+ * sozinho; no beat da recarga o cabo CHEGA, encaixa e carrega; e sai
+ * antes do beat das recargas, para não disputar com o contador.
+ */
+const CABO = {
+  entra: { de: 0.115, ate: 0.2 },
+  sai: { de: 0.275, ate: 0.35 },
+}
+
+/**
+ * Fase do cabo: 1 é longe e invisível, 0 é encaixado.
+ *
+ * Uma função só para entrada e saída, e por isso um valor só descreve as
+ * duas: a entrada é a saída de trás para a frente. Assim o encaixe e o
+ * desencaixe usam exatamente a mesma coreografia, e não há como uma
+ * ficar mais bonita que a outra.
+ */
+function faseDoCabo(progress: number): number {
+  const suave = (t: number) => t * t * (3 - 2 * t)
+  const rampa = (p: number, de: number, ate: number) =>
+    suave(Math.max(0, Math.min(1, (p - de) / (ate - de))))
+
+  if (progress <= CABO.entra.de) return 1
+  if (progress < CABO.entra.ate) return 1 - rampa(progress, CABO.entra.de, CABO.entra.ate)
+  if (progress <= CABO.sai.de) return 0
+  return rampa(progress, CABO.sai.de, CABO.sai.ate)
+}
+
+/**
+ * O cabo, encenado.
  *
  * Opacidade sozinha entrega o RESULTADO sem entregar a AÇÃO: o cabo
- * simplesmente sumia. Aqui a desconexão acontece em três tempos, todos
- * amarrados ao scrub — rolar de volta refaz o encaixe.
+ * simplesmente aparecia ou sumia. Aqui o encaixe acontece em três tempos,
+ * todos amarrados ao scrub — rolar de volta desfaz.
  *
- *   1. o plugue recua pelo eixo da porta e a casca deixa a abertura
- *   2. já solto, o conjunto cede e cai um pouco
- *   3. desliza para fora de quadro; só então a opacidade baixa
+ *   1. o conjunto entra de fora de quadro e a opacidade sobe
+ *   2. o cabo se acomoda, deixando de cair
+ *   3. o plugue avança pelo eixo da porta e a casca entra na abertura
  *
- * A onda de neon para no instante em que desconecta: depois de fora da
- * porta não há mais carga entrando, e mantê-la acesa contaria uma mentira.
+ * Na saída, os mesmos três tempos ao contrário.
+ *
+ * A onda de neon só corre PLUGADO: fora da porta não há carga entrando,
+ * e mantê-la acesa contaria uma mentira.
  */
 export function cabeSaida(progress: number): SaidaDoCabo {
-  const inicio = 0.09
-  const fim = 0.24
-  const bruto = (progress - inicio) / (fim - inicio)
-  const t = Math.max(0, Math.min(1, bruto))
-  const e = t * t * (3 - 2 * t)
+  const e = faseDoCabo(progress)
 
   const faixa = (de: number, ate: number) =>
     Math.max(0, Math.min(1, (e - de) / (ate - de)))

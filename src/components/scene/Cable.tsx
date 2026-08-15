@@ -216,20 +216,39 @@ export function Cable({
      * Por isso agora: giro total de ~1,2 rad (não 6,9), raio sempre
      * crescendo e altura sempre descendo. Sem vai e volta, sem zigue-zague.
      */
+    /**
+     * CURTO E FROUXO, não comprido e esticado.
+     *
+     * O cabo da caixa é curto, e o traçado anterior o esticava até 26
+     * unidades (26 cm) numa varredura quase reta atravessando a tela. Duas
+     * coisas erradas de uma vez: comprimento que o objeto real não tem, e
+     * uma curva TENSA, que é como se desenha corda puxada, não cabo solto.
+     *
+     * O alcance caiu para menos da metade e a queda por unidade de avanço
+     * subiu: o arco fecha mais cedo e mais fundo, que é o que faz ler como
+     * peça flexível pousando, e não como fio esticado entre dois pontos.
+     */
     const pontos = [
       // Reto ao sair do plugue — cabo deixa o conector pelo eixo dele
       emVolta(anguloPorta, 0, saida, yPorta),
-      emVolta(anguloPorta, 0, saida + 0.45, yPorta - 0.04),
+      emVolta(anguloPorta, 0, saida + 0.4, yPorta - 0.04),
 
-      // A gravidade começa a vencer
-      emVolta(anguloPorta, 0.14, saida + 1.3, yPorta - 0.55),
-      emVolta(anguloPorta, 0.33, saida + 2.5, yPorta - 1.65),
-      emVolta(anguloPorta, 0.55, saida + 3.9, yPorta - 3.0),
-      emVolta(anguloPorta, 0.78, saida + 6.2, yPorta - 4.7),
+      // A gravidade começa a vencer, e vence mais rápido que antes
+      emVolta(anguloPorta, 0.16, saida + 1.05, yPorta - 0.62),
+      emVolta(anguloPorta, 0.38, saida + 1.95, yPorta - 1.85),
+      emVolta(anguloPorta, 0.62, saida + 2.85, yPorta - 3.3),
+      emVolta(anguloPorta, 0.86, saida + 4.1, yPorta - 5.1),
 
       // Cai para fora de quadro
-      emVolta(anguloPorta, 0.98, saida + 12, yPorta - 7.0),
-      emVolta(anguloPorta, 1.15, saida + 26, yPorta - 10.5),
+      emVolta(anguloPorta, 1.02, saida + 6.4, yPorta - 7.2),
+      /**
+       * O último ponto ainda sai de quadro, mas por pouco.
+       *
+       * Ele existe só para a ponta não aparecer cortada; não é cabo à
+       * mostra. Antes ia a 26 unidades, o que garantia isso com folga
+       * enorme e, de brinde, um fio atravessando a tela inteira.
+       */
+      emVolta(anguloPorta, 1.14, saida + 10.5, yPorta - 10.2),
     ]
 
     /**
