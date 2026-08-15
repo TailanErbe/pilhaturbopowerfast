@@ -66,9 +66,39 @@ export function FaixaDaCena({
     obs.observe(painel)
     window.addEventListener('resize', medir, { passive: true })
 
+    /**
+     * E o painel agora ROLA POR DENTRO, no retrato.
+     *
+     * Isso é novo: os painéis ganharam `overflow-y: auto` porque um acordeão
+     * aberto não cabe na altura fixa da seção e o conteúdo se perdia. Só que
+     * o canvas é `fixed` e não rola com nada — então, sem isto, arrastar a
+     * ficha para ler movia o texto e deixava as oito pilhas paradas, cobrindo
+     * o parágrafo que passava por baixo delas.
+     *
+     * Remedindo, o vão se move junto com o conteúdo e a cena o segue: as
+     * pilhas sobem com o texto, como se fossem parte dele. É de graça porque
+     * a medida já era relativa ao PAINEL — só faltava alguém avisar que ela
+     * mudou.
+     *
+     * Num quadro por vez: `getBoundingClientRect` no ouvinte de scroll é
+     * leitura de geometria no meio do gesto, que é exatamente o que trava
+     * rolagem.
+     */
+    let agendado = 0
+    const aoRolar = () => {
+      if (agendado) return
+      agendado = requestAnimationFrame(() => {
+        agendado = 0
+        medir()
+      })
+    }
+    painel.addEventListener('scroll', aoRolar, { passive: true })
+
     return () => {
       obs.disconnect()
       window.removeEventListener('resize', medir)
+      painel.removeEventListener('scroll', aoRolar)
+      cancelAnimationFrame(agendado)
       sceneState.faixaDoKit = null
     }
   }, [])

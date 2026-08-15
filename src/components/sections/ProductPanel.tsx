@@ -246,10 +246,36 @@ export function ProductPanel({ product }: { product: Product }) {
    * o comentário de VAO em scene/Kit.tsx).
    */
   if (escolha) {
+    /**
+     * `overflow-y-auto` no retrato, e ele existe por causa dos acordeões.
+       *
+       * A seção é de altura fixa e vive dentro do pin, onde `overflow-hidden`
+       * não vira barra de rolagem: vira CONTEÚDO PERDIDO. Medido num
+       * 375×812, com a ficha técnica aberta: o corpo dela tem 288 px e abre
+       * a 86 px do fim da seção, então 251 px somem — e são 8 linhas, das
+       * quais o cliente via 4 no Safari. Com os dois acordeões abertos, 371.
+       *
+       * Rolar por dentro do próprio acordeão não resolveria: sobrariam duas
+       * linhas visíveis de cada vez. Quem precisa rolar é a COLUNA, e aí o
+       * bloco aberto sobe e ganha a tela.
+       *
+       * Fechado não muda nada: sem transbordo, `auto` não mostra barra nem
+       * captura gesto. A rolagem aninhada só passa a existir depois que o
+       * usuário abriu alguma coisa, que é exatamente quando ela é esperada.
+       *
+       * `data-lenis-prevent` para o Lenis não sequestrar a roda aqui dentro.
+       * No toque não seria preciso — a instância roda com `syncTouch: false`,
+       * ou seja o dedo já usa a rolagem nativa —, mas a janela estreita de
+       * mesa existe e é onde a roda passaria direto para a página.
+       *
+     * `overscroll-contain` impede o encadeamento: chegando ao fim da ficha,
+     * o gesto para ali em vez de continuar rolando o ato por baixo.
+     */
     return (
       <section
         id={`produto-${product.index}`}
-        className={`relative flex h-full min-h-dvh overflow-hidden ${t.section} ${claro(product.theme)}`}
+        data-lenis-prevent
+        className={`relative flex h-full min-h-dvh overflow-x-hidden overflow-y-auto overscroll-contain md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
       >
         <SectionBg className={t.bg} noAto />
 
@@ -461,10 +487,13 @@ export function ProductPanel({ product }: { product: Product }) {
     )
   }
 
+  /* Mesma razão do painel do kit: acordeão aberto num contêiner de altura
+     fixa e recortado perde conteúdo. Ver o comentário longo lá em cima. */
   return (
     <section
       id={`produto-${product.index}`}
-      className={`relative flex h-full min-h-dvh items-center overflow-hidden ${t.section} ${claro(product.theme)}`}
+      data-lenis-prevent
+      className={`relative flex h-full min-h-dvh items-center overflow-x-hidden overflow-y-auto overscroll-contain md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
     >
       <SectionBg className={t.bg} noAto />
 

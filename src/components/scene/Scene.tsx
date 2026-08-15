@@ -600,6 +600,123 @@ function ContraLuz() {
 }
 
 /**
+ * COMPILA TUDO ANTES, para a travada acontecer onde ninguém está olhando.
+ *
+ * ------------------------------------------------------------------
+ * O QUE FOI MEDIDO
+ * ------------------------------------------------------------------
+ *
+ * Varrendo o progresso de 0 a 1 e cronometrando cada quadro, a mediana é
+ * 0,3 ms e existem exatamente dois picos:
+ *
+ *   p = 0,18   17,0 ms   programas de 8 para 10   (o cabo entra)
+ *   p = 0,91   70,3 ms   programas de 10 para 13  (o kit se forma)
+ *
+ * Setenta milissegundos é um engasgo que se vê. E os dois acontecem UMA
+ * vez, na primeira passagem — que é exatamente como o cliente descreveu:
+ * "só na primeira vez que carrega, algumas transições dão uma travada".
+ *
+ * A causa NÃO é textura, e vale registrar porque a suspeita óbvia era
+ * essa: medi `info.memory.textures` antes e depois da virada 01→02 e a
+ * contagem não muda (14 e 14). Os mapas da AAA já estão na GPU muito
+ * antes. O que custa é COMPILAR PROGRAMA de shader, que o driver faz na
+ * primeira vez que um material é desenhado.
+ *
+ * ------------------------------------------------------------------
+ * POR QUE PRECISA TORNAR VISÍVEL
+ * ------------------------------------------------------------------
+ *
+ * `WebGLRenderer.compile` percorre com `traverseVisible` (conferido no
+ * fonte instalado, three 0.185). O cabo e as oito do kit passam quase a
+ * página inteira invisíveis — justamente até o instante em que travam —,
+ * então uma chamada ingênua compilaria só o que já está em cena e não
+ * resolveria nada.
+ *
+ * ------------------------------------------------------------------
+ * DESENHA DE VERDADE, NUM ALVO DE 1×1
+ * ------------------------------------------------------------------
+ *
+ * A primeira tentativa foi `compileAsync`, e ela só cortou o pico de 70
+ * para 56 ms. Medido de novo, o quadro de p=0,905 continuava levando os
+ * programas de 11 para 13: `compile` não alcançava os dois materiais do
+ * kit, quase certamente porque eles só divergem dos da protagonista no
+ * instante em que o kit entra — antes disso não há o que compilar.
+ *
+ * Adivinhar o que `compile` percorre é frágil. Desenhar não é: um render
+ * de verdade compila o programa, sobe a geometria e sobe a textura, pelo
+ * mesmo caminho que o quadro real usaria. Num alvo de 1×1 isso custa
+ * preenchimento nenhum e não chega à tela — o pico acontece aqui, uma vez,
+ * durante o carregamento, em vez de no meio da rolagem.
+ */
+function PreCompilar() {
+  const feito = useRef(false)
+  const quadros = useRef(0)
+
+  useFrame(({ gl, scene, camera }) => {
+    if (feito.current) return
+    /* O ambiente tem de estar assado antes: o PMREM do <Environment> só
+       existe depois do primeiro quadro, e material compilado sem ele
+       compilaria com outra configuração de luz — ou seja, de novo errada */
+    if (quadros.current++ < 3) return
+    feito.current = true
+
+    const escondidos: THREE.Object3D[] = []
+    /**
+     * Visível NÃO BASTA: o que não passa pelo frustum também não é
+     * desenhado, e portanto também não compila.
+     *
+     * Medido: acendendo tudo, os programas paravam em 11 e o pico do kit
+     * ficava inteiro. Em p=0 as oito pilhas estão com escala perto de zero
+     * na posição do painel 03, ou seja fora ou degeneradas no volume de
+     * visão — o desenho nunca chegava a acontecer.
+     */
+    const semCorte: THREE.Object3D[] = []
+    scene.traverse((o) => {
+      if (!o.visible) {
+        o.visible = true
+        escondidos.push(o)
+      }
+      if (o.frustumCulled) {
+        o.frustumCulled = false
+        semCorte.push(o)
+      }
+    })
+
+    /**
+     * NA TELA, com tesoura de 1×1. E as duas coisas importam.
+     *
+     * Alvo fora da tela não serve, e isto foi medido duas vezes: com um
+     * `WebGLRenderTarget` os programas iam de 13 para 21 e os picos
+     * continuavam inteiros — a chave de programa do three inclui a
+     * configuração de saída, então desenhar noutro alvo compila um conjunto
+     * PARALELO de variantes que o quadro real não reaproveita. Casar o
+     * `colorSpace` do alvo não resolveu; a divergência é maior que isso.
+     *
+     * Desenhando no mesmo alvo do quadro real, a chave é a mesma e o
+     * programa é reaproveitado. A tesoura restringe a escrita a um pixel do
+     * canto: o driver compila, sobe a geometria e sobe a textura, e a tela
+     * não muda — o `autoClear` também fica dentro da tesoura, então nem o
+     * fundo é apagado.
+     */
+    const tesouraAntes = gl.getScissorTest()
+    const caixa = new THREE.Vector4()
+    gl.getScissor(caixa)
+    try {
+      gl.setScissorTest(true)
+      gl.setScissor(0, 0, 1, 1)
+      gl.render(scene, camera)
+    } finally {
+      gl.setScissor(caixa.x, caixa.y, caixa.z, caixa.w)
+      gl.setScissorTest(tesouraAntes)
+      for (const o of escondidos) o.visible = false
+      for (const o of semCorte) o.frustumCulled = true
+    }
+  })
+
+  return null
+}
+
+/**
  * Ponteiro normalizado para o parallax do cabo.
  *
  * Escrito direto no objeto de estado, sem passar por React: isto atualiza a
@@ -882,6 +999,9 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
            */}
           <ChuvaDeDescartaveis estatico={reduzido} />
           {reduzido ? <CenaEstatica /> : <SaidaDoAto />}
+          {/* Depois de tudo no JSX: quando este laço roda, o cabo, a chuva
+              e as oito do kit já estão na árvore, ainda que invisíveis */}
+          <PreCompilar />
           {debug && <DebugHook />}
 
           {/**

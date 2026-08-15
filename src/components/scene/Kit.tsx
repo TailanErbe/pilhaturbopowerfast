@@ -140,6 +140,20 @@ export function Kit({
    * palito têm mapas próprios, e é só isso que as distingue além do porte.
    */
   const pecas = usePecasDaPilha(dim.raio, dim.comprimento)
+  /**
+   * SEM a variante de carga, e a tentativa de mudar isso foi medida e
+   * revertida — fica o registro para ninguém repetir.
+   *
+   * A hipótese era boa: sem a injeção, estes materiais têm chave de programa
+   * diferente da protagonista, e o quadro em que o kit aparece compila dois
+   * programas novos e custa 55 ms. Compartilhando a chave, não haveria o que
+   * compilar.
+   *
+   * Só que não são estes os dois programas. Passando `true` aqui, o total
+   * caiu de 13 para 12 e o quadro de p=0,905 continuou compilando dois e
+   * custando 55,3 ms. Ou seja: pagaria-se a gaussiana por fragmento em oito
+   * corpos em troca de nada.
+   */
   const corpoAA = useMaterialDoCorpo(mapasAA)
   const corpoAAA = useMaterialDoCorpo(mapasAAA)
 
