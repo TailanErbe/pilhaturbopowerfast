@@ -492,7 +492,7 @@ export function Cable({
       c.visible = saida.opacidade > 0.01
       const fx = Math.sin(anguloPorta)
       const fz = Math.cos(anguloPorta)
-      const avanco = saida.recuo + saida.deslize
+      const avanco = saida.avanco
       c.position.set(fx * avanco, -saida.queda, fz * avanco)
       // Tomba conforme se solta, como peça que perdeu apoio
       c.rotation.z = -saida.queda * 0.12

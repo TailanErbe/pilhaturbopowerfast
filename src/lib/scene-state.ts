@@ -534,12 +534,19 @@ export const sceneState = {
  * Ver REGRAS.md, Sprint 3.
  */
 export type SaidaDoCabo = {
-  /** Recuo ao longo do eixo da porta: a casca metálica saindo da abertura */
-  recuo: number
+  /**
+   * Distância do plugue até a porta, ao longo do EIXO dela, em unidades.
+   *
+   * Eram dois campos, `recuo` e `deslize`, com a ideia de que um era a
+   * casca saindo da abertura e o outro o conjunto indo embora. Só que o
+   * Cable os SOMAVA na mesma direção — `avanco = recuo + deslize` — então
+   * nunca foram dois movimentos: eram dois pedaços do mesmo, e nada no
+   * tipo dizia isso. Foi essa separação de mentira que escondeu a trava
+   * que o cliente viu (ver o comentário de `cabeSaida`).
+   */
+  avanco: number
   /** Queda por gravidade, depois de solto */
   queda: number
-  /** Deslize para fora de quadro */
-  deslize: number
   /** Só cai no fim, quando o conjunto já saiu */
   opacidade: number
   /** Enquanto plugado, a onda de neon corre. Desconectado, para. */
@@ -584,9 +591,55 @@ export type SaidaDoCabo = {
  * `entra.de` fica depois dela. A pilha está PARADA quando o cabo chega,
  * não 97% parada.
  */
+/**
+ * A ENTRADA ficou mais longa: 0,075 de progresso contra os 0,05 de antes.
+ *
+ * O cliente pediu "um pouco menos rápido". Metade disso veio de andar em
+ * velocidade constante em vez de disparar e travar (ver `cabeSaida`), e a
+ * outra metade vem daqui: 1080 px de rolagem no lugar de 720. A velocidade
+ * média cai 1,5 vez e a de pico, que é o que se percebe como "muito
+ * rápido", cai por volta de 3,3 vezes.
+ *
+ * Começa em 0,17 e não antes: POSE_PRONTA fixa a pose da pilha em 0,16, e
+ * o cabo é filho do grupo dela.
+ */
 const CABO = {
-  entra: { de: 0.19, ate: 0.24 },
+  entra: { de: 0.17, ate: 0.245 },
   sai: { de: 0.29, ate: 0.345 },
+}
+
+/** Distância total que o plugue percorre até encostar na porta */
+const ALCANCE = 12.1
+
+/**
+ * Quanto do caminho o plugue faz em velocidade CONSTANTE.
+ *
+ * O resto é a desaceleração de encostar. Um conector não bate na porta: a
+ * mão que o leva alivia nos últimos milímetros. Mas isso é ENCOSTAR, não
+ * "quase chegar e esperar" — por isso são 12% do trajeto e não um terço.
+ */
+const CONSTANTE = 0.88
+
+/**
+ * Rampa de velocidade constante com desaceleração só no fim.
+ *
+ * Um smoothstep desacelera nos DOIS extremos e, com trecho longo, o miolo
+ * fica muito mais rápido que as pontas: é metade do "duas velocidades" que
+ * o cliente apontou. Aqui a velocidade é uma só até `CONSTANTE` e daí cai
+ * linearmente até zero.
+ *
+ * `V` compensa o que a desaceleração deixa de percorrer, para o plugue
+ * ainda chegar exatamente na porta ao fim da janela: andando a V no
+ * trecho reto e desacelerando no resto, o total fecha em 1.
+ */
+const V = 1 / (CONSTANTE + (1 - CONSTANTE) / 2)
+
+function chegada(t: number): number {
+  const x = Math.max(0, Math.min(1, t))
+  if (x <= CONSTANTE) return V * x
+  const s = x - CONSTANTE
+  const L = 1 - CONSTANTE
+  return V * (CONSTANTE + s - (s * s) / (2 * L))
 }
 
 /**
@@ -606,15 +659,26 @@ const CABO = {
  */
 function faseDoCabo(progress: number): { fase: number; saindo: boolean } {
   const suave = (t: number) => t * t * (3 - 2 * t)
-  const rampa = (p: number, de: number, ate: number) =>
-    suave(Math.max(0, Math.min(1, (p - de) / (ate - de))))
+  const fracao = (p: number, de: number, ate: number) =>
+    Math.max(0, Math.min(1, (p - de) / (ate - de)))
 
   if (progress <= CABO.entra.de) return { fase: 1, saindo: false }
   if (progress < CABO.entra.ate) {
-    return { fase: 1 - rampa(progress, CABO.entra.de, CABO.entra.ate), saindo: false }
+    /* Entrada em velocidade constante: ver `chegada` */
+    return {
+      fase: 1 - chegada(fracao(progress, CABO.entra.de, CABO.entra.ate)),
+      saindo: false,
+    }
   }
   if (progress <= CABO.sai.de) return { fase: 0, saindo: false }
-  return { fase: rampa(progress, CABO.sai.de, CABO.sai.ate), saindo: true }
+  /**
+   * A SAÍDA continua com smoothstep, e não é incoerência.
+   *
+   * Entrar é um gesto conduzido, com velocidade escolhida por quem
+   * conduz. Sair é soltar: o conjunto parte do repouso, ganha velocidade e
+   * some de quadro. A aceleração inicial do smoothstep é justamente isso.
+   */
+  return { fase: suave(fracao(progress, CABO.sai.de, CABO.sai.ate)), saindo: true }
 }
 
 /**
@@ -640,8 +704,34 @@ export function cabeSaida(progress: number): SaidaDoCabo {
   const faixa = (de: number, ate: number) =>
     Math.max(0, Math.min(1, (e - de) / (ate - de)))
 
+  /**
+   * ------------------------------------------------------------------
+   * A TRAVA QUE HAVIA AQUI
+   * ------------------------------------------------------------------
+   *
+   * O avanço vinha de dois campos somados no Cable, e cada um cobria uma
+   * faixa diferente da fase:
+   *
+   *   fase          o que andava        avanço
+   *   1,00 → 0,42   só o deslize        12,1 → 1,1
+   *   0,42 → 0,34   NADA                1,1 parado
+   *   0,34 → 0,00   só o recuo          1,1 → 0
+   *
+   * Duas coisas erradas de uma vez. Havia um vão de 0,08 de fase em que
+   * nenhum dos dois se mexia, e as velocidades dos trechos vizinhos eram
+   * 19 e 3,2 por unidade de fase: seis vezes mais devagar depois da
+   * parada. O cliente descreveu exatamente isso — vem muito rápido, meio
+   * que para, e só então conecta.
+   *
+   * Na saída o vão também existia, mas ali a gravidade está agindo e
+   * alguma coisa continua se mexendo, então ele nunca apareceu.
+   *
+   * Agora o avanço é UM número, proporcional à fase. Com a fase andando em
+   * velocidade constante (ver `chegada`), o plugue anda em velocidade
+   * constante: sem vão, sem degrau, sem trava.
+   */
   return {
-    recuo: faixa(0, 0.34) * 1.1,
+    avanco: e * ALCANCE,
     /**
      * A queda é SÓ da saída.
      *
@@ -650,8 +740,15 @@ export function cabeSaida(progress: number): SaidaDoCabo {
      * apontou. Gravidade não se inverte porque a rolagem inverteu.
      */
     queda: saindo ? faixa(0.26, 1) * 2.2 : 0,
-    deslize: faixa(0.42, 1) * 11,
     opacidade: 1 - faixa(0.78, 1),
-    conectado: e < 0.3,
+    /**
+     * Plugado é ENCOSTADO, não "por perto".
+     *
+     * O limiar era 0,3 de fase, que com este alcance são 3,6 unidades: 36
+     * milímetros de ar entre o plugue e a porta, com o neon já correndo
+     * pelo cabo. A onda existe para dizer que há carga entrando, e ali não
+     * havia. Em 0,04 o plugue está a menos de meio milímetro.
+     */
+    conectado: e < 0.04,
   }
 }
