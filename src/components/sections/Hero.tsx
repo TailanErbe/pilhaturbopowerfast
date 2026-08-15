@@ -69,15 +69,41 @@ export function Hero() {
        */}
       <div className="container-gutter relative z-2 pt-[max(11vh,88px)]">
         <div className="mx-auto w-fit text-left">
-          {/* O piso do clamp é do CELULAR: em 390 de largura, 2,4vw dá
-              9px e a linha some. Quem manda no retrato é o piso, não o vw */}
-          <p className="font-display text-[clamp(1.5rem,2.4vw,2.2rem)] tracking-[0.1em] text-white">
-            {CONTENT.hero.kicker}
-          </p>
-
-          {/* Uma linha só: é o nome do produto, não uma frase. O espaço
-              final evita que leitores de tela juntem as palavras */}
+          {/**
+           * O KICKER MORA DENTRO DO h1, e isso é semântica, não diagramação.
+           *
+           * Ele era um `<p>` irmão. Visualmente dava o mesmo lockup, mas o
+           * h1 da página passava a ser só "Turbo PowerFast" — que é o nome
+           * da tecnologia, não do produto. Quem navega por títulos com leitor
+           * de tela, e o buscador, nunca ficavam sabendo o que a página
+           * vende. O `<title>` (layout.tsx) e o JSON-LD (DadosDoProduto) já
+           * diziam "Pilha Recarregável Turbo PowerFast"; o h1 era o único
+           * lugar que discordava dos dois.
+           *
+           * Juntos num h1 só, o nome acessível vira exatamente a mesma
+           * string dos outros dois. E NADA muda na tela — foi conferido
+           * antes e depois:
+           *
+           *   · a Bebas Neue não tem minúsculas. "Pilha Recarregável" e
+           *     "PILHA RECARREGÁVEL" medem os mesmos 155,4 px, então o
+           *     `text-transform: uppercase` que o h1 aplica (globals.css)
+           *     não altera um pixel;
+           *   · o `leading-[1.4]` do span é obrigatório e reproduz o
+           *     `--leading-body` que o `<p>` tinha. Sem ele o span herdaria
+           *     o `leading-[0.95]` do h1, a linha encolheria de 33,6 para
+           *     22,8 px e o nome subiria junto.
+           *
+           * O piso do clamp é do CELULAR: em 390 de largura, 2,4vw dá 9px e
+           * a linha some. Quem manda no retrato é o piso, não o vw.
+           */}
           <h1 className="font-display text-[clamp(3rem,5.4vw,5rem)] leading-[0.95] tracking-[0.04em] text-brand-orange">
+            {/* O espaço final é o mesmo cuidado das linhas do nome: sem ele
+                o nome acessível sai "Pilha RecarregávelTurbo PowerFast" */}
+            <span className="block text-[clamp(1.5rem,2.4vw,2.2rem)] leading-[1.4] tracking-[0.1em] text-white">
+              {CONTENT.hero.kicker}{' '}
+            </span>
+            {/* Uma linha só: é o nome do produto, não uma frase. O espaço
+                final evita que leitores de tela juntem as palavras */}
             {CONTENT.hero.headline.map((linha) => (
               <span key={linha} className="block">
                 {linha}{' '}

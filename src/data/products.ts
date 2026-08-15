@@ -303,7 +303,17 @@ export const CONTENT = {
      * ele gastava a novidade antes da hora e deixava a primeira tela sem
      * dizer o que a pessoa está vendo.
      */
-    headline: ['TURBO POWERFAST'],
+    /**
+     * Caixa NORMAL no dado; as maiúsculas são da fonte e do CSS.
+     *
+     * Era 'TURBO POWERFAST'. Renderiza igual — a Bebas Neue não tem
+     * minúsculas e o h1 ainda aplica `text-transform: uppercase` —, mas o
+     * dado é lido por mais gente que a tela: ele vira o nome acessível do
+     * h1, e leitor de tela costuma soletrar cadeia toda em caixa alta. Em
+     * caixa normal a string também passa a bater, letra por letra, com o
+     * `<title>` e com o `name` do JSON-LD.
+     */
+    headline: ['Turbo PowerFast'],
     kicker: 'Pilha Recarregável',
     cta: 'Nossos modelos',
   },
