@@ -185,46 +185,75 @@
 }
 
 /**
- * Os halos que ficam atrás do produto, cada um na SUA CAMADA.
- *
- * O canvas do WebGL é `alpha: true`, então o que estiver pintado atrás
- * dele aparece atrás do produto. É por isso que estes gradientes moram
- * aqui e não na cena 3D: não passam pelo Bloom, cujo limiar existe
- * justamente para a tampa laranja não florescer, e não pagam a conta de
- * preenchimento que a cena já paga por pixel.
+ * A PAREDE do estúdio, em duas camadas: o ponto quente e a vinheta.
  *
  * ------------------------------------------------------------------
- * POR QUE ELEMENTOS PRÓPRIOS, E NÃO O FUNDO DO [data-cena]
+ * ISTO SUBSTITUI OS HALOS, E A DIFERENÇA É CONCEITUAL
  * ------------------------------------------------------------------
  *
- * Isto já foi um `background` com cinco gradientes de tela inteira no
- * container, e a intensidade, o tamanho e o CENTRO de cada um vinham de
- * variáveis CSS que o <BrilhoDeCarga /> reescrevia. Custou a página
- * inteira: o produto respira e o amortecimento persegue a pose, então o
- * centro muda TODO QUADRO, e cada mudança obriga o navegador a rasterizar
- * cinco gradientes do tamanho da tela outra vez. Um deles com raio de
- * 96vmax. A sessenta por segundo.
+ * Havia aqui um halo laranja que nascia do produto e o perseguia pela
+ * tela. Ele foi reprovado três vezes, e as três respostas foram mexer nos
+ * números do mesmo gradiente. O levantamento fechou a questão medindo: ele
+ * cobria 90,5% da tela, o centro dele tinha luminância 0,281 contra 0,070
+ * da faixa especular mais forte do produto, e CEM POR CENTO da luz que
+ * tocava a pilha era branca. Uma fonte laranja de meia tela depositando
+ * zero fótons.
  *
- * Aqui o gradiente é FIXO — desenhado uma vez, na intensidade cheia,
- * centrado no próprio elemento. O que muda por quadro é só `transform` e
- * `opacity`, que o compositor resolve sem repintar nada. O mesmo desenho
- * na tela, por um custo que não escala com o tamanho dela.
+ * Em foto de produto o fundo tem gradiente porque o CENÁRIO está
+ * iluminado, não porque o objeto brilha. Por isso aqui:
  *
- * O elemento é maior que a tela porque ele SE MOVE: quando o produto está
- * no alto do retrato, o halo desce com ele e a borda de baixo entraria em
- * quadro. 120vw × 170vh cobre todo o percurso do produto. O que sobra do
- * gradiente para fora dessa caixa é cortado, e ali ele já vale menos de
- * 2% de opacidade — abaixo do que uma tela de 8 bits distingue.
+ *   · o ponto quente fica em 58% da largura, DESLOCADO para o lado em que
+ *     o corpo escurece, e não centrado no objeto
+ *   · ele NÃO persegue o produto: parede não se move junto com o que está
+ *     na frente dela
+ *   · o pico dele vale 0,107 vez o pico especular do produto. O centro do
+ *     halo antigo valia 4,1 VEZES esse pico, ou seja o fundo era quatro
+ *     vezes mais brilhante que a coisa que ele deveria destacar
+ *
+ * A VINHETA é a metade que faltava para os painéis claros. Sobre o laranja
+ * chapado do painel 02 o teto matemático de separar CLAREANDO é 1,99:1:
+ * a silhueta só descola escurecendo. Ela também fecha o canto do painel
+ * branco sem tocar na legibilidade (255 para 221 no canto; o texto preto
+ * segue em 15,2:1).
+ *
+ * ------------------------------------------------------------------
+ * O CUSTO, QUE JÁ FOI UM PROBLEMA SÉRIO AQUI
+ * ------------------------------------------------------------------
+ *
+ * O gradiente é FIXO, desenhado uma vez na intensidade cheia. O que muda
+ * por quadro é só `opacity` e um `translate3d` por virada de beat, que o
+ * compositor resolve sem repintar.
+ *
+ * A versão original disto era um `background` com cinco gradientes de tela
+ * cheia cujo CENTRO vinha de variável CSS reescrita todo quadro. O produto
+ * respira e o amortecimento persegue a pose, então o centro mudava sempre,
+ * e cada mudança rasterizava os cinco de novo. Derrubou o FPS da página.
  */
-.halo-do-heroi,
-.halo-de-carga {
+.parede-clara,
+.parede-escura {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 120vw;
-  height: 170vh;
+  /**
+   * 170vw, e a folga toda é por causa do `--parede-dx`.
+   *
+   * Um `radial-gradient` NÃO acaba onde a última parada acaba: dali até a
+   * borda do elemento ele continua pintando a última cor. A vinheta,
+   * portanto, é 0,55 de preto em toda a área fora da elipse — e a borda da
+   * CAIXA vira um degrau visível de 0,13 de alfa para zero.
+   *
+   * Com dx zerado isso não aparecia: 110vw ia de -5vw a 105vw, fora de
+   * quadro dos dois lados. No beat do kit o dx vai a -24,5vw e a borda
+   * direita entrou em 80,5vw — uma linha vertical no meio do painel branco,
+   * visível na captura. A largura agora cobre o maior deslocamento com
+   * sobra: -59,5vw a 110,5vw.
+   */
+  width: 170vw;
+  height: 130vh;
   pointer-events: none;
   transform-origin: center;
+  transform: translate(-50%, -50%)
+    translate3d(var(--parede-dx, 0), 0, 0);
   /**
    * A promoção é explícita, e não um efeito colateral.
    *
@@ -237,101 +266,79 @@
 }
 
 /**
- * O halo do HERÓI: a pilha energizada, em TRÊS camadas.
+ * O PONTO QUENTE da parede.
  *
- * Existe por um motivo prático antes de estético: o produto é quase preto
- * sobre uma página preta, e sem nada atrás dele a silhueta some nas
- * bordas. Daí ele cresceu para o que o cliente pediu — luz saindo do
- * objeto e alcançando a página.
+ * Fica 8,8vw à direita e 3,9vh acima do centro da TELA, deslocado para o
+ * lado em que o corpo do produto escurece. Parede iluminada tem um lado
+ * mais claro que o outro; parede com o brilho centrado no objeto é halo, e
+ * halo foi o que saiu daqui.
  *
- *   núcleo      apertado e forte, dá o aspecto de aceso por dentro
- *   meio        a ponte; sem ela o salto do núcleo para o vazio é o que
- *               desenha a borda
- *   irradiação  enorme e quase transparente, em vmax para cobrir a tela
- *               em qualquer proporção. É ela que tira o halo de "mancha"
- *               e o põe em "ambiente"
+ * O centro vai em `calc(50% + 8,8vw)` e não em `58%` porque porcentagem
+ * aqui é da CAIXA, e a caixa mudou de tamanho uma vez (110vw para 170vw)
+ * para caber o deslocamento do kit. Naquela mudança o ponto quente andou
+ * cinco vw sozinho. Escrito a partir do meio, ele para de depender da
+ * largura da caixa.
  *
- * A queda tem MUITAS paradas, seguindo (1−t)², e não três ou quatro. Com
- * poucas o degradê ganha um platô e depois cai: o olho lê esse joelho
- * como CONTORNO, e o halo vira um oval desenhado atrás do produto. Luz de
- * verdade não tem joelho, e oito paradas por camada ainda evitam o
- * bandeamento que um degradê longo em 8 bits produz.
+ * A queda tem oito paradas seguindo (1-t)^2. Com poucas o degradê ganha um
+ * platô e depois cai, e o olho lê esse joelho como CONTORNO. Luz de parede
+ * não tem joelho, e oito paradas ainda evitam o bandeamento que um degradê
+ * longo em 8 bits produz.
  *
- * As opacidades são as CHEIAS. Quem as atenua é o `opacity` do elemento,
- * que o <BrilhoDeCarga /> escreve.
+ * A cor é quase branca com viés quente, e não laranja: a fonte que ilumina
+ * este cenário é a mesma que ilumina o produto, e ela é #FFE9D2.
+ *
+ * As opacidades aqui são as CHEIAS. Quem as atenua é o `opacity` do
+ * elemento, escrito por beat pelo <FundoDoAto />. No pico do herói ele vale
+ * 0,085, o que sobre preto dá rgb(22,20,18) e luminância 0,0062: 0,107 vez
+ * o pico especular do produto.
  */
-.halo-do-heroi {
-  opacity: var(--halo-a, 0);
-  transform: translate(-50%, -50%)
-    translate3d(var(--halo-dx, 0px), var(--halo-dy, 0px), 0);
-  background-image:
-    radial-gradient(
-      ellipse 22vmin 30vh at 50% 50%,
-      rgb(255 190 90 / 1) 0%,
-      rgb(255 170 60 / 0.85) 8%,
-      rgb(255 150 35 / 0.7) 17%,
-      rgb(255 135 20 / 0.52) 28%,
-      rgb(255 122 10 / 0.36) 41%,
-      rgb(255 110 5 / 0.21) 56%,
-      rgb(255 100 0 / 0.1) 72%,
-      rgb(255 95 0 / 0.03) 87%,
-      rgb(255 90 0 / 0) 100%
-    ),
-    radial-gradient(
-      ellipse 58vmin 66vh at 50% 50%,
-      rgb(255 150 40 / 0.34) 0%,
-      rgb(255 138 28 / 0.28) 9%,
-      rgb(255 128 18 / 0.22) 19%,
-      rgb(255 120 12 / 0.16) 31%,
-      rgb(255 112 6 / 0.11) 44%,
-      rgb(255 105 2 / 0.07) 58%,
-      rgb(255 100 0 / 0.035) 73%,
-      rgb(255 96 0 / 0.012) 88%,
-      rgb(255 92 0 / 0) 100%
-    ),
-    radial-gradient(
-      circle 96vmax at 50% 50%,
-      rgb(255 128 20 / 0.16) 0%,
-      rgb(255 120 12 / 0.11) 12%,
-      rgb(255 112 6 / 0.072) 25%,
-      rgb(255 106 2 / 0.044) 39%,
-      rgb(255 100 0 / 0.024) 54%,
-      rgb(255 96 0 / 0.011) 70%,
-      rgb(255 92 0 / 0.004) 85%,
-      rgb(255 90 0 / 0) 100%
-    );
+/**
+ * Apagada por padrão, e não por variável CSS.
+ *
+ * Quem acende é o <FundoDoAto />, escrevendo `style.opacity` direto no
+ * elemento — estilo em linha ganha da folha, então uma variável aqui seria
+ * texto morto fingindo ser o controle. E o padrão apagado é o certo para o
+ * modo de movimento reduzido: ali não há timeline, ninguém escreve nada, e
+ * a parede simplesmente não existe.
+ */
+.parede-clara {
+  opacity: 0;
+  background-image: radial-gradient(
+    ellipse 34vw 62vh at calc(50% + 8.8vw) calc(50% - 3.9vh),
+    rgb(255 236 214 / 1) 0%,
+    rgb(255 230 202 / 0.62) 14%,
+    rgb(255 224 190 / 0.36) 28%,
+    rgb(255 217 178 / 0.19) 44%,
+    rgb(255 210 166 / 0.09) 60%,
+    rgb(255 205 158 / 0.035) 76%,
+    rgb(255 200 150 / 0.008) 90%,
+    rgb(255 198 146 / 0) 100%
+  );
 }
 
 /**
- * O halo de CARGA do beat do contador: a pilha enchendo.
+ * A VINHETA, que é a metade que faltava para os painéis claros.
  *
- * Ele cresce de um fio de luz até envolver o corpo, e esse crescimento
- * era a altura da elipse. Virou `scaleY` pelo mesmo motivo de tudo aqui:
- * mudar a altura do gradiente redesenha o gradiente, esticar o elemento
- * não. O desenho é o mesmo — esticar verticalmente uma elipse é o que
- * aumentar o raio vertical dela faz.
+ * Sobre o laranja chapado do painel 02 o teto matemático de separar a
+ * silhueta CLAREANDO é 1,99:1. A separação só pode vir de escurecer, e é
+ * isto que escurece. No painel branco ela fecha os cantos sem tocar na
+ * legibilidade: 255 para 221, com o texto preto seguindo em 15,2:1.
  *
- * Vem DEPOIS do halo do herói no documento, e portanto por cima dele:
- * este conta um acontecimento, aquele é ambiente.
+ * Mesmo centro do ponto quente, e não o centro da tela: o escuro tem de
+ * crescer a partir de onde a luz não chega, senão as duas camadas contam
+ * histórias diferentes sobre onde está a fonte.
  */
-/**
- * A ordem do transform importa: `rotate` DEPOIS de `scaleY` na escrita
- * significa que a escala acontece PRIMEIRO, no eixo local da elipse, e só
- * então tudo gira. É o que faz o halo crescer ao longo do próprio eixo
- * maior e depois deitar junto com o produto. Invertendo os dois, ele
- * cresceria na vertical da tela e sairia torto em relação à pilha.
- */
-.halo-de-carga {
-  opacity: var(--carga-a, 0);
-  transform: translate(-50%, -50%)
-    translate3d(var(--carga-dx, 0px), var(--carga-dy, 0px), 0)
-    rotate(var(--carga-rot, 0deg))
-    scaleY(var(--carga-escala, 0.1));
+.parede-escura {
+  opacity: 0;
   background-image: radial-gradient(
-    ellipse 24vmin 62vh at 50% 50%,
-    rgb(255 156 0 / 1) 0%,
-    rgb(255 120 0 / 0.42) 42%,
-    rgb(255 100 0 / 0) 72%
+    ellipse 44vw 76vh at calc(50% + 8.8vw) calc(50% - 3.9vh),
+    rgb(0 0 0 / 0) 0%,
+    rgb(0 0 0 / 0.04) 26%,
+    rgb(0 0 0 / 0.1) 42%,
+    rgb(0 0 0 / 0.19) 58%,
+    rgb(0 0 0 / 0.3) 72%,
+    rgb(0 0 0 / 0.42) 86%,
+    rgb(0 0 0 / 0.55) 100%
   );
 }
 

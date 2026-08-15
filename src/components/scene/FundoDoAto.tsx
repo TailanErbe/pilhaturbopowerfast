@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react'
 import { BEATS, beatPorId, CRUZAMENTO } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
+import { luzEm } from '@/lib/luz'
+import { sceneState } from '@/lib/scene-state'
 
 /**
  * O fundo do ato, numa camada só, abaixo do canvas 3D.
@@ -114,8 +116,12 @@ export function FundoDoAto() {
     let agendado = 0
     let ultimaCor = ''
     let ultimoZ = ''
-    /** O canvas entra por import dinâmico: pode não existir ainda */
+    let ultimaClara = -1
+    let ultimaEscura = -1
+    /** O canvas entra por import dinâmico: podem não existir ainda */
     let cena: HTMLElement | null = null
+    let clara: HTMLElement | null = null
+    let escura: HTMLElement | null = null
 
     const aplicar = () => {
       agendado = 0
@@ -137,6 +143,38 @@ export function FundoDoAto() {
       if (cor !== ultimaCor && camada.current) {
         ultimaCor = cor
         camada.current.style.backgroundColor = cor
+      }
+
+      /**
+       * A PAREDE do estúdio, acesa por beat.
+       *
+       * Ela mora no container do canvas e não aqui, mas quem sabe em que
+       * beat estamos é este componente — e a parede tem de mudar no MESMO
+       * instante que a cor de fundo, senão a costura aparece. Um dono só
+       * para as duas coisas.
+       *
+       * Multiplicado por `(1 - saidaDoAto)`: passado o pin a cena inteira
+       * sai de quadro, e uma parede acesa por trás do impacto seria luz de
+       * um cenário que já não existe.
+       */
+      clara ??= document.querySelector<HTMLElement>('.parede-clara')
+      escura ??= document.querySelector<HTMLElement>('.parede-escura')
+      if (clara && escura) {
+        const v = luzEm(p)
+        const fora = 1 - Math.max(0, Math.min(1, sceneState.saidaDoAto))
+        const c = Math.round(v.claro * fora * 1000) / 1000
+        const e = Math.round(v.escuro * fora * 1000) / 1000
+        const dx = `${v.paredeDx.toFixed(1)}vw`
+        if (c !== ultimaClara) {
+          ultimaClara = c
+          clara.style.opacity = String(c)
+          clara.style.setProperty('--parede-dx', dx)
+        }
+        if (e !== ultimaEscura) {
+          ultimaEscura = e
+          escura.style.opacity = String(e)
+          escura.style.setProperty('--parede-dx', dx)
+        }
       }
 
       /**

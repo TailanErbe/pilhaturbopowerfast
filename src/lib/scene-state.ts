@@ -651,32 +651,6 @@ export const sceneState = {
    */
   faixasDoRetrato: null as { de: number; ate: number }[] | null,
   /**
-   * Onde o produto está NA TELA, em fração, escrito pela <Battery /> a
-   * cada quadro. Lido pelo <BrilhoDeCarga /> para o halo nascer atrás
-   * dele.
-   *
-   * Publicar em vez de recalcular: a posição final do produto é o
-   * resultado de pose, amortecimento, respiro, faixa do retrato e escala
-   * — refazer essa conta do lado do CSS seria manter duas versões da
-   * mesma verdade, e elas divergiriam na primeira mudança. Foi o que
-   * aconteceu com o halo fixo em 56%: no retrato o produto subiu para a
-   * faixa livre e o brilho ficou no pé da tela, sozinho.
-   */
-  centroNaTela: { x: 0.5, y: 0.5 },
-  /**
-   * Carga CHEGANDO ao corpo, 0→1. Escrita pelo <Cable /> a cada quadro.
-   *
-   * A onda de neon já percorria o cabo em direção à pilha, mas morria na
-   * porta: entrava energia e não acontecia nada. O que faltava era o
-   * outro lado da frase — a pilha recebendo.
-   *
-   * Este valor sobe no instante em que a onda alcança o conector e cai
-   * logo depois, então o halo atrás do corpo pisca a cada pulso. É o
-   * mesmo halo do herói, e de propósito: ali ele diz "pilha carregada",
-   * aqui diz "carregando agora". Um aspecto só para uma ideia só.
-   */
-  pulsoDeCarga: 0,
-  /**
    * Saída do ato, 0→1. Escrita pela timeline logo depois que o pin solta.
    *
    * O canvas é `fixed inset-0` e nunca desmonta, então sem isto o kit
@@ -694,15 +668,31 @@ export const sceneState = {
   /**
    * Inclinação do eixo do produto NA TELA, em graus, sentido horário.
    *
-   * O halo de carga é uma elipse alta e precisa deitar junto com a pilha:
-   * no beat do contador ela está na diagonal, e um brilho em pé atrás de um
-   * objeto deitado lê como mancha, não como luz saindo dele.
+   * O AMBIENTE tomba junto com o produto por causa deste número. Num
+   * cilindro, só o que está na linha do horizonte especular vira realce; com
+   * o corpo deitado 38,6 graus no beat do contador, a fita de chave teria de
+   * estar em -61,5 de elevação para espelhar nele, e ela não alcança.
+   * Girando `environmentRotation.z` pelo mesmo ângulo, a exigência sobe para
+   * -37 e o rasgo continua correndo o corpo inteiro.
    *
-   * Publicado pelo mesmo laço que publica `centroNaTela`, e pelo mesmo
-   * motivo: só ele sabe onde a pose, o amortecimento e o respiro deixaram o
-   * objeto.
+   * Publicado por quem posiciona o produto, e não recalculado do lado de
+   * fora: a pose final é o resultado de pose, amortecimento, respiro, faixa
+   * do retrato e escala, e só aquele laço sabe onde ela deu.
    */
   inclinacaoNaTela: 0,
+  /**
+   * O x de MUNDO do sujeito, para a contraluz segui-lo.
+   *
+   * Medido no beat do kit: com a luz parada em x=0, os oito corpos a viam
+   * em azimutes de 135 a 166 graus — um leque de 31 graus todo para um
+   * lado, com o realce marchando de corpo a corpo (22,8% no primeiro,
+   * 26,7% no oitavo). Seguindo o centro da composição, o leque cai para 17
+   * e fica simétrico em torno de 180.
+   *
+   * Quem escreve é a protagonista; no beat do kit, o próprio kit
+   * sobrescreve com o centro das duas ilhas.
+   */
+  centroDeMundo: 0,
   /**
    * Onde a onda de carga está DENTRO DO CORPO, de 0 (porta) a 1 (polo
    * negativo). Fora de 0..1 não há onda no corpo.

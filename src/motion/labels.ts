@@ -53,7 +53,7 @@ export const ALTURAS_DO_ATO = 19
  *   01     1,90   02    1,90   03     1,90
  *
  * Herói e USB-C ficaram nos mesmos 0,15 de fração de propósito: as janelas
- * do cabo, da troca da barra pela pílula e do halo do herói são escritas
+ * do cabo, da troca da barra pela pílula e da luz do beat são escritas
  * neste mesmo eixo, e mexer nas fronteiras desses dois obrigaria a
  * re-derivar todas elas. O tempo deles vem da altura total, não de uma
  * mudança de proporção.
@@ -74,15 +74,14 @@ export const CRUZAMENTO = 0.045
 /**
  * A janela em que o herói ENTREGA a tela.
  *
- * Quatro peças precisam concordar sobre este instante e, até agora, cada
+ * Três peças precisam concordar sobre este instante e, até agora, cada
  * uma trazia a sua cópia dos mesmos dois números:
  *
  *   a barra do herói sai e a pílula entra   (lib/no-heroi)
- *   o halo forte do produto se apaga        (scene/BrilhoDeCarga)
  *   o canvas desce de cima do ato para trás (scene/FundoDoAto)
  *   o produto larga a pose frontal e gira   (lib/scene-state)
  *
- * Quatro cópias do mesmo instante é quatro chances de uma delas ficar
+ * Três cópias do mesmo instante é três chances de uma delas ficar
  * para trás numa edição, e o sintoma seria dos mais difíceis: nada quebra,
  * a primeira tela só passa a parecer desconjuntada.
  *

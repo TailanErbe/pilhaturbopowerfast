@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 import { ancoraDoBeat, sceneState } from '@/lib/scene-state'
 import { BEATS } from '@/motion/labels'
 import { useClientValue } from '@/lib/client-value'
-import { BrilhoDeCarga } from './BrilhoDeCarga'
 
 /**
  * Ponto de montagem da cena.
@@ -143,11 +142,13 @@ export function SceneMount() {
        * scene-state.ts).
        */}
       {/**
-       * `overflow-hidden` por causa dos halos.
+       * `overflow-hidden` por causa da parede.
        *
-       * Eles são maiores que a tela de propósito — precisam sobrar para
-       * poder acompanhar o produto sem mostrar a própria borda. Como o
-       * container é `fixed`, o Chrome não conta esse transbordo na área
+       * As duas camadas dela são bem maiores que a tela de propósito: elas
+       * se deslocam por beat, e o degradê continua pintando a última cor até
+       * a borda da caixa, então a caixa tem de terminar fora de quadro em
+       * todos os deslocamentos. Como o container é `fixed`, o Chrome não
+       * conta esse transbordo na área
        * rolável, mas isso é detalhe de implementação, e um filete de
        * rolagem horizontal aparecendo em outro navegador seria um defeito
        * caro de achar. Cortar aqui é explícito e não custa nada: o canvas
@@ -157,16 +158,6 @@ export function SceneMount() {
         debug={debug}
         className={`pointer-events-none fixed inset-0 overflow-hidden ${debug ? 'z-[800] bg-surface-000' : 'z-1'}`}
       />
-      {/**
-       * Acende o halo atrás do produto no beat do contador. Escreve
-       * variáveis CSS no próprio [data-cena], sem objeto novo em cena.
-       *
-       * Sem condição de movimento reduzido: nesse modo o PinnedAct não
-       * monta a timeline, `obterTimeline()` devolve nulo e o componente
-       * não escreve nada. O halo simplesmente não existe, que é o certo —
-       * ele conta uma carga subindo, e ali não há subida nenhuma.
-       */}
-      <BrilhoDeCarga />
       {debug && <DebugPanel />}
     </>
   )

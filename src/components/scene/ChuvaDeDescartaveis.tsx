@@ -293,10 +293,10 @@ export function ChuvaDeDescartaveis({ estatico }: { estatico?: boolean }) {
      * mesmo que dirige o contador. A chuva é a imagem daquele número, então
      * ela anda no relógio dele.
      *
-     * O <BrilhoDeCarga /> lê o cru, então o halo vai parecer meio fora de
-     * compasso com a chuva. Isso é defeito PRÉ-EXISTENTE do halo e merece
-     * tarefa própria; uniformizar por aqui quebraria o sincronismo com o
-     * número, que é o que importa.
+     * O <FundoDoAto /> lê o cru para acender a parede, então a luz do fundo
+     * anda alguns centésimos à frente da chuva. Ali isso não custa nada: o
+     * que ela dirige é um degradê de fundo sem borda, e um atraso invisível
+     * é preferível a desincronizar a chuva do número que ela ilustra.
      */
     const p = sceneState.progress
     const dentro = p > JANELA.de - 0.002 && p < 0.502

@@ -6,8 +6,11 @@ import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { Battery } from './Battery'
 import { ChuvaDeDescartaveis } from './ChuvaDeDescartaveis'
-import { ancoraDoBeat, cabeSaida, sceneState } from '@/lib/scene-state'
-import { BEATS } from '@/motion/labels'
+import * as THREE from 'three'
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
+import { ancoraDoBeat, cabeSaida, kitPresenca, sceneState } from '@/lib/scene-state'
+import { CARGA_CHEIA, luzEm } from '@/lib/luz'
+import { BEATS, janelaDoContador } from '@/motion/labels'
 import { isCoarsePointer, prefersReducedMotion } from '@/lib/motion'
 import { useClientValue } from '@/lib/client-value'
 
@@ -69,6 +72,12 @@ function temWebGL() {
  * Só em depuração: expõe o renderer para forçar um quadro à mão.
  * Necessário porque em aba sem composição o requestAnimationFrame congela
  * e a cena nunca desenharia sozinha.
+ *
+ * `alvo()` desenha num render target em vez da tela, e é a única leitura
+ * confiável em aba escondida: o buffer de apresentação não é preservado
+ * entre tarefas, então `readPixels` nele devolve o quadro anterior, ou
+ * metade dele. Foi assim que uma rodada inteira de medições saiu com o
+ * lado escuro do corpo em zero.
  */
 function DebugHook() {
   const { gl, scene, camera, advance } = useThree()
@@ -79,6 +88,17 @@ function DebugHook() {
       scene,
       camera,
       render: () => gl.render(scene, camera),
+      alvo: () => {
+        const rt = new THREE.WebGLRenderTarget(gl.domElement.width, gl.domElement.height)
+        rt.texture.colorSpace = gl.outputColorSpace
+        gl.setRenderTarget(rt)
+        gl.render(scene, camera)
+        const px = new Uint8Array(rt.width * rt.height * 4)
+        gl.readRenderTargetPixels(rt, 0, 0, rt.width, rt.height, px)
+        gl.setRenderTarget(null)
+        rt.dispose()
+        return { px, w: rt.width, h: rt.height }
+      },
       passo: (t: number) => advance(t),
       info: () => ({
         objetos: scene.children.length,
@@ -136,7 +156,7 @@ function SaidaDoAto() {
      * desbota: ele sai como um elemento do documento sairia.
      *
      * `translate3d` e não `top`: é transformação, o compositor resolve sem
-     * repintar, e o container só tem o canvas e os dois halos dentro.
+     * repintar, e o container só tem o canvas e as duas paredes dentro.
      */
     const y = saida > 0 ? -saida * window.innerHeight : 0
     const arred = Math.round(y * 10) / 10
@@ -415,6 +435,117 @@ function BrilhoDoCabo() {
 }
 
 /**
+ * A CONTRALUZ, e os dois uniformes globais do ambiente.
+ *
+ * ------------------------------------------------------------------
+ * POR QUE UMA LUZ DE ÁREA, E NÃO MAIS UM GRADIENTE
+ * ------------------------------------------------------------------
+ *
+ * O halo que existia aqui foi reprovado três vezes, e as três respostas
+ * foram mexer nos números do mesmo gradiente. O que ele nunca teve é o que
+ * esta luz tem: fonte com posição, tamanho e cor, oclusão pelo produto por
+ * construção, e fótons.
+ *
+ * Ela mora ATRÁS, em azimute 180, porque nas duas bordas da silhueta a
+ * reflexão de um cilindro aponta para o mesmo ponto, exatamente atrás. Uma
+ * fonte só rima os dois lados e é a única que pode acender a parede
+ * lateral do terminal. E ela NÃO pode preencher o lado escuro: em 180 o
+ * n·l é negativo para toda normal voltada para a câmera. A máscara sai da
+ * geometria, não de disciplina.
+ *
+ * O rim que ela desenha é de VERNIZ, não da base. Conferi no fonte
+ * instalado (lights_physical_pars_fragment, dentro de
+ * RE_Direct_RectArea_Physical) que há um bloco `#ifdef USE_CLEARCOAT` com
+ * LTC próprio: a luz de área FAZ clearcoat. Com clearcoatRoughness 0,24 o
+ * lóbulo tem ~13°, o que dá um fio de 2,9% da largura, e a base de 0,62 dá
+ * um envolvimento macio de 10,7% por baixo dele. É esse par, fio brilhante
+ * sobre borda macia, que evita o buraco entre 81% e 98% da largura.
+ *
+ * ------------------------------------------------------------------
+ * ELA SEGUE O SUJEITO
+ * ------------------------------------------------------------------
+ *
+ * `position.x` acompanha o produto. Medido no beat do kit, com a luz
+ * parada em x=0 os oito corpos a viam em azimutes de 135 a 166 graus: um
+ * leque de 31 graus, todo para um lado, e o realce marchava de corpo a
+ * corpo. Seguindo o centro da composição, o leque cai para 17 e fica
+ * simétrico em torno de 180.
+ *
+ * A CHAVE não segue nada: ela é IBL, ou seja infinitamente distante, e
+ * vale igual para os oito.
+ *
+ * ------------------------------------------------------------------
+ * E O AMBIENTE GIRA COM O PRODUTO
+ * ------------------------------------------------------------------
+ *
+ * No beat das recargas o eixo do cilindro tomba 38,6 graus, e a fita no
+ * horizonte precisaria estar em elevação -61,5 para espelhar nele: ela não
+ * alcança. Girando `environmentRotation.z` junto com a inclinação que a
+ * <Battery /> já publica, a exigência sobe para -37 graus, dentro da fita.
+ * É uniforme global, custa zero por quadro, e o valor de entrada já existe.
+ */
+function ContraLuz() {
+  const luz = useRef<THREE.RectAreaLight>(null)
+
+  /**
+   * O `RectAreaLightUniformsLib` precisa ser inicializado UMA vez antes de
+   * qualquer luz de área desenhar. Sem isso a luz existe, não dá erro, e
+   * simplesmente não ilumina nada — o pior tipo de falha.
+   */
+  useEffect(() => {
+    RectAreaLightUniformsLib.init()
+  }, [])
+
+  /**
+   * A cena vem pelo ARGUMENTO do useFrame, não por `useThree`.
+   *
+   * As duas devolvem o mesmo objeto, mas escrever num valor capturado de
+   * hook é justamente o que o compilador do React proíbe (ele não tem como
+   * saber que este objeto é externo ao React e vive fora do render). Pelo
+   * argumento, é um parâmetro de função comum, e a regra não se aplica.
+   */
+  useFrame(({ scene: cena }) => {
+    const l = luz.current
+    if (!l) return
+    const p = sceneState.progress
+    const v = luzEm(p)
+
+    /**
+     * A carga do contador ESQUENTA a contraluz.
+     *
+     * É isto que substitui o halo de carga: em vez de um oval laranja
+     * pintado atrás do produto, a parede atrás dele fica mais quente e
+     * mais forte, e o que se vê na pilha é luz batendo nela.
+     */
+    const j = janelaDoContador('cycles')
+    const carga = Math.max(0, Math.min(1, (p - j.de) / (j.ate - j.de)))
+    const q = carga * carga * (3 - 2 * carga)
+    const misturaCarga = p > j.de && p < BEATS[3].inicio ? q : 0
+
+    l.position.set(sceneState.centroDeMundo, v.parede.y, v.parede.z)
+    l.width = v.parede.largura
+    l.height = v.parede.altura
+    l.intensity =
+      v.parede.intensidade +
+      (CARGA_CHEIA.intensidade - v.parede.intensidade) * misturaCarga
+    l.color.setRGB(
+      (v.parede.cor[0] + (CARGA_CHEIA.cor[0] - v.parede.cor[0]) * misturaCarga) / 255,
+      (v.parede.cor[1] + (CARGA_CHEIA.cor[1] - v.parede.cor[1]) * misturaCarga) / 255,
+      (v.parede.cor[2] + (CARGA_CHEIA.cor[2] - v.parede.cor[2]) * misturaCarga) / 255,
+    )
+    l.lookAt(sceneState.centroDeMundo, 0, 0)
+
+    cena.environmentIntensity = v.ambiente
+    /* O giro some quando o kit se forma: são oito corpos em pé, e girar o
+       ambiente por baixo deles inclinaria o realce de todos ao mesmo tempo */
+    cena.environmentRotation.z =
+      (sceneState.inclinacaoNaTela * Math.PI) / 180 * (1 - kitPresenca(p))
+  })
+
+  return <rectAreaLight ref={luz} intensity={2} width={7} height={9} position={[0, 0, -5.5]} />
+}
+
+/**
  * Ponteiro normalizado para o parallax do cabo.
  *
  * Escrito direto no objeto de estado, sem passar por React: isto atualiza a
@@ -447,18 +578,22 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
   return (
     <div className={className} data-cena>
       {/**
-       * Os dois halos, ANTES do canvas no documento.
+       * A PAREDE do estúdio, ANTES do canvas no documento.
        *
-       * É a ordem que os põe atrás do produto: os três são posicionados e
-       * nenhum declara z-index, então quem pinta por último pinta por
-       * cima. O container do R3F vem depois e ganha a frente sem precisar
-       * de camada nomeada.
+       * É a ordem que a põe atrás do produto: os três elementos são
+       * posicionados e nenhum declara z-index, então quem pinta por último
+       * pinta por cima. O container do R3F vem depois e ganha a frente sem
+       * precisar de camada nomeada.
        *
-       * Eles não têm conteúdo nem interação; o desenho inteiro está no
-       * CSS (ver .halo-do-heroi), e quem os acende é o <BrilhoDeCarga />.
+       * A escura vem depois da clara porque vinheta escurece o que já foi
+       * pintado, inclusive o ponto quente. Invertidas, o brilho passaria
+       * por cima do escurecimento e o canto do painel branco não fecharia.
+       *
+       * Elas não têm conteúdo nem interação; o desenho inteiro está no CSS
+       * (ver .parede-clara), e quem as acende por beat é o <FundoDoAto />.
        */}
-      <div aria-hidden className="halo-do-heroi" />
-      <div aria-hidden className="halo-de-carga" />
+      <div aria-hidden className="parede-clara" />
+      <div aria-hidden className="parede-escura" />
       <Canvas
         /**
          * `pointer-events: none` PRECISA vir aqui também.
@@ -538,8 +673,27 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
            * A direcional do topo fica: é ela que acende o aço do terminal,
            * que na foto é a região mais clara da pilha (lum 200).
            */}
-          <ambientLight intensity={0.06} />
-          <directionalLight position={[-3, 9, 7]} intensity={1.9} />
+          {/**
+           * SAÍRAM a ambiente e a direcional, e as duas por medida.
+           *
+           * A `ambientLight` de 0,06 tinha efeito medido zero na leitura do
+           * corpo e contribuía para o piso do lado escuro, que é o defeito
+           * central deste beat.
+           *
+           * A `directionalLight` em [-3, 9, 7] era mantida por um motivo
+           * escrito no código: "é ela que acende o aço do terminal". O
+           * motivo não se sustenta. 76% daquele vetor aponta para +Y, onde
+           * um cilindro vertical tem n·l igual a zero em toda a barriga, e
+           * o que sobra fica a 23° do eixo óptico, ou seja luz FRONTAL, que
+           * é a definição de achatar. E a face de cima do terminal nunca é
+           * rasterizada: a câmera está em y=0 e o topo do terminal perto de
+           * +1,85, então aquele disco é face traseira. O aço que aparece na
+           * tela é a parede LATERAL de 1,35 mm.
+           *
+           * Apagando as duas, o piso do lado escuro cai de 16 para 9 de
+           * 255, e a faixa dinâmica sai de 4,8:1 rumo aos 68:1 da foto.
+           */}
+          <ContraLuz />
 
           {/**
            * 512 e não 256.
@@ -549,38 +703,69 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
            * ficou nítido o bastante para a fonte aparecer refletida nele, e
            * em 256 a fresta chegava com a borda serrilhada.
            */}
+          {/**
+           * O ESTÚDIO, em quatro peças, e cada ângulo sai de conta.
+           *
+           * Num cilindro vertical visto por lente longa a reflexão nunca
+           * sai do plano horizontal: só o que está na LINHA DO HORIZONTE
+           * vira realce, e tudo acima ou abaixo é preenchimento. Invertendo
+           * a posição do pico medido na foto do produto (28% da largura),
+           * a chave tem de estar em -52,2° de azimute. O rig anterior a
+           * punha em -40° e por isso renderizava o pico em 33%.
+           *
+           * `rotation` NÃO entra em Lightformer nenhum: o drei já faz
+           * lookAt na origem, e é a ESCALA que vira o tamanho angular da
+           * fonte. Declarar rotação aqui briga com o lookAt e o resultado
+           * é uma fonte apontando para o lugar errado.
+           *
+           * Fluxo relativo na barriga (intensidade x ângulo sólido):
+           *   chave 1,54  cartão 0,29  teto 0,51  piso 0,12   total 2,46
+           *   antes: 2,09 + 1,42 + 0,46 + 0,27 = 4,23
+           * São 42% de queda, e ela acontece inteira nas direções que não
+           * modelam nada.
+           *
+           * `frames` fica no padrão (1). O PMREM É invalidado a cada
+           * quadro se isto virar Infinity: CubeCamera marca
+           * `needsPMREMUpdate` e a textura incrementa `pmremVersion`, então
+           * o ambiente seria reassado com seis faces de cubo mais a
+           * convolução, sessenta vezes por segundo. O que anima aqui é uma
+           * luz analítica e dois uniformes globais, que custam zero.
+           */}
           <Environment resolution={512}>
-            {/* Faixa larga no topo: marca o metal do terminal */}
-            <Lightformer
-              intensity={2.2}
-              position={[0, 6, 2]}
-              rotation={[Math.PI / 2, 0, 0]}
-              scale={[10, 4, 1]}
-            />
-            {/* A FRESTA: alta e estreita, à esquerda e à frente. É ela que
-                desenha o rasgo especular que corre o comprimento da pilha */}
-            <Lightformer
-              intensity={4.2}
-              position={[-4.2, 0, 5]}
-              rotation={[0, Math.PI / 2, 0]}
-              scale={[1.4, 16, 1]}
-            />
-            {/* Segunda fresta, mais fraca e mais atrás: separa a silhueta do
-                fundo preto da página sem preencher o lado escuro */}
-            <Lightformer
-              intensity={1.4}
-              position={[5.2, 1, -2.5]}
-              rotation={[0, -Math.PI / 2, 0]}
-              scale={[0.9, 14, 1]}
-            />
-            {/* Piso de ambiente, largo e quase apagado: tira o preto morto
-                das costas sem devolver o achatamento */}
-            <Lightformer
-              intensity={0.18}
-              position={[0, -4, -6]}
-              rotation={[-Math.PI / 2, 0, 0]}
-              scale={[14, 10, 1]}
-            />
+            {/**
+             * A CHAVE: uma FITA no horizonte, a -52,2° de azimute.
+             *
+             * Alta e estreita de propósito. Um cilindro só lê como
+             * cilindro quando a fonte é uma fresta: o realce vira um rasgo
+             * que corre o comprimento inteiro, e é esse rasgo que o olho
+             * usa para ler a curvatura.
+             */}
+            <Lightformer intensity={8.0} position={[-5.0, 1.46, 3.88]} scale={[1.5, 20, 1]} />
+
+            {/**
+             * O CARTÃO DE OMBRO: largo, fraco, do MESMO lado da chave.
+             *
+             * Sem ele o realce vira decalque. A rugosidade da base do
+             * rótulo é 0,62 medida no mapa, ou seja um lóbulo largo, e
+             * lóbulo largo convolvendo um hemisfério vazio devolve quase
+             * nada: o pico ficava 3,33 vezes acima da coluna seguinte
+             * contra 1,48 na foto.
+             *
+             * Radiância treze vezes menor e ângulo sólido duas vezes e
+             * meia maior: o lóbulo largo da tinta o enxerga, o lóbulo
+             * estreito do verniz quase não. O pico próprio dele cai em 37%
+             * da largura, que é exatamente onde a foto marca 46.
+             */}
+            <Lightformer intensity={0.3} position={[-3.68, 0.77, 6.37]} scale={[7, 10, 1]} />
+
+            {/* Teto: dá o topo do corpo e o aro do terminal sem preencher
+                a barriga, porque em +82° de elevação ele está fora do
+                horizonte especular */}
+            <Lightformer intensity={0.38} position={[0, 8.12, 1.14]} scale={[9, 9, 1]} />
+
+            {/* Piso, quase apagado: tira o preto morto do pé sem devolver
+                o achatamento que a direcional causava */}
+            <Lightformer intensity={0.04} position={[0, -5.64, 2.05]} scale={[10, 6, 1]} />
           </Environment>
 
           {/* O formato vem do progresso, não de prop: ver variantEm() */}

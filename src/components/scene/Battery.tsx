@@ -520,28 +520,19 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
     g.position.y = chegar(g.position.y, poseY + flutua + subida)
     g.rotation.y = chegar(g.rotation.y, alvo.rotation[1] + balanca)
 
-    /**
-     * Publica onde o produto ficou NA TELA.
-     *
-     * O halo do fundo nasce daqui. Ele já foi um valor fixo em CSS, e no
-     * retrato o resultado foi cômico: o produto sobe para a faixa livre e
-     * o brilho fica no pé da tela, sozinho. A posição final depende de
-     * pose, amortecimento, respiro, faixa e escala — quem sabe onde ela
-     * deu é este laço, e mais ninguém.
-     */
-    sceneState.centroNaTela = {
-      x: 0.5 + g.position.x / (2 * meiaLargura),
-      y: 0.5 - g.position.y / (2 * meiaAltura),
-    }
+    /* A contraluz segue o sujeito; ver `centroDeMundo`. No beat do kit
+       quem sobrescreve é o próprio kit, com o centro das duas ilhas. */
+    sceneState.centroDeMundo = g.position.x
 
     /**
-     * E publica também a INCLINAÇÃO dele na tela.
+     * Publica a INCLINAÇÃO do produto na tela.
      *
-     * O halo de carga é uma elipse alta, e ela estava sempre em pé — mas no
-     * beat do contador o produto está deitado na diagonal. O brilho corria
-     * numa direção e o objeto noutra, e o que deveria ser luz saindo da
-     * pilha lia como uma mancha vertical atrás dela, que é a mesma "mancha
-     * oval" que o cliente já tinha reprovado no herói.
+     * É o que faz o AMBIENTE tombar junto com ele. Num cilindro vertical só
+     * o que está na linha do horizonte vira realce; deitando o produto 38,6
+     * graus no beat do contador, a fita de chave precisaria estar em -61,5
+     * de elevação para espelhar nele, e ela não alcança. Girando
+     * `environmentRotation.z` pelo mesmo ângulo, a exigência sobe para -37 e
+     * o rasgo continua correndo o corpo inteiro (ver <ContraLuz />).
      *
      * O ângulo sai da geometria, não da pose: projetar as duas pontas do
      * eixo do corpo dá a direção real na tela, com rotação, perspectiva e

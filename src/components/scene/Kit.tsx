@@ -187,6 +187,11 @@ export function Kit({
 
     r.scale.setScalar(ajuste)
     r.position.x = (esquerda + direita) / 2
+    /* A contraluz precisa seguir o CENTRO DAS DUAS ILHAS aqui, e não a
+       protagonista, que a esta altura já está dissolvida. Ver
+       `centroDeMundo`: parada no eixo, a luz fazia o realce marchar de
+       corpo a corpo, de 22,8% no primeiro a 26,7% no oitavo. */
+    sceneState.centroDeMundo = r.position.x
 
     /**
      * As oito pousam na MESMA linha, e essa linha fica no pé da faixa.

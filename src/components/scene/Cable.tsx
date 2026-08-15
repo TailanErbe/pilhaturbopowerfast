@@ -184,8 +184,6 @@ const CORPO_EM_UNIDADES = 4.52
 const CURSO_NO_CORPO = CORPO_EM_UNIDADES / CABO_EM_UNIDADES
 const CURSO = 1.2 + CURSO_NO_CORPO
 
-const CHEGADA = 1.2 / CURSO
-
 export function Cable({
   raio,
   anguloPorta,
@@ -603,18 +601,6 @@ export function Cable({
         saida.conectado && depois >= 0 ? Math.min(1, t) : -1
       sceneState.cargaForca =
         saida.conectado && depois >= 0 ? entra * saiu : 0
-
-      /**
-       * E o HALO do fundo bate junto, na chegada.
-       *
-       * O pulso decai rápido: a onda leva uns três segundos e meio para
-       * percorrer o cabo, e um brilho que durasse tudo isso viraria luz
-       * acesa, não pulso. O que se quer é a batida do que acabou de entrar.
-       */
-      const desde = (fase - CHEGADA + 1) % 1
-      sceneState.pulsoDeCarga = saida.conectado
-        ? Math.exp(-desde * 7) * saida.opacidade
-        : 0
     }
 
     /**

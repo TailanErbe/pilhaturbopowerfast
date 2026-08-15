@@ -72,7 +72,31 @@ const TERMINAL = { raio: 2.5 * MM, altura: 1.35 * MM, cor: '#bebebe' }
  * inteiro, com a mesma intensidade sobre o preto e sobre o branco, que é o
  * que se vê na foto.
  */
-const VERNIZ = { clearcoat: 0.62, clearcoatRoughness: 0.28 }
+/**
+ * O verniz do RÓTULO. A tampa tem o dela, logo abaixo.
+ *
+ * Subiu de 0,62/0,28 para 0,78/0,24 junto com o rig novo. O termo final do
+ * MeshPhysical é `outgoingLight * (1 - clearcoat * Fcc)`: mais verniz
+ * APROFUNDA a borda rasante, que é onde o corpo precisa escurecer para a
+ * faixa dinâmica sair de 4,8:1 rumo aos 68:1 da foto. E a rugosidade menor
+ * leva o alpha de 0,078 para 0,058, afiando o fio especular uns 20%.
+ *
+ * A rugosidade e o metalness da BASE não mudam: medidos no PNG, valem
+ * 158/255 = 0,6196 e zero em 98,6% da área. Aquela base larga É o ombro do
+ * realce que a foto mostra em 46% da largura; estreitá-la trocaria ombro
+ * por lâmina sem carne.
+ */
+const VERNIZ = { clearcoat: 0.78, clearcoatRoughness: 0.24 }
+
+/**
+ * O verniz da TAMPA, com constantes próprias.
+ *
+ * Ela partilhava as do rótulo, e partilhar amarra duas peças que a luz
+ * trata de forma diferente: a tampa é uma superfície lisa e saturada, o
+ * rótulo é impressão fosca sob verniz. Separadas, mexer numa não arrasta a
+ * outra.
+ */
+const VERNIZ_DA_TAMPA = { clearcoat: 0.62, clearcoatRoughness: 0.26 }
 
 export type PecasDaPilha = {
   comprimento: number
@@ -117,23 +141,41 @@ export function usePecasDaPilha(raio: number, comprimento: number): PecasDaPilha
         color: '#f09a07',
         roughness: 0.5,
         metalness: 0.05,
-        clearcoat: VERNIZ.clearcoat,
-        clearcoatRoughness: VERNIZ.clearcoatRoughness,
+        clearcoat: VERNIZ_DA_TAMPA.clearcoat,
+        clearcoatRoughness: VERNIZ_DA_TAMPA.clearcoatRoughness,
       }),
+      /**
+       * Só a PAREDE LATERAL do terminal é rasterizada.
+       *
+       * A câmera está em y=0 e o topo do terminal perto de +1,85: o disco
+       * de cima, com normal +Y, é face traseira e nunca aparece. O que se
+       * vê são 1,35 mm de parede, uns 46 por 4 px.
+       *
+       * A 0,22 de rugosidade aquela parede é quase um espelho, e com o
+       * produto girando ela PISCA a cada passagem de fonte. 0,30 alarga o
+       * lóbulo o bastante para o realce correr em vez de piscar.
+       */
       matTerminal: new THREE.MeshStandardMaterial({
         color: TERMINAL.cor,
-        roughness: 0.22,
-        metalness: 0.95,
+        roughness: 0.3,
+        metalness: 0.92,
       }),
       /**
        * A base (polo negativo) NÃO é preto puro: nenhum objeto real é. O
        * preto absoluto some contra o fundo da página, que também é escuro,
        * e a pilha perde a ponta de baixo — a silhueta termina no ar.
        */
+      /**
+       * A base É desenhada, e no retrato dos painéis ela aparece inteira.
+       *
+       * Um pouco mais clara e mais metálica que antes: com o rig novo o
+       * lado escuro do corpo cai muito, e o polo negativo em #22242a fosco
+       * desaparecia junto, levando a ponta de baixo da silhueta com ele.
+       */
       matBase: new THREE.MeshStandardMaterial({
-        color: '#22242a',
-        roughness: 0.55,
-        metalness: 0.45,
+        color: '#2a2d35',
+        roughness: 0.44,
+        metalness: 0.55,
       }),
     }
   }, [raio, comprimento])
