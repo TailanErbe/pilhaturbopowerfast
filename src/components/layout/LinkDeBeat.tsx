@@ -1,7 +1,7 @@
 'use client'
 
 import { irParaPosicao } from '@/lib/lenis'
-import { scrollDoBeat } from '@/motion/labels'
+import { scrollDaAncora } from '@/lib/scene-state'
 import { obterTimeline } from '@/motion/registro'
 
 /**
@@ -55,7 +55,7 @@ export function LinkDeBeat({
         if (!tl) return
         e.preventDefault()
         irParaPosicao(
-          beat === 'topo' ? 0 : scrollDoBeat(beat, tl.inicio(), tl.altura()),
+          beat === 'topo' ? 0 : scrollDaAncora(beat, tl.inicio(), tl.altura()),
         )
       }}
     >

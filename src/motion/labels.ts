@@ -153,22 +153,18 @@ export function centroDoBeat(id: string): number {
  * pin, os painéis não têm posição própria na página — o destino é uma
  * posição de SCROLL, calculada a partir do progresso do beat.
  */
-export function scrollDoBeat(id: string, inicioDoPin: number, alturaDoPin: number) {
-  const beat = BEATS.find((b) => b.id === id)
-  if (!beat) return inicioDoPin
-
-  /**
-   * O destino é o CENTRO do beat, não o começo dele.
-   *
-   * As poses da cena estão ancoradas nos centros (ver POSES em
-   * scene-state.ts): é lá que o produto termina o giro e se apresenta de
-   * frente. Mirando em `inicio + CRUZAMENTO`, a pílula parava a 0,645
-   * enquanto a pose de frente do painel 01 está em 0,67, e a pilha chegava
-   * ainda girando, de três-quartos. O painel certo aparecia, o produto não.
-   *
-   * Se as faixas em BEATS mudarem, as poses mudam junto: os dois conjuntos
-   * de números são o mesmo eixo.
-   */
-  const alvo = (beat.inicio + beat.fim) / 2
-  return inicioDoPin + alturaDoPin * alvo
-}
+/**
+ * ONDE PARAR O SCROLL saiu daqui, e a mudança é a lição.
+ *
+ * Havia aqui um `scrollDoBeat` que mirava no CENTRO do beat, com um
+ * comentário explicando que aquilo casava com as poses da cena e avisando
+ * que "os dois conjuntos de números são o mesmo eixo". Era verdade quando
+ * foi escrito e deixou de ser: as voltas de 360° dos painéis foram fundidas
+ * numa só, as poses frontais foram para 0,712 e 0,888, os centros
+ * continuaram em 0,750 e 0,850, e a pílula voltou a entregar a pilha
+ * girada — o mesmo defeito que aquele comentário dizia ter consertado.
+ *
+ * Aviso em comentário não sincroniza duas cópias. A resposta agora é
+ * derivada de `ancoraDoBeat`, em lib/scene-state, que é quem sabe onde o
+ * produto está de frente; ver `scrollDaAncora`.
+ */

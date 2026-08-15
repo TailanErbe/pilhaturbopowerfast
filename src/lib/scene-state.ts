@@ -509,7 +509,42 @@ export function ancoraDoBeat(id: string): number {
    */
   if (id === 'hero') return 0
   if (id === 'chip') return chipEm(0.92)
+  /**
+   * E OS DOIS PAINÉIS DE PILHA, pela mesma razão — só que aqui o centro
+   * deixou de servir DEPOIS de já ter servido, e isso é o mais perigoso.
+   *
+   * Quando a volta de 360° do painel 01 acabava dentro do próprio painel, a
+   * pose de frente caía perto do centro e mirar no centro funcionava. Ao
+   * fundir as duas voltas numa só — para o meio dela cair na fronteira e a
+   * troca de formato acontecer com o produto de costas —, as poses frontais
+   * foram para 0,712 e 0,888, enquanto os centros ficaram em 0,750 e 0,850.
+   *
+   * O sintoma: escolher "AA" no menu levava ao painel certo com a pilha
+   * ainda girando, de três-quartos. É literalmente o defeito que o
+   * comentário de `scrollDoBeat` dizia ter consertado — voltou porque
+   * aquele código guardava a sua própria cópia da resposta.
+   *
+   * O kit não precisa de exceção: a chegada dele É o centro do beat.
+   */
+  if (id === 'produto-01') return AA_CHEGA
+  if (id === 'produto-02') return AAA_CHEGA
   return centroDoBeat(id)
+}
+
+/**
+ * Onde parar o SCROLL para um beat se apresentar pronto.
+ *
+ * Mora aqui, e não em motion/labels, porque quem sabe onde o produto está
+ * de frente é a cena. O `scrollDoBeat` que existia lá calculava o centro do
+ * beat por conta própria e avisava, em comentário, que os dois conjuntos de
+ * números eram o mesmo eixo e que mudar um obrigava a mudar o outro. O
+ * aviso não impediu nada: as poses mudaram, o destino não, e a pilha
+ * passou a chegar girada.
+ *
+ * Uma resposta só, derivada da mesma âncora que a cena usa.
+ */
+export function scrollDaAncora(id: string, inicioDoPin: number, alturaDoPin: number) {
+  return inicioDoPin + alturaDoPin * ancoraDoBeat(id)
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
