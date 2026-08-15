@@ -289,13 +289,17 @@ const pxComp = gm.height / 52
  * corte cai em carvão liso: a trava de marca mais alta só começa em
  * v=0,165.
  */
-const util = await sharp(girada)
+const recortada = await sharp(girada)
   .extract({
     left: 0,
     top: Math.round(DOBRA_MAIS * pxComp),
     width: Math.round(CIRCUNFERENCIA * pxCircunf),
     height: Math.round(PILHA.comprimento * pxComp),
   })
+  .png()
+  .toBuffer()
+
+const util = await sharp(recortada)
   .resize(TEX.largura, TEX.altura, { fit: 'fill', kernel: 'lanczos3' })
   .toBuffer()
 
@@ -449,6 +453,225 @@ await sharp(normal, { raw: { width: NL, height: NA, channels: 3 } })
   .toFile(path.join(DESTINO, 'rotulo_aa_normal.png'))
 
 console.log('rótulo AA gerado (cor, rugosidade, metálico, normal)')
+
+/* ==================================================================== AAA */
+
+/**
+ * A PALITO NÃO É A AA REDUZIDA.
+ *
+ * Não existe arte oficial dela, e copiar a da AA em escala daria uma
+ * pilha errada: nas fotos do produto a porta da palito fica EM PÉ, e a
+ * faixa laranja desce numa aba que a envolve e termina em ponta.
+ *
+ * O motivo é dimensional, não estético. O recorte da porta tem 9 mm no
+ * lado maior. Numa AA de 14,5 mm de diâmetro isso são 74° de arco e cabe
+ * deitado; numa palito de 10,5 mm seriam 118°, ou seja um terço da volta,
+ * e o conector não teria onde se apoiar. Girado, o mesmo recorte ocupa
+ * 9 mm dos 44,5 mm de comprimento, que sobram.
+ *
+ * O que É reaproveitado da arte oficial: as duas travas de marca, o bloco
+ * de cuidado e a tarja do pé. O que é redesenhado: a faixa, a aba, a
+ * porta, o galão e os dois números da tarja.
+ */
+
+/**
+ * DESLIGADA. Esta primeira versão saiu errada e está aqui como registro
+ * do caminho, não como código em uso. Rode com AAA=1 para trabalhar nela.
+ *
+ * O que quebrou: as peças novas (faixa, aba, galão, tarja) são compostas
+ * em coordenadas da textura FINAL, mas a arte por baixo já foi rolada
+ * para a porta cair em ANGULO_PORTA. Misturar os dois sistemas fez a aba
+ * nascer na coluna errada, o galão virar uma cunha atravessada e a tarja
+ * nova aparecer ao lado da antiga em vez de sobre ela.
+ *
+ * O conserto não é ajustar número: é compor ANTES da rolagem, no sistema
+ * da arte, onde cada elemento tem posição conhecida, e rolar uma vez só
+ * no fim. Também falta girar a língua da porta junto com ela — o desenho
+ * do conector assume o lado maior na horizontal, e na palito ele é
+ * vertical.
+ */
+if (!process.env.AAA) {
+  console.log('rótulo AAA: pulado (defina AAA=1 para gerar)')
+  process.exit(0)
+}
+
+const AAA = { diametro: 10.5, comprimento: 44.5 }
+const AAA_CIRC = Math.PI * AAA.diametro
+const TEX_AAA = { largura: 1024, altura: 1382 }
+
+/**
+ * A faixa da palito, em fração do comprimento e da circunferência.
+ *
+ * Lida no recorte da foto do kit, que é o melhor que existe: as pilhas
+ * estão em perspectiva e encostadas, então isto é proporção observada,
+ * não cota. Fica aqui em cima, num lugar só, para ser fácil de acertar
+ * quando aparecer a arte oficial da AAA.
+ */
+const FAIXA_AAA = {
+  cheiaAte: 0.115, // faixa de largura inteira
+  abaAte: 0.275, // a aba desce até aqui
+  abaPontaAte: 0.315, // e fecha em ponta
+  abaDe: 0.3, // borda esquerda da aba, em fração da circunferência
+  galaoDe: 0.335,
+  galaoAte: 0.4,
+}
+
+/** Porta em pé: o mesmo recorte de 9 x 3 mm, girado */
+const PORTA_AAA = {
+  comprimento: 9.0,
+  circunferencia: 3.025,
+  centroComprimento: 0.185, // fração do comprimento
+}
+
+const utilAAA = await sharp(recortada)
+  .resize(TEX_AAA.largura, TEX_AAA.altura, { fit: 'fill', kernel: 'lanczos3' })
+  .toBuffer()
+
+/**
+ * A rolagem leva a trava de marca da palito para o mesmo lugar da AA.
+ *
+ * Na AA quem manda é a porta, que precisa cair em ANGULO_PORTA. Aqui é a
+ * mesma conta, porque a porta da palito também é desenhada em cima da
+ * trava: as duas ficam na face que o produto mostra.
+ */
+const rolagemAAA = Math.round(((U_DA_PORTA - uAtual + 1) % 1) * TEX_AAA.largura)
+const roladaAAA = await sharp({
+  create: { width: TEX_AAA.largura, height: TEX_AAA.altura, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+})
+  .composite([
+    { input: utilAAA, left: rolagemAAA - TEX_AAA.largura, top: 0 },
+    { input: utilAAA, left: rolagemAAA, top: 0 },
+  ])
+  .png()
+  .toBuffer()
+
+const AL = TEX_AAA.largura
+const AA_ALT = TEX_AAA.altura
+const fx = (f) => (f * AL).toFixed(1)
+const fy = (f) => (f * AA_ALT).toFixed(1)
+
+/** Caixa da porta em pé, centrada na coluna da aba */
+const portaAAA = {
+  w: (PORTA_AAA.circunferencia / AAA_CIRC) * AL,
+  h: (PORTA_AAA.comprimento / AAA.comprimento) * AA_ALT,
+}
+const portaCx = U_DA_PORTA * AL
+const portaCy = PORTA_AAA.centroComprimento * AA_ALT
+
+/**
+ * A faixa, a aba e o galão, num SVG só.
+ *
+ * O retângulo de carvão vem primeiro e apaga a faixa da AA junto com o
+ * galão dela, que na palito fica mais embaixo. Depois entra o desenho
+ * novo. Fazer numa peça só garante que a ponta da aba e o galão fiquem
+ * alinhados na mesma coluna.
+ */
+const svgFaixaAAA = (cor) => Buffer.from(`<svg width="${AL}" height="${AA_ALT}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${AL}" height="${fy(FAIXA_AAA.galaoAte + 0.01)}" fill="${cor.corpo}"/>
+  <rect width="${AL}" height="${fy(FAIXA_AAA.cheiaAte)}" fill="${cor.faixa}"/>
+  <path d="M ${fx(FAIXA_AAA.abaDe)} ${fy(FAIXA_AAA.cheiaAte - 0.002)}
+           H ${AL}
+           V ${fy(FAIXA_AAA.abaAte)}
+           L ${fx((FAIXA_AAA.abaDe + 1) / 2)} ${fy(FAIXA_AAA.abaPontaAte)}
+           L ${fx(FAIXA_AAA.abaDe)} ${fy(FAIXA_AAA.abaAte)} Z" fill="${cor.faixa}"/>
+  <path d="M ${fx(FAIXA_AAA.abaDe)} ${fy(FAIXA_AAA.galaoDe)}
+           H ${AL}
+           L ${fx((FAIXA_AAA.abaDe + 1) / 2)} ${fy(FAIXA_AAA.galaoAte)} Z" fill="${cor.faixa}"/>
+</svg>`)
+
+const svgPortaAAA = (cores) => svgDaPorta({
+  largura: AL, altura: AA_ALT,
+  esquerda: portaCx - portaAAA.w / 2, topo: portaCy - portaAAA.h / 2,
+  w: portaAAA.w, h: portaAAA.h,
+}, cores)
+
+/**
+ * A tarja do pé muda de conteúdo: outra capacidade e outro formato.
+ *
+ * O texto é redesenhado, não remendado glifo a glifo: a fonte da marca
+ * saiu do repositório e remendar "AA" para "AAA" com outra fonte deixaria
+ * duas famílias na mesma linha. Redesenhando a linha inteira, ela fica
+ * coerente consigo mesma. Na tela ela tem cerca de um pixel de altura.
+ */
+const TARJA = { de: 0.9008, ate: 0.9231 } // em fração da circunferência, da arte
+const tarjaX = ((TARJA.de + TARJA.ate) / 2 + rolagemAAA / AL) % 1
+const svgTarjaAAA = Buffer.from(`<svg width="${AL}" height="${AA_ALT}" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(${fx(tarjaX)} ${fy(0.55)}) rotate(-90)">
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="middle"
+          font-family="Arial Narrow, Liberation Sans Narrow, Arial, sans-serif"
+          font-size="17" font-weight="700" letter-spacing="0.5" fill="#ffffff">AAA  |  1.5 V  |  1100mWh  |  <tspan fill="#ff9c00">BATERIA RECARREGÁVEL DE ÍONS DE LÍTIO</tspan></text>
+  </g>
+</svg>`)
+
+/** Apaga a tarja antiga antes de escrever a nova */
+const svgApagaTarja = Buffer.from(`<svg width="${AL}" height="${AA_ALT}" xmlns="http://www.w3.org/2000/svg">
+  <rect x="${fx(tarjaX - 0.022)}" y="${fy(0.2)}" width="${fx(0.044)}" height="${fy(0.72)}" fill="#2c2e35"/>
+</svg>`)
+
+const corAAA = await sharp(roladaAAA)
+  .composite([
+    { input: svgApagaTarja, top: 0, left: 0 },
+    { input: svgTarjaAAA, top: 0, left: 0 },
+    { input: svgFaixaAAA({ corpo: '#2c2e35', faixa: '#ff9c00' }), top: 0, left: 0 },
+    {
+      input: svgPortaAAA({ aro: '#8d8f94', fundoTopo: '#141414', fundoBase: '#2a2a2a', lingueta: '#3f4145' }),
+      top: 0, left: 0,
+    },
+  ])
+  .png()
+  .toBuffer()
+
+await sharp(corAAA).toFile(path.join(DESTINO, 'rotulo_aaa.png'))
+
+/** Rugosidade, metálico e normal: mesma receita da AA, na malha da palito */
+await sharp({
+  create: { width: AL, height: AA_ALT, channels: 3, background: '#9e9e9e' },
+})
+  .composite([{ input: svgPortaAAA({ aro: '#3d3d3d', fundoTopo: '#8a8a8a', fundoBase: '#8a8a8a', lingueta: '#4a4a4a' }), top: 0, left: 0 }])
+  .png()
+  .toFile(path.join(DESTINO, 'rotulo_aaa_rugosidade.png'))
+
+await sharp({
+  create: { width: AL, height: AA_ALT, channels: 3, background: '#000000' },
+})
+  .composite([{ input: svgPortaAAA({ aro: '#e6e6e6', fundoTopo: '#1a1a1a', fundoBase: '#1a1a1a', lingueta: '#dcdcdc' }), top: 0, left: 0 }])
+  .png()
+  .toFile(path.join(DESTINO, 'rotulo_aaa_metalico.png'))
+
+const { data: altAAA, info: infoAAA } = await sharp({
+  create: { width: AL, height: AA_ALT, channels: 3, background: '#ffffff' },
+})
+  .composite([{ input: svgPortaAAA({ aro: '#c8c8c8', fundoTopo: '#101010', fundoBase: '#101010', lingueta: '#6a6a6a' }), top: 0, left: 0 }])
+  .blur(2.2)
+  .removeAlpha()
+  .raw()
+  .toBuffer({ resolveWithObject: true })
+
+const ACA = infoAAA.channels
+const normalAAA = Buffer.alloc(AL * AA_ALT * 3)
+for (let y = 0; y < AA_ALT; y++) {
+  for (let x = 0; x < AL; x++) {
+    const h = (dx, dy) => {
+      const xx = Math.min(AL - 1, Math.max(0, x + dx))
+      const yy = Math.min(AA_ALT - 1, Math.max(0, y + dy))
+      return altAAA[(yy * AL + xx) * ACA] / 255
+    }
+    const gx = (h(1, 0) - h(-1, 0)) * RELEVO
+    const gy = (h(0, 1) - h(0, -1)) * RELEVO
+    const inv = 1 / Math.hypot(gx, gy, 1)
+    const p = (y * AL + x) * 3
+    normalAAA[p] = Math.round((-gx * inv * 0.5 + 0.5) * 255)
+    normalAAA[p + 1] = Math.round((gy * inv * 0.5 + 0.5) * 255)
+    normalAAA[p + 2] = Math.round((inv * 0.5 + 0.5) * 255)
+  }
+}
+await sharp(normalAAA, { raw: { width: AL, height: AA_ALT, channels: 3 } })
+  .png()
+  .toFile(path.join(DESTINO, 'rotulo_aaa_normal.png'))
+
+console.log('rótulo AAA gerado (porta em pé, faixa com aba)')
+console.log(`  proporção       ${(AAA_CIRC / AAA.comprimento).toFixed(4)}  (textura ${(TEX_AAA.largura / TEX_AAA.altura).toFixed(4)})`)
+console.log(`  porta           ${PORTA_AAA.circunferencia} x ${PORTA_AAA.comprimento} mm, centro em v ${PORTA_AAA.centroComprimento}`)
 console.log(`  faca            ${FACA_L.toFixed(2)} x ${FACA_A.toFixed(2)} px  (${PX_MM.toFixed(4)} px/mm)`)
 console.log(`  dobra           ${DOBRA_MAIS} mm no polo +, ${DOBRA_MENOS.toFixed(2)} mm no polo -`)
 console.log(`  lapela          ${LAPELA.toFixed(3)} mm cortados da circunferência`)
