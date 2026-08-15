@@ -154,7 +154,18 @@ export const POSES: Pose[] = [
    * O giro até FACE_MARCA + 0,28 passa a acontecer NA CHEGADA do cabo,
    * que é quando ele volta a fazer falta.
    */
-  { at: 0.06, screenX: FAIXA, position: [0.3, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 1 },
+  /**
+   * A pose desce e encolhe um pouco para o TÍTULO caber acima dela.
+   *
+   * No herói o produto fica por cima de tudo — é o assunto da tela e não
+   * pode ficar sob nada. Justamente por isso quem sai do caminho é a
+   * composição: medido em 1280x820, o produto ocupava de 88 a 632 px e o
+   * nome do produto vive entre 176 e 245. Ele cobria o título inteiro.
+   *
+   * Descendo 0,9 unidade e encolhendo para 0,92, ele passa a morar entre o
+   * título e as duas linhas do rodapé, que ficam em 756.
+   */
+  { at: 0.06, screenX: FAIXA, position: [-0.6, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 0.92 },
 
   /**
    * Beat 2 — USB-C (centro do beat: 0,22): inclina o suficiente para expor

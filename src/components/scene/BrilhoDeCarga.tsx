@@ -61,6 +61,16 @@ const ALTURA = { minima: 6, maxima: 62 }
 /** Opacidade máxima. Acima disto o preto do corpo começa a lavar */
 const FORCA = 0.5
 
+/**
+ * O halo do herói: ambiente, não narrativa.
+ *
+ * Ele não conta nada — só devolve o contorno de um produto quase preto
+ * sobre uma página preta. Por isso é mais fraco que o da carga e se apaga
+ * na mesma passagem em que a barra do herói vira pílula, para não sobrar
+ * um brilho sem dono no beat seguinte.
+ */
+const HALO = { forca: 0.34, some: { de: 0.055, ate: 0.105 } }
+
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))
 
@@ -83,9 +93,18 @@ export function BrilhoDeCarga() {
        * acendia — sem erro nenhum, que é o pior tipo de falha.
        */
       alvo ??= document.querySelector<HTMLElement>('[data-cena]')
-      if (!alvo) return
       const tl = obterTimeline()
-      if (!tl) return
+      /**
+       * Nem o elemento nem a timeline existem no primeiro quadro: o
+       * <Scene /> entra por import dinâmico e a timeline se registra
+       * depois da montagem do ato. Desistindo aqui, o halo do herói só
+       * acendia no primeiro scroll — e quem abre a página e fica parado
+       * via o produto sem contorno nenhum.
+       */
+      if (!alvo || !tl) {
+        agendar()
+        return
+      }
       const p = tl.progresso()
 
       const carga = suave(entre((p - FAIXA.nasce) / (FAIXA.enche - FAIXA.nasce)))
@@ -111,6 +130,16 @@ export function BrilhoDeCarga() {
         '--carga-h',
         `${(ALTURA.minima + (ALTURA.maxima - ALTURA.minima) * carga).toFixed(1)}vh`,
       )
+
+      /**
+       * O halo do HERÓI é outro assunto, e por isso outras variáveis.
+       *
+       * Este não conta nada: só devolve o contorno de um produto quase
+       * preto sobre página preta. Fica aceso na primeira tela e se apaga
+       * junto com ela, na mesma passagem em que a barra vira pílula.
+       */
+      const noHeroi = 1 - suave(entre((p - HALO.some.de) / (HALO.some.ate - HALO.some.de)))
+      alvo.style.setProperty('--halo-a', (HALO.forca * noHeroi).toFixed(3))
     }
 
     /**

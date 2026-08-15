@@ -263,8 +263,16 @@ export const CONTENT = {
    * Ver REGRAS.md §9.6 — três opções para escolher.
    */
   hero: {
-    headline: ['RECARREGA', 'ATÉ 1.200 VEZES'],
-    kicker: 'Pilha Recarregável Turbo PowerFast',
+    /**
+     * O herói passa a anunciar o PRODUTO, não uma promessa.
+     *
+     * Era "RECARREGA / ATÉ 1.200 VEZES", que é o argumento — e o argumento
+     * agora tem beat próprio, com o contador subindo. Repetido na abertura,
+     * ele gastava a novidade antes da hora e deixava a primeira tela sem
+     * dizer o que a pessoa está vendo.
+     */
+    headline: ['TURBO POWERFAST'],
+    kicker: 'Pilha Recarregável',
     cta: 'Nossos modelos',
   },
 

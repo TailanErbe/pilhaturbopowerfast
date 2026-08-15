@@ -1,6 +1,7 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ProductPill } from '@/components/layout/ProductPill'
+import { BarraDoHeroi } from '@/components/layout/BarraDoHeroi'
 import { SceneMount } from '@/components/scene/SceneMount'
 import { PinnedAct } from '@/components/PinnedAct'
 import { ResumoDoAto } from '@/components/a11y/ResumoDoAto'
@@ -30,6 +31,9 @@ export default function Home() {
       <SceneMount />
 
       <Header />
+      {/* As duas navegações se revezam pelo mesmo sinal: a barra é do
+          herói, a pílula assume do segundo beat em diante */}
+      <BarraDoHeroi />
       <ProductPill />
 
       {/* Sem z-index aqui de propósito: `main` não pode criar contexto de

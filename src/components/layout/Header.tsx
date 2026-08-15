@@ -1,7 +1,6 @@
 import { Logo } from './Logo'
 import { MobileMenu } from './MobileMenu'
 import { LinkDeBeat } from './LinkDeBeat'
-import { CONTENT, PRODUCTS } from '@/data/products'
 
 /**
  * Header.
@@ -28,36 +27,37 @@ export function Header() {
           <MobileMenu />
         </div>
 
-        <nav aria-label="Modelos" className="hidden sm:block">
-          <ul className="flex flex-col gap-1">
-            {PRODUCTS.map((p) => (
-              <li key={p.index}>
-                {/* Âncora comum não chega ao painel: dentro do pin os sete
-                    ocupam a mesma posição. Ver LinkDeBeat. */}
-                <LinkDeBeat
-                  beat={`produto-${p.index}`}
-                  className="text-sm whitespace-nowrap transition-opacity hover:opacity-70"
-                >
-                  {p.name}
-                </LinkDeBeat>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {/**
+         * A navegação de modelos SAIU do cabeçalho.
+         *
+         * Ela vive agora na barra do herói e, dali em diante, na pílula —
+         * as duas com foto do produto e o numeral do painel, que é a
+         * âncora da página inteira. Mantida aqui, seria um terceiro
+         * caminho para o mesmo lugar, empilhado no canto justo na tela em
+         * que o rascunho pede só o logotipo em cima.
+         *
+         * A coluna vazia FICA: é ela que mantém o logotipo no centro
+         * óptico da tela, e não no centro do que sobrou.
+         */}
+        <div aria-hidden className="hidden sm:block" />
 
         <LinkDeBeat beat="topo" className="justify-self-center">
           <span className="sr-only">Gshield, início</span>
           <Logo variant="negativa" width={132} priority />
         </LinkDeBeat>
 
-        <div className="justify-self-end">
-          <a
-            href={CONTENT.buy.href}
-            className="text-sm whitespace-nowrap transition-opacity hover:opacity-70"
-          >
-            {CONTENT.buy.cta}
-          </a>
-        </div>
+        {/**
+         * O "onde comprar" também saiu do cabeçalho: o rascunho pede só o
+         * logotipo em cima.
+         *
+         * A compra não some da página — ela está na barra do herói, na
+         * primeira tela, e na seção final, que é onde a decisão acontece.
+         * No celular continua no menu de quatro pontos.
+         *
+         * A coluna vazia FICA, aqui e do outro lado: são elas que mantêm o
+         * logotipo no centro da TELA, e não no centro do que sobrou.
+         */}
+        <div aria-hidden className="justify-self-end" />
       </div>
     </header>
   )

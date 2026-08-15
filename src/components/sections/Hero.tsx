@@ -1,42 +1,72 @@
 import { CONTENT } from '@/data/products'
-import { SectionBg, EdgeColumn } from '@/components/layout/Layer'
+import { SectionBg } from '@/components/layout/Layer'
 
 /**
- * Beat 1 — hero.
+ * Beat 1 — herói.
  *
- * Composição da referência: produto no EIXO CENTRAL, texto nas bordas.
- * Headline encostada à esquerda, apoio no rodapé, "role para explorar" no
- * canto oposto. A faixa central fica limpa para a pilha.
+ * O produto SOZINHO, de frente, no eixo central, com o nome dele em cima e
+ * duas linhas de serviço nos cantos de baixo. Mais nada.
+ *
+ * Antes o texto era um bloco encostado à esquerda com a promessa das 1.200
+ * recargas, e o cabo já nascia plugado. Duas coisas erradas na mesma tela:
+ * a promessa gastava aqui a novidade que tem um beat inteiro só para ela,
+ * e o cabo punha um segundo assunto ao lado do produto que a página existe
+ * para vender.
+ *
+ * O título vai ACIMA do produto, centralizado, e não ao lado: no eixo
+ * central o objeto tem a tela toda para si, e é assim que se fotografa
+ * produto. As duas linhas dos cantos são informação de serviço — onde o
+ * produto existe e o que fazer agora — e por isso ficam onde o olho só
+ * passa depois.
  */
 export function Hero() {
   return (
     <section
       id="topo"
-      className="relative flex h-full min-h-dvh flex-col justify-center overflow-hidden"
+      className="relative flex h-full min-h-dvh flex-col overflow-hidden"
     >
       <SectionBg className="bg-surface-000" />
 
-      <div className="container-gutter base-do-retrato">
-        <EdgeColumn side="left">
-          <p className="mb-4 text-sm tracking-wide text-white/70">
+      {/**
+       * O bloco do nome fica na faixa de cima, acima do produto.
+       *
+       * `pt` grande o bastante para não encostar no cabeçalho e no logo, e
+       * o produto começa logo abaixo (ver a pose do beat 1 e, no retrato,
+       * a faixa que ele ocupa em RETRATO/Battery.tsx).
+       */}
+      {/**
+       * As duas linhas formam UM bloco, alinhadas à esquerda entre si.
+       *
+       * O bloco é que fica centrado sobre o produto, não cada linha por si.
+       * Centralizar as duas separadamente daria dois eixos diferentes, e a
+       * descida da primeira para a segunda perderia a régua — que é o que
+       * segura um lockup de nome de produto.
+       *
+       * `w-fit` mais `mx-auto`: o bloco tem a largura da linha mais longa,
+       * que é a do nome, e é essa caixa que se centraliza.
+       */}
+      <div className="container-gutter relative z-2 pt-[max(11vh,88px)]">
+        <div className="mx-auto w-fit text-left">
+          <p className="font-display text-[clamp(1.1rem,2.4vw,2.2rem)] tracking-[0.1em] text-white">
             {CONTENT.hero.kicker}
           </p>
 
-          {/* As linhas são <span> de bloco só para quebrar visualmente.
-              O espaço final evita que leitores de tela juntem as palavras
-              ("RECARREGAATÉ"). */}
-          <h1 className="text-[clamp(2.75rem,6.5vw,6.5rem)]">
-            {CONTENT.hero.headline.map((line) => (
-              <span key={line} className="block">
-                {line}{' '}
+          {/* Uma linha só: é o nome do produto, não uma frase. O espaço
+              final evita que leitores de tela juntem as palavras */}
+          <h1 className="font-display text-[clamp(2.25rem,5.4vw,5rem)] leading-[0.95] tracking-[0.04em] text-brand-orange">
+            {CONTENT.hero.headline.map((linha) => (
+              <span key={linha} className="block">
+                {linha}{' '}
               </span>
             ))}
           </h1>
-        </EdgeColumn>
+        </div>
       </div>
 
-      {/* Rodapé do hero: apoio à esquerda, chamada de scroll à direita.
-          O centro fica vago — é onde a pílula fixa e a pilha vivem. */}
+      {/**
+       * Rodapé do herói: disponibilidade à esquerda, chamada de rolagem à
+       * direita. O centro fica vago — é onde o produto e a pílula vivem.
+       */}
       <div className="container-gutter absolute inset-x-0 bottom-6 z-2 hidden items-end justify-between md:flex">
         <p className="max-w-[34ch] text-sm text-white/60">
           Disponível em AA e AAA, com cabo de recarga simultânea incluso.

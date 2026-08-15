@@ -6,6 +6,7 @@ import { PRODUCTS } from '@/data/products'
 import { irParaPosicao } from '@/lib/lenis'
 import { beatEm, scrollDoBeat } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
+import { useNoHeroi } from '@/lib/no-heroi'
 
 /**
  * Pílula fixa "Nossas pilhas" — o navegador do scrollytelling.
@@ -64,9 +65,23 @@ export function ProductPill() {
   const produtoAtivo = PRODUCTS.find((p) => p.index === ativo)
   const rotulo = produtoAtivo ? produtoAtivo.name : 'Nossas pilhas'
 
+  /**
+   * No herói quem navega é a BARRA, não a pílula.
+   *
+   * As duas fazem a mesma coisa e mostrar as duas juntas seria oferecer
+   * dois caminhos para o mesmo lugar na tela mais vazia da página. Elas se
+   * cruzam em opacidade pelo mesmo sinal (useNoHeroi), então não existe
+   * trecho com nenhuma das duas.
+   */
+  const noHeroi = useNoHeroi()
+  const presenca = 1 - noHeroi
+  const oculta = presenca < 0.01
+
   return (
     <div
       ref={raiz}
+      aria-hidden={oculta}
+      style={{ opacity: presenca, visibility: oculta ? 'hidden' : 'visible' }}
       className="pointer-events-none fixed inset-x-0 bottom-5 z-30 flex flex-col items-center gap-2 sm:bottom-6"
     >
       {aberto && (

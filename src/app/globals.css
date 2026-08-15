@@ -197,12 +197,34 @@
  * <BrilhoDeCarga />, escrevendo as variáveis conforme o contador sobe.
  */
 [data-cena] {
-  background: radial-gradient(
-    ellipse 24vmin var(--carga-h, 0vh) at var(--carga-x, 50%) 58%,
-    rgb(255 156 0 / var(--carga-a, 0)) 0%,
-    rgb(255 120 0 / calc(var(--carga-a, 0) * 0.42)) 42%,
-    rgb(255 100 0 / 0) 72%
-  );
+  background:
+    /**
+     * O halo do HERÓI, embaixo na pilha de camadas e por isso pintado por
+     * último: ele é ambiente, e o de carga tem de passar por cima dele.
+     *
+     * Existe por um motivo prático antes de estético: o produto é quase
+     * preto sobre uma página preta, e sem nada atrás dele a silhueta
+     * some nas bordas. O halo devolve o contorno sem acender o objeto.
+     */
+    radial-gradient(
+      ellipse 30vmin 34vh at 50% var(--halo-y, 56%),
+      rgb(255 150 30 / var(--halo-a, 0)) 0%,
+      rgb(255 110 10 / calc(var(--halo-a, 0) * 0.34)) 45%,
+      rgb(255 90 0 / 0) 74%
+    );
+  background-image:
+    radial-gradient(
+      ellipse 24vmin var(--carga-h, 0vh) at var(--carga-x, 50%) 58%,
+      rgb(255 156 0 / var(--carga-a, 0)) 0%,
+      rgb(255 120 0 / calc(var(--carga-a, 0) * 0.42)) 42%,
+      rgb(255 100 0 / 0) 72%
+    ),
+    radial-gradient(
+      ellipse 30vmin 34vh at 50% var(--halo-y, 56%),
+      rgb(255 150 30 / var(--halo-a, 0)) 0%,
+      rgb(255 110 10 / calc(var(--halo-a, 0) * 0.34)) 45%,
+      rgb(255 90 0 / 0) 74%
+    );
 }
 
 /**
