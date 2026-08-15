@@ -698,6 +698,39 @@ function PreCompilar() {
      * não muda — o `autoClear` também fica dentro da tesoura, então nem o
      * fundo é apagado.
      */
+    /**
+     * DOIS quadros, porque `transparent` é chave de programa.
+     *
+     * O primeiro cobre o mundo opaco. Ele sozinho matou o pico do cabo, mas
+     * deixou 51 ms de pé na entrada do kit, e por três rodadas eu procurei
+     * a causa nos materiais DO KIT. Não é lá.
+     *
+     * É a PROTAGONISTA. Ela esmaece quando o kit se forma, e esmaecer liga
+     * `transparent` nos quatro materiais do corpo (ver Battery.tsx). No
+     * three, `transparent` entra na chave do programa pelo parâmetro
+     * `opaque`, então cada um daqueles materiais tem DUAS variantes de
+     * shader — e a alpha só é pedida naquele instante, que é o pior da
+     * página. O aquecimento roda com progresso ~0, onde tudo é opaco, e por
+     * isso nunca a alcançava.
+     *
+     * Confirmado antes de escrever isto, com uma linha descartável
+     * (`querTransparente = true`): a varredura de 0 a 1 passou a ter ZERO
+     * picos e pior quadro de 1,3 ms, contra 51,3.
+     *
+     * Então o segundo quadro liga `transparent` nos materiais marcados e
+     * desenha de novo. Restaurar é barato: o three guarda as variantes num
+     * mapa por material e só as libera no `dispose`, então a volta para
+     * opaco reusa o programa que já existe.
+     */
+    const alphas = [] as THREE.Material[]
+    scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material
+      if (!m) return
+      for (const mat of Array.isArray(m) ? m : [m]) {
+        if (mat.userData?.esmaeceNoKit && !mat.transparent) alphas.push(mat)
+      }
+    })
+
     const tesouraAntes = gl.getScissorTest()
     const caixa = new THREE.Vector4()
     gl.getScissor(caixa)
@@ -705,7 +738,19 @@ function PreCompilar() {
       gl.setScissorTest(true)
       gl.setScissor(0, 0, 1, 1)
       gl.render(scene, camera)
+
+      if (alphas.length) {
+        for (const m of alphas) {
+          m.transparent = true
+          m.needsUpdate = true
+        }
+        gl.render(scene, camera)
+      }
     } finally {
+      for (const m of alphas) {
+        m.transparent = false
+        m.needsUpdate = true
+      }
       gl.setScissor(caixa.x, caixa.y, caixa.z, caixa.w)
       gl.setScissorTest(tesouraAntes)
       for (const o of escondidos) o.visible = false

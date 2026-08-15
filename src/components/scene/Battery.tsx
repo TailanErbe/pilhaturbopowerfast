@@ -428,7 +428,20 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
       corpoDaPilha.current.traverse((o) => {
         const m = (o as THREE.Mesh).material
         if (!m) return
-        materiais.current.push(...(Array.isArray(m) ? m : [m]))
+        const lista = Array.isArray(m) ? m : [m]
+        /**
+         * A MARCA é o que permite pré-compilar a variante alpha destes.
+         *
+         * Ligar `transparent` troca a chave de programa do material, e o
+         * único lugar da página em que isso acontece é aqui, na virada do
+         * kit — ou seja, o driver compila no pior instante possível. Quem
+         * resolve é o <PreCompilar /> em Scene.tsx, e ele precisa saber
+         * QUAIS materiais vão mudar de estado. Marcar no mesmo laço que os
+         * empilha garante que o conjunto marcado seja, por construção,
+         * exatamente o conjunto que a linha abaixo muta.
+         */
+        for (const mat of lista) mat.userData.esmaeceNoKit = true
+        materiais.current.push(...lista)
       })
     }
     const querTransparente = presenca < 0.999

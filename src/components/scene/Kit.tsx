@@ -141,18 +141,18 @@ export function Kit({
    */
   const pecas = usePecasDaPilha(dim.raio, dim.comprimento)
   /**
-   * SEM a variante de carga, e a tentativa de mudar isso foi medida e
-   * revertida — fica o registro para ninguém repetir.
+   * SEM a variante de carga: injetar a onda aqui custaria instruções por
+   * fragmento em oito corpos para uma luz que nunca acende no beat do kit.
    *
-   * A hipótese era boa: sem a injeção, estes materiais têm chave de programa
-   * diferente da protagonista, e o quadro em que o kit aparece compila dois
-   * programas novos e custa 55 ms. Compartilhando a chave, não haveria o que
-   * compilar.
+   * Registro de uma investigação que passou por aqui e NÃO era isto, para
+   * ninguém repetir: o engasgo de 51 ms na entrada do kit parecia vir destes
+   * materiais, porque eles têm chave de programa diferente da protagonista.
+   * Passar `true` aqui derrubou o total de 13 para 12 programas e não mexeu
+   * no pico.
    *
-   * Só que não são estes os dois programas. Passando `true` aqui, o total
-   * caiu de 13 para 12 e o quadro de p=0,905 continuou compilando dois e
-   * custando 55,3 ms. Ou seja: pagaria-se a gaussiana por fragmento em oito
-   * corpos em troca de nada.
+   * A causa era a PROTAGONISTA: ela liga `transparent` ao esmaecer, e
+   * `transparent` é chave de programa. Está resolvido no <PreCompilar />, em
+   * Scene.tsx, com um segundo quadro de aquecimento em alpha.
    */
   const corpoAA = useMaterialDoCorpo(mapasAA)
   const corpoAAA = useMaterialDoCorpo(mapasAAA)
