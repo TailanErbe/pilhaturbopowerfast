@@ -248,33 +248,47 @@ export function ProductPanel({ product }: { product: Product }) {
   if (escolha) {
     /**
      * `overflow-y-auto` no retrato, e ele existe por causa dos acordeões.
-       *
-       * A seção é de altura fixa e vive dentro do pin, onde `overflow-hidden`
-       * não vira barra de rolagem: vira CONTEÚDO PERDIDO. Medido num
-       * 375×812, com a ficha técnica aberta: o corpo dela tem 288 px e abre
-       * a 86 px do fim da seção, então 251 px somem — e são 8 linhas, das
-       * quais o cliente via 4 no Safari. Com os dois acordeões abertos, 371.
-       *
-       * Rolar por dentro do próprio acordeão não resolveria: sobrariam duas
-       * linhas visíveis de cada vez. Quem precisa rolar é a COLUNA, e aí o
-       * bloco aberto sobe e ganha a tela.
-       *
-       * Fechado não muda nada: sem transbordo, `auto` não mostra barra nem
-       * captura gesto. A rolagem aninhada só passa a existir depois que o
-       * usuário abriu alguma coisa, que é exatamente quando ela é esperada.
-       *
-       * `data-lenis-prevent` para o Lenis não sequestrar a roda aqui dentro.
-       * No toque não seria preciso — a instância roda com `syncTouch: false`,
-       * ou seja o dedo já usa a rolagem nativa —, mas a janela estreita de
-       * mesa existe e é onde a roda passaria direto para a página.
-       *
+     *
+     * A seção é de altura fixa e vive dentro do pin, onde `overflow-hidden`
+     * não vira barra de rolagem: vira CONTEÚDO PERDIDO. Medido num 375×812,
+     * com a ficha técnica aberta: o corpo dela tem 288 px e abre a 86 px do
+     * fim da seção, então 251 px somem — e são 8 linhas, das quais o cliente
+     * via 4 no Safari. Com os dois acordeões abertos, 371.
+     *
+     * Rolar por dentro do próprio acordeão não resolveria: sobrariam duas
+     * linhas visíveis de cada vez. Quem precisa rolar é a COLUNA, e aí o
+     * bloco aberto sobe e ganha a tela.
+     *
+     * Fechado não muda nada: sem transbordo, `auto` não mostra barra nem
+     * captura gesto. A rolagem aninhada só passa a existir depois que o
+     * usuário abriu alguma coisa, que é exatamente quando ela é esperada.
+     *
+     * ------------------------------------------------------------------
+     * E NADA DE `data-lenis-prevent` AQUI. Eu pus, e quebrou a página.
+     * ------------------------------------------------------------------
+     *
+     * A seção é `absolute` e cobre a tela inteira, e os painéis inativos
+     * ficam com `visibility: hidden` — ou seja, do beat 01 em diante o
+     * ponteiro está SEMPRE sobre um destes elementos. Com o atributo, o
+     * Lenis parava de tratar a roda ali; e como o painel fechado não tem
+     * transbordo nenhum (medido: `scrollHeight - clientHeight` = 0), não
+     * havia rolagem interna para receber o gesto. A página simplesmente
+     * parava de rolar a partir do 01 AA, que foi o relato do cliente.
+     *
+     * Sem o atributo o toque continua certo, e é o que importa aqui: a
+     * instância roda com `syncTouch: false`, então o dedo usa a rolagem
+     * nativa — havendo transbordo o painel rola, não havendo a página rola.
+     *
+     * O que se perde é a roda alcançar a rolagem interna numa janela de mesa
+     * mais estreita que `md`. Custo pequeno, num canto raro. Zona morta de
+     * roda do tamanho da tela, não.
+     *
      * `overscroll-contain` impede o encadeamento: chegando ao fim da ficha,
      * o gesto para ali em vez de continuar rolando o ato por baixo.
      */
     return (
       <section
         id={`produto-${product.index}`}
-        data-lenis-prevent
         className={`relative flex h-full min-h-dvh overflow-x-hidden overflow-y-auto overscroll-contain md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
       >
         <SectionBg className={t.bg} noAto />
@@ -492,7 +506,6 @@ export function ProductPanel({ product }: { product: Product }) {
   return (
     <section
       id={`produto-${product.index}`}
-      data-lenis-prevent
       className={`relative flex h-full min-h-dvh items-center overflow-x-hidden overflow-y-auto overscroll-contain md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
     >
       <SectionBg className={t.bg} noAto />
