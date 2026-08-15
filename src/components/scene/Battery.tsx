@@ -87,6 +87,17 @@ const RETRATO = {
 const LARGURA_RETRATO = 768
 
 /**
+ * Quanto o produto sobe dentro da faixa livre, no retrato.
+ *
+ * Fração da altura da tela. Centrado na faixa, ele ficava equidistante do
+ * título acima e das linhas abaixo, e no herói isso lê como duas coisas
+ * soltas em vez de um título anunciando um objeto. Subindo, ele encosta
+ * na chamada e o respiro sobra do lado de baixo, que é onde o olho já
+ * espera vazio.
+ */
+const SUBIDA_RETRATO = 0.045
+
+/**
  * A protagonista SAI DE CENA POR OPACIDADE na virada do kit.
  *
  * Ela sumia só por escala, com o argumento de que um objeto que encolhe
@@ -422,13 +433,43 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
      * faixa que o texto não usa. É o mesmo arranjo da referência no
      * celular: produto em cima, texto embaixo, sem cruzamento.
      */
-    // Centra o produto DENTRO da faixa livre deste beat, não na tela
+    /**
+     * No retrato quem manda na vertical é a FAIXA, e só ela.
+     *
+     * O `position[0]` da pose desce o produto para o título caber acima
+     * dele — e isso é acerto de DESKTOP, onde o título mora no topo e a
+     * pose é a única alavanca. No retrato a faixa livre já resolve o
+     * mesmo problema, e o deslocamento da pose entrava por cima: somados,
+     * empurravam o produto para baixo do centro da faixa e abriam um vão
+     * grande entre ele e o título.
+     *
+     * `SUBIDA_RETRATO` tira o produto do centro exato da faixa e o
+     * aproxima do texto de cima. Centrado, ele fica equidistante das duas
+     * pontas, e no herói isso lê como duas coisas soltas em vez de um
+     * título anunciando um objeto.
+     */
     const alturaVisivel = meiaAltura * 2
-    const centroDaFaixa = (faixaAqui.de + faixaAqui.ate) / 2
+    const centroDaFaixa =
+      (faixaAqui.de + faixaAqui.ate) / 2 - (retrato ? SUBIDA_RETRATO : 0)
     const subida = retrato ? alturaVisivel * (0.5 - centroDaFaixa) : 0
+    const poseY = retrato ? 0 : alvo.position[0]
 
-    g.position.y = chegar(g.position.y, alvo.position[0] + flutua + subida)
+    g.position.y = chegar(g.position.y, poseY + flutua + subida)
     g.rotation.y = chegar(g.rotation.y, alvo.rotation[1] + balanca)
+
+    /**
+     * Publica onde o produto ficou NA TELA.
+     *
+     * O halo do fundo nasce daqui. Ele já foi um valor fixo em CSS, e no
+     * retrato o resultado foi cômico: o produto sobe para a faixa livre e
+     * o brilho fica no pé da tela, sozinho. A posição final depende de
+     * pose, amortecimento, respiro, faixa e escala — quem sabe onde ela
+     * deu é este laço, e mais ninguém.
+     */
+    sceneState.centroNaTela = {
+      x: 0.5 + g.position.x / (2 * meiaLargura),
+      y: 0.5 - g.position.y / (2 * meiaAltura),
+    }
   })
 
   return (

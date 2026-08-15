@@ -82,11 +82,75 @@ export function BarraDoHeroi() {
           </button>
         ))}
 
+        {/**
+         * O carrinho, como no rascunho.
+         *
+         * Eu tinha trocado por "Onde comprar" com o argumento de que a
+         * página não tem carrinho e o ícone prometeria o que não entrega.
+         * O cliente preferiu o ícone, e é decisão dele — mas o rótulo
+         * acessível diz para onde o clique leva de verdade, e o `title`
+         * mostra o mesmo a quem passar o mouse. Assim o desenho é o que
+         * ele pediu sem que a promessa fique só na imagem.
+         */}
+        {/**
+         * O carrinho ocupa a LARGURA da barra e se centra nela.
+         *
+         * Ele estava do tamanho das miniaturas e encostado à esquerda,
+         * como se fosse um quarto produto da lista — e não é: é a única
+         * ação da barra.
+         *
+         * Centrado sob a régua, mas com a CAIXA justa. Ocupando a linha
+         * inteira em laranja chapado, ele virava o objeto mais pesado da
+         * primeira tela e disputava com o produto; quem tinha de crescer
+         * era o ícone, não o bloco. A régua acima não é enfeite: sem ela
+         * o botão flutua no fim da lista sem dizer que mudou de assunto.
+         */}
+        <span aria-hidden className="mt-4 h-px w-full bg-white/15" />
+
+        {/**
+         * Laranja chapado com tinta preta, como os painéis claros.
+         *
+         * Em branco a 5% ele era mais um bloco cinza numa coluna de
+         * blocos cinza — a única AÇÃO da tela, vestida de item de lista.
+         * O laranja da marca é a cor que a página reserva para o que
+         * importa, e sobre ele o preto dá 10,56:1 de contraste (texto
+         * branco daria 1,99:1 e reprovaria).
+         */}
         <a
           href={CONTENT.buy.href}
-          className="mt-3 text-sm whitespace-nowrap text-white/60 transition-colors hover:text-white"
+          title={CONTENT.buy.cta}
+          className="pulsa-carrinho mt-4 grid w-fit self-center place-items-center rounded-xl bg-brand-orange px-4 py-1.5 text-brand-black transition-colors hover:bg-orange-light"
         >
-          {CONTENT.buy.cta}
+          <span className="sr-only">{CONTENT.buy.cta}</span>
+          {/**
+           * O cesto é um TRAPÉZIO fechado, não uma linha aberta.
+           *
+           * O desenho anterior era um traço só que ia do cabo até o fim
+           * do cesto e voltava, sem base: nos tamanhos pequenos a boca
+           * ficava aberta e o ícone lia como um gancho. Fechando o
+           * trapézio, a silhueta se reconhece mesmo em 20 px, e a leve
+           * conicidade é o que distingue carrinho de caixa.
+           *
+           * O cabo encontra o cesto no mesmo ponto em que ele começa, e
+           * as rodas ficam sob os dois terços do cesto, que é onde elas
+           * estariam num carrinho de verdade.
+           */}
+          <svg
+            aria-hidden
+            width="34"
+            height="34"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M2.6 3.3h2.05a1.3 1.3 0 0 1 1.26.99l.31 1.31" />
+            <path d="M6.22 5.6h14.6l-1.62 6.95a1.65 1.65 0 0 1-1.6 1.27H9.44a1.65 1.65 0 0 1-1.6-1.26L6.22 5.6Z" />
+            <circle cx="10.3" cy="19.2" r="1.5" />
+            <circle cx="17.3" cy="19.2" r="1.5" />
+          </svg>
         </a>
       </nav>
     </div>

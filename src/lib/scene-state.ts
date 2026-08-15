@@ -346,6 +346,19 @@ export const sceneState = {
    */
   faixasDoRetrato: null as { de: number; ate: number }[] | null,
   /**
+   * Onde o produto está NA TELA, em fração, escrito pela <Battery /> a
+   * cada quadro. Lido pelo <BrilhoDeCarga /> para o halo nascer atrás
+   * dele.
+   *
+   * Publicar em vez de recalcular: a posição final do produto é o
+   * resultado de pose, amortecimento, respiro, faixa do retrato e escala
+   * — refazer essa conta do lado do CSS seria manter duas versões da
+   * mesma verdade, e elas divergiriam na primeira mudança. Foi o que
+   * aconteceu com o halo fixo em 56%: no retrato o produto subiu para a
+   * faixa livre e o brilho ficou no pé da tela, sozinho.
+   */
+  centroNaTela: { x: 0.5, y: 0.5 },
+  /**
    * Saída do ato, 0→1. Escrita pela timeline logo depois que o pin solta.
    *
    * O canvas é `fixed inset-0` e nunca desmonta, então sem isto o kit

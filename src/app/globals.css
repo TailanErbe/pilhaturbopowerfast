@@ -214,16 +214,79 @@
     );
   background-image:
     radial-gradient(
-      ellipse 24vmin var(--carga-h, 0vh) at var(--carga-x, 50%) 58%,
+      ellipse 24vmin var(--carga-h, 0vh) at var(--carga-x, 50%) var(--carga-y, 58%),
       rgb(255 156 0 / var(--carga-a, 0)) 0%,
       rgb(255 120 0 / calc(var(--carga-a, 0) * 0.42)) 42%,
       rgb(255 100 0 / 0) 72%
     ),
+    /**
+     * O halo do herói, em TRÊS camadas.
+     *
+     * Com duas ele terminava numa borda visível e lia como mancha oval
+     * colada atrás do produto — contido, quando o que se quer é luz
+     * saindo dele e alcançando a página.
+     *
+     *   núcleo      apertado e forte, dá o aspecto de aceso por dentro
+     *   meio        a ponte; sem ela o salto do núcleo para o vazio é o
+     *               que desenha a borda
+     *   irradiação  enorme e quase transparente, em vmax para cobrir a
+     *               tela em qualquer proporção. É ela que tira o halo de
+     *               "mancha" e o põe em "ambiente"
+     *
+     * As três seguem o centro do produto, que a cena publica a cada
+     * quadro (ver centroNaTela). Fixá-las em CSS foi o que, no retrato,
+     * deixou a pilha no alto e o brilho no pé da tela.
+     */
+    /**
+     * A queda tem MUITAS paradas, seguindo (1−t)², e não três ou quatro.
+     *
+     * Com poucas paradas o degradê ganha um platô no meio e depois cai:
+     * o olho lê esse joelho como CONTORNO, e o halo vira um oval
+     * desenhado atrás do produto. Luz de verdade não tem joelho — ela
+     * decai rápido perto da fonte e vai ficando cada vez mais lenta, sem
+     * nunca marcar onde termina.
+     *
+     * Oito paradas por camada bastam para o joelho sumir e ainda evitam
+     * o bandeamento que um degradê longo em 8 bits produz.
+     *
+     * A excentricidade também baixou. Um oval muito alongado é uma FORMA,
+     * e forma se reconhece; perto do círculo ele deixa de ter silhueta e
+     * passa a ler como ambiente.
+     */
     radial-gradient(
-      ellipse 30vmin 34vh at 50% var(--halo-y, 56%),
-      rgb(255 150 30 / var(--halo-a, 0)) 0%,
-      rgb(255 110 10 / calc(var(--halo-a, 0) * 0.34)) 45%,
-      rgb(255 90 0 / 0) 74%
+      ellipse 22vmin 30vh at var(--halo-x, 50%) var(--halo-y, 56%),
+      rgb(255 190 90 / var(--halo-a, 0)) 0%,
+      rgb(255 170 60 / calc(var(--halo-a, 0) * 0.85)) 8%,
+      rgb(255 150 35 / calc(var(--halo-a, 0) * 0.7)) 17%,
+      rgb(255 135 20 / calc(var(--halo-a, 0) * 0.52)) 28%,
+      rgb(255 122 10 / calc(var(--halo-a, 0) * 0.36)) 41%,
+      rgb(255 110 5 / calc(var(--halo-a, 0) * 0.21)) 56%,
+      rgb(255 100 0 / calc(var(--halo-a, 0) * 0.1)) 72%,
+      rgb(255 95 0 / calc(var(--halo-a, 0) * 0.03)) 87%,
+      rgb(255 90 0 / 0) 100%
+    ),
+    radial-gradient(
+      ellipse 58vmin 66vh at var(--halo-x, 50%) var(--halo-y, 56%),
+      rgb(255 150 40 / calc(var(--halo-a, 0) * 0.34)) 0%,
+      rgb(255 138 28 / calc(var(--halo-a, 0) * 0.28)) 9%,
+      rgb(255 128 18 / calc(var(--halo-a, 0) * 0.22)) 19%,
+      rgb(255 120 12 / calc(var(--halo-a, 0) * 0.16)) 31%,
+      rgb(255 112 6 / calc(var(--halo-a, 0) * 0.11)) 44%,
+      rgb(255 105 2 / calc(var(--halo-a, 0) * 0.07)) 58%,
+      rgb(255 100 0 / calc(var(--halo-a, 0) * 0.035)) 73%,
+      rgb(255 96 0 / calc(var(--halo-a, 0) * 0.012)) 88%,
+      rgb(255 92 0 / 0) 100%
+    ),
+    radial-gradient(
+      circle 96vmax at var(--halo-x, 50%) var(--halo-y, 56%),
+      rgb(255 128 20 / calc(var(--halo-a, 0) * 0.16)) 0%,
+      rgb(255 120 12 / calc(var(--halo-a, 0) * 0.11)) 12%,
+      rgb(255 112 6 / calc(var(--halo-a, 0) * 0.072)) 25%,
+      rgb(255 106 2 / calc(var(--halo-a, 0) * 0.044)) 39%,
+      rgb(255 100 0 / calc(var(--halo-a, 0) * 0.024)) 54%,
+      rgb(255 96 0 / calc(var(--halo-a, 0) * 0.011)) 70%,
+      rgb(255 92 0 / calc(var(--halo-a, 0) * 0.004)) 85%,
+      rgb(255 90 0 / 0) 100%
     );
 }
 
@@ -240,6 +303,38 @@
  * `overflow-hidden` da seção e sumiria pela borda de baixo; encostando na
  * base, o bloco cresce para CIMA e o que falta é espaço, não conteúdo.
  */
+/**
+ * O pulso do carrinho: chamar atenção sem pedir socorro.
+ *
+ * Duas coisas ao mesmo tempo, e de propósito: a peça cresce muito pouco
+ * (3,5%) e um anel sai dela e se dissolve. O anel é quem chama; a escala
+ * sozinha, no tamanho que resolve, já viraria salto.
+ *
+ * O ciclo é longo. Pulso curto lê como alerta — algo errado que precisa
+ * de clique. Em dois segundos e meio ele lê como convite, que é o que um
+ * botão de compra deve parecer.
+ *
+ * `motion-safe` porque isto é animação decorativa e contínua, o tipo
+ * exato que a §6.10 manda desligar quando o sistema pede menos movimento.
+ */
+@keyframes pulso-carrinho {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(255 164 0 / 0.5);
+  }
+  50% {
+    transform: scale(1.035);
+    box-shadow: 0 0 0 12px rgb(255 164 0 / 0);
+  }
+}
+
+@utility pulsa-carrinho {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: pulso-carrinho 2.5s ease-in-out infinite;
+  }
+}
+
 @utility base-do-retrato {
   @media (width < 48rem) {
     display: flex;

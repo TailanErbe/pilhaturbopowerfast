@@ -28,6 +28,33 @@ export function Hero() {
       <SectionBg className="bg-surface-000" noAto />
 
       {/**
+       * A moldura da primeira tela.
+       *
+       * Uma tela com o produto no meio e texto nos cantos não tem nada
+       * dizendo onde ela começa e termina — o preto do fundo e o preto da
+       * borda do navegador são o mesmo preto, e a composição fica boiando.
+       * O filete resolve isso e ainda dá à abertura um ar de peça
+       * impressa, com margem declarada.
+       *
+       * Fica ACIMA do produto de propósito: no herói o canvas sobe para
+       * cima do ato (ver FundoDoAto), e uma moldura que o objeto
+       * atravessasse deixaria de ser moldura.
+       */}
+      {/**
+       * 26% e não 12%.
+       *
+       * A 12% ela existia e não se via: o halo do produto ilumina o meio
+       * da tela e levanta o preto em volta, e um filete quase transparente
+       * desaparece contra esse fundo aceso. Borda de moldura precisa
+       * ganhar do fundo mais claro que ela vai encontrar, não do mais
+       * escuro.
+       */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-4 z-3 rounded-xl border border-white/26 sm:inset-6"
+      />
+
+      {/**
        * O bloco do nome fica na faixa de cima, acima do produto.
        *
        * `pt` grande o bastante para não encostar no cabeçalho e no logo, e
@@ -47,13 +74,15 @@ export function Hero() {
        */}
       <div className="container-gutter relative z-2 pt-[max(11vh,88px)]">
         <div className="mx-auto w-fit text-left">
-          <p className="font-display text-[clamp(1.1rem,2.4vw,2.2rem)] tracking-[0.1em] text-white">
+          {/* O piso do clamp é do CELULAR: em 390 de largura, 2,4vw dá
+              9px e a linha some. Quem manda no retrato é o piso, não o vw */}
+          <p className="font-display text-[clamp(1.5rem,2.4vw,2.2rem)] tracking-[0.1em] text-white">
             {CONTENT.hero.kicker}
           </p>
 
           {/* Uma linha só: é o nome do produto, não uma frase. O espaço
               final evita que leitores de tela juntem as palavras */}
-          <h1 className="font-display text-[clamp(2.25rem,5.4vw,5rem)] leading-[0.95] tracking-[0.04em] text-brand-orange">
+          <h1 className="font-display text-[clamp(3rem,5.4vw,5rem)] leading-[0.95] tracking-[0.04em] text-brand-orange">
             {CONTENT.hero.headline.map((linha) => (
               <span key={linha} className="block">
                 {linha}{' '}

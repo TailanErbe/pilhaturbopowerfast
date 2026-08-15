@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { BEATS } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
-import { poseAt } from '@/lib/scene-state'
+import { sceneState } from '@/lib/scene-state'
 
 /**
  * O halo de carga que sobe atrás da pilha, no beat do contador.
@@ -62,14 +62,16 @@ const ALTURA = { minima: 6, maxima: 62 }
 const FORCA = 0.5
 
 /**
- * O halo do herói: ambiente, não narrativa.
+ * O halo do herói: a pilha ENERGIZADA.
  *
- * Ele não conta nada — só devolve o contorno de um produto quase preto
- * sobre uma página preta. Por isso é mais fraco que o da carga e se apaga
- * na mesma passagem em que a barra do herói vira pílula, para não sobrar
- * um brilho sem dono no beat seguinte.
+ * Começou fraco, como contorno para o produto não sumir contra a página
+ * preta. O pedido do cliente é outro e é melhor: que a primeira tela
+ * mostre uma pilha carregada, com a luz saindo dela e alcançando a
+ * página. Então ele é forte e largo, e se apaga na mesma passagem em que
+ * a barra do herói vira pílula, para não sobrar brilho sem dono no beat
+ * seguinte.
  */
-const HALO = { forca: 0.34, some: { de: 0.055, ate: 0.105 } }
+const HALO = { forca: 0.72, some: { de: 0.055, ate: 0.105 } }
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))
@@ -77,8 +79,9 @@ const entre = (t: number) => Math.max(0, Math.min(1, t))
 export function BrilhoDeCarga() {
   useEffect(() => {
     let agendado = 0
-    /** Último valor escrito, para não sujar o estilo a cada evento */
-    let ultimo = -1
+    /** Um acumulador por brilho: ver o comentário no corpo de `aplicar` */
+    let ultimaCarga = -1
+    let ultimoHalo = -1
     /** Guardado depois de achado; ver o comentário abaixo */
     let alvo: HTMLElement | null = null
 
@@ -107,39 +110,55 @@ export function BrilhoDeCarga() {
       }
       const p = tl.progresso()
 
+      /**
+       * O CENTRO vem da cena, não de uma conta paralela.
+       *
+       * A posição final do produto é o resultado de pose, amortecimento,
+       * respiro, faixa do retrato e escala. Recalcular aqui seria manter
+       * duas versões da mesma verdade — e foi exatamente o que produziu,
+       * no celular, um produto no alto com o brilho parado no pé da tela.
+       */
+      const centro = sceneState.centroNaTela
+      const cx = `${(centro.x * 100).toFixed(1)}%`
+      const cy = `${(centro.y * 100).toFixed(1)}%`
+
+      /* ------------------------------------------------ halo do herói */
+      const noHeroi = 1 - suave(entre((p - HALO.some.de) / (HALO.some.ate - HALO.some.de)))
+      const halo = Math.round(HALO.forca * noHeroi * 1000) / 1000
+      /**
+       * Cada brilho tem o SEU guarda de escrita.
+       *
+       * Havia um só, comparado com o valor da CARGA — e como a carga vale
+       * zero no herói, a função saía antes de escrever o halo. Ele ficava
+       * congelado no que estivesse, que na prática era zero: o herói
+       * abria sem brilho nenhum. Um acumulador por variável.
+       */
+      if (halo !== ultimoHalo) {
+        ultimoHalo = halo
+        alvo.style.setProperty('--halo-a', halo.toFixed(3))
+        alvo.style.setProperty('--halo-x', cx)
+        alvo.style.setProperty('--halo-y', cy)
+      } else if (halo > 0) {
+        // Aceso e parado: a posição ainda acompanha o respiro do produto
+        alvo.style.setProperty('--halo-x', cx)
+        alvo.style.setProperty('--halo-y', cy)
+      }
+
+      /* ------------------------------------------------ halo de carga */
       const carga = suave(entre((p - FAIXA.nasce) / (FAIXA.enche - FAIXA.nasce)))
       const saindo = suave(entre((p - FAIXA.enche) / (FAIXA.apaga - FAIXA.enche)))
-      const presenca = carga * (1 - saindo)
+      const presenca = Math.round(carga * (1 - saindo) * 100) / 100
 
-      const arredondado = Math.round(presenca * 100) / 100
-      if (arredondado === ultimo) return
-      ultimo = arredondado
-
-      /**
-       * O halo segue a COLUNA do produto.
-       *
-       * `screenX` da pose é fração da tela e muda entre beats — no
-       * contador o produto sai do centro para 0,57, justamente para não
-       * cobrir o texto. Um halo fixo no meio ficaria ao lado dele.
-       */
-      const x = poseAt(p).screenX * 100
-
-      alvo.style.setProperty('--carga-x', `${x.toFixed(1)}%`)
-      alvo.style.setProperty('--carga-a', String(FORCA * arredondado))
-      alvo.style.setProperty(
-        '--carga-h',
-        `${(ALTURA.minima + (ALTURA.maxima - ALTURA.minima) * carga).toFixed(1)}vh`,
-      )
-
-      /**
-       * O halo do HERÓI é outro assunto, e por isso outras variáveis.
-       *
-       * Este não conta nada: só devolve o contorno de um produto quase
-       * preto sobre página preta. Fica aceso na primeira tela e se apaga
-       * junto com ela, na mesma passagem em que a barra vira pílula.
-       */
-      const noHeroi = 1 - suave(entre((p - HALO.some.de) / (HALO.some.ate - HALO.some.de)))
-      alvo.style.setProperty('--halo-a', (HALO.forca * noHeroi).toFixed(3))
+      if (presenca !== ultimaCarga || presenca > 0) {
+        ultimaCarga = presenca
+        alvo.style.setProperty('--carga-x', cx)
+        alvo.style.setProperty('--carga-y', cy)
+        alvo.style.setProperty('--carga-a', String(FORCA * presenca))
+        alvo.style.setProperty(
+          '--carga-h',
+          `${(ALTURA.minima + (ALTURA.maxima - ALTURA.minima) * carga).toFixed(1)}vh`,
+        )
+      }
     }
 
     /**
