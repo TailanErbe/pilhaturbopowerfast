@@ -28,46 +28,27 @@ export function Hero() {
       <SectionBg className="bg-surface-000" noAto />
 
       {/**
-       * A moldura da primeira tela.
+       * NÃO EXISTE MOLDURA AQUI, e isso é decisão tomada.
        *
-       * Uma tela com o produto no meio e texto nos cantos não tem nada
-       * dizendo onde ela começa e termina — o preto do fundo e o preto da
-       * borda do navegador são o mesmo preto, e a composição fica boiando.
-       * O filete resolve isso e ainda dá à abertura um ar de peça
-       * impressa, com margem declarada.
+       * Houve um filete de 1 px em volta da primeira tela, pedido para
+       * resolver um problema real: o preto do fundo e o preto da borda do
+       * navegador são o mesmo preto, e sem nada declarando onde a
+       * composição começa ela fica boiando.
        *
-       * Fica ACIMA do produto de propósito: no herói o canvas sobe para
-       * cima do ato (ver FundoDoAto), e uma moldura que o objeto
-       * atravessasse deixaria de ser moldura.
+       * Ele saiu porque falhava no próprio objetivo. Filete fino, de baixo
+       * contraste e recuado poucos pixels da borda da tela não lê como
+       * moldura: lê como sobreposição de ferramenta. O cliente olhou e
+       * perguntou se aquilo era marcação de segurança e se iria para o
+       * servidor — e quando o dono do produto confunde um elemento de
+       * composição com artefato de build, a intenção não está chegando,
+       * por mais correto que seja o argumento que a criou.
+       *
+       * Se o problema do preto contra preto voltar a incomodar, o caminho
+       * NÃO é engrossar este filete. É dar corpo ao fundo: uma queda de
+       * luminância nas bordas, ou o próprio halo do produto assumindo o
+       * papel de dizer onde a cena está acesa. Borda desenhada é a
+       * resposta mais literal e a que mais parece ferramenta.
        */}
-      {/**
-       * 26% e não 12%.
-       *
-       * A 12% ela existia e não se via: o halo do produto ilumina o meio
-       * da tela e levanta o preto em volta, e um filete quase transparente
-       * desaparece contra esse fundo aceso. Borda de moldura precisa
-       * ganhar do fundo mais claro que ela vai encontrar, não do mais
-       * escuro.
-       */}
-      {/**
-       * O recuo da moldura sai da GOTEIRA, e é menor que ela.
-       *
-       * Estava em `inset-4 sm:inset-6`, ou seja 16 px no celular — e a
-       * goteira do conteúdo também é 16 px ali. Medido em 390x844: o
-       * "Role para explorar" terminava em x=374 e o filete da moldura
-       * passava em x=374. Zero folga: o texto encostava na linha, o que
-       * lê como erro de impressão.
-       *
-       * Amarrando à goteira por um fator menor que 1, a folga passa a
-       * existir em toda largura por construção, e não por coincidência
-       * numérica em uma tela. Em 390 são 7 px de moldura contra 16 de
-       * texto; em 1280, 22 contra 48.
-       */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[calc(var(--spacing-gutter)*0.45)] z-3 rounded-xl border border-white/26"
-      />
-
       {/**
        * O bloco do nome fica na faixa de cima, acima do produto.
        *

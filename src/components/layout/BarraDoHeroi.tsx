@@ -86,7 +86,27 @@ export function BarraDoHeroi() {
          * mesmo recuo dos ladrilhos, os quatro ícones caem na mesma linha
          * e os nomes ficam pendurados só onde existem.
          */
-        className="pointer-events-auto flex flex-row items-start justify-center gap-3 md:flex-col md:items-start md:justify-start md:gap-1"
+        /**
+         * A BORDA ENVOLVE O MENU, e não a tela.
+         *
+         * O pedido original foi "está faltando uma borda em volta dessa
+         * seção", e eu li "seção" como a primeira tela inteira: pus um
+         * filete de 1 px em volta do viewport e o defendi por várias
+         * rodadas. Ele acabou removido porque o próprio cliente perguntou
+         * se aquilo era marcação de segurança que ia para o servidor. Era
+         * a leitura certa de um elemento errado: filete fino colado na
+         * borda da tela lê como sobreposição de ferramenta.
+         *
+         * A "seção" era ESTA: o menu Nossas pilhas. E aqui a borda faz o
+         * trabalho que lá não fazia — ela agrupa. Três ladrilhos, uma
+         * régua e um botão soltos sobre o fundo são cinco coisas; dentro
+         * de uma caixa são um menu.
+         *
+         * `w-fit` no retrato para a caixa abraçar o conteúdo em vez de
+         * encostar nas duas bordas do celular, onde ela viraria barra de
+         * ferramentas.
+         */
+        className="pointer-events-auto mx-auto flex w-fit flex-row items-start justify-center gap-1.5 rounded-2xl border border-white/15 bg-black/35 p-2.5 md:mx-0 md:flex-col md:items-start md:justify-start md:gap-1 md:p-4"
       >
         <p className="hidden text-xs tracking-[0.22em] text-white/50 uppercase md:mb-3 md:block">
           Nossas pilhas
