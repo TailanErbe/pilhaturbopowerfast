@@ -257,12 +257,22 @@ export function CampoDeDescartaveis({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* A legenda diz o total e a unidade, e some o `aria-label` que
-            substituía o desenho inteiro: alternativa escondida que alguém
-            precisa lembrar de atualizar é dívida */}
+        {/**
+         * A legenda diz o total e DE ONDE ele vem, sem jargão.
+         *
+         * Ela dizia "o limite de ciclos de recarga da ficha". "A ficha" é
+         * vocabulário interno: existe um accordion chamado Ficha técnica
+         * nos painéis de produto, e a legenda apontava para ele sem dizer
+         * isso. O cliente leu e perguntou "que ficha?", que é a pergunta
+         * certa — quem chega na página não tem esse contexto.
+         *
+         * O `aria-label` do desenho antigo também sumiu junto: ele
+         * substituía a figura inteira por uma frase, e alternativa
+         * escondida que alguém precisa lembrar de atualizar é dívida.
+         */}
         <figcaption className="texto-nota mt-[18px] text-white/60">
-          Cada traço é uma descartável. São 1.200, o limite de ciclos de
-          recarga da ficha.
+          Cada traço é uma descartável. São 1.200, que é quantas vezes uma
+          Gshield pode ser recarregada.
         </figcaption>
       </figure>
 

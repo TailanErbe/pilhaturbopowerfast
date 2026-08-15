@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { BEATS, CRUZAMENTO, SAIDA_DO_HEROI } from '@/motion/labels'
+import { BEATS, beatPorId, CRUZAMENTO } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
 
 /**
@@ -66,14 +66,24 @@ const CORES: [number, number, number][] = [
 ]
 
 /**
- * Enquanto o herói manda, o canvas fica acima do ato.
+ * Enquanto o herói manda, o canvas fica ACIMA do ato.
  *
- * A troca de camada acontece no MEIO da saída do herói, onde as duas
- * navegações estão cruzando e ninguém está olhando para a ordem de
- * pintura. Os números vêm de motion/labels, junto com os das outras três
- * peças que dependem deste mesmo instante.
+ * A troca de camada acontece no FIM do beat do herói, e não no meio da
+ * saída dele.
+ *
+ * Ela estava em `SAIDA_DO_HEROI.meio`, ou seja 0,08. Só que o título do
+ * herói não some ali: ele apaga entre 0,105 e 0,15, junto com o beat. Com
+ * a troca em 0,08, havia sete centésimos de progresso em que o canvas já
+ * estava embaixo e o texto ainda estava na tela — e o resultado era o
+ * "TURBO POWERFAST" desenhado POR CIMA da tampa da pilha, que é o oposto
+ * da regra da casa: no herói o produto é o assunto e não fica sob nada.
+ *
+ * 0,15 é a única janela limpa que existe. A saída do herói roda em
+ * [0,105 ; 0,15] e a entrada do USB-C em [0,15 ; 0,195], então exatamente
+ * ali os dois textos estão em opacidade zero: dá para trocar a ordem de
+ * pintura sem que haja um pixel de texto para trocar de lado.
  */
-const HEROI = SAIDA_DO_HEROI
+const TROCA_DE_CAMADA = beatPorId('hero').fim
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))
@@ -135,7 +145,7 @@ export function FundoDoAto() {
        * Escrito como string e comparado antes: mudar z-index a cada
        * quadro forçaria o compositor a refazer as camadas sem necessidade.
        */
-      const z = p < HEROI.meio ? '3' : '1'
+      const z = p < TROCA_DE_CAMADA ? '3' : '1'
       if (z !== ultimoZ && cena) {
         ultimoZ = z
         cena.style.zIndex = z

@@ -118,6 +118,23 @@ const FAIXA = 0.5
  */
 export const LARGURA_RETRATO = 1024
 
+/** Um ponto dentro do beat do painel 01, em fração dele */
+const aaEm = (f: number) => {
+  const b = beatPorId('produto-01')
+  return b.inicio + (b.fim - b.inicio) * f
+}
+
+/**
+ * Onde a volta do painel 01 começa e termina.
+ *
+ * `AA_CHEGA` fica logo no começo do beat porque o produto já vem posto: o
+ * chip o entrega na pose final. Se estivesse no centro, o trecho anterior
+ * voltaria a ser uma viagem dentro do painel, que é justamente o defeito
+ * que isto conserta.
+ */
+const AA_CHEGA = aaEm(0.12)
+const AA_VOLTA = aaEm(0.88)
+
 /**
  * Qual formato está em cena.
  *
@@ -126,11 +143,17 @@ export const LARGURA_RETRATO = 1024
  * é percebida como corte. Trocar com a face de frente entregaria o truque.
  */
 /**
- * O meio exato entre as poses dos painéis 01 e 02. Com uma volta completa
- * entre elas, é ali que o produto está de costas para a câmera.
+ * O meio exato entre a ÚLTIMA âncora do painel 01 e a do 02.
+ *
+ * Com uma volta completa entre as duas, é ali que o produto está de costas
+ * para a câmera, e é por isso que a troca de formato não aparece.
+ *
+ * Usa `AA_VOLTA` e não o centro do beat: o painel 01 ganhou duas âncoras
+ * quando a volta completa mudou de lugar para dentro dele, e o centro
+ * deixou de ser o ponto de partida da passagem para o 02. Medindo pelo
+ * centro, a troca cairia a uns 45° de giro, com a marca ainda visível.
  */
-const TROCA_DE_FORMATO =
-  (centroDoBeat('produto-01') + centroDoBeat('produto-02')) / 2
+const TROCA_DE_FORMATO = (AA_VOLTA + centroDoBeat('produto-02')) / 2
 
 export function variantEm(progress: number): 'AA' | 'AAA' {
   return progress < TROCA_DE_FORMATO ? 'AA' : 'AAA'
@@ -208,6 +231,24 @@ const AFASTAMENTO = 22.6 / 14
 const chipEm = (f: number) => {
   const b = beatPorId('chip')
   return b.inicio + (b.fim - b.inicio) * f
+}
+
+/**
+ * A pose de apresentação, IDÊNTICA nos três painéis e na chegada do chip.
+ *
+ * Fica num objeto só porque ela é a mesma coisa em cinco âncoras, e o
+ * defeito que o cliente apontou nasceu justamente de duas delas terem
+ * divergido: o chip terminava em screenX 0,57 e escala 1,02, o painel
+ * começava em 0,50 e 1,05, e a diferença virava rolagem dentro do painel.
+ * Espalhados, cinco conjuntos de números divergem; num objeto só, não têm
+ * como.
+ *
+ * O ÂNGULO fica de fora: ele é o que muda entre uma âncora e outra.
+ */
+const POSE_DO_PAINEL = {
+  screenX: FAIXA,
+  position: [0, 0.2 * AFASTAMENTO] as [number, number],
+  scale: 1.05,
 }
 
 /**
@@ -351,55 +392,63 @@ export const POSES: Pose[] = [
   { at: centroDoBeat('cycles'), screenX: 0.57, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
 
   /**
-   * O BEAT DO CHIP É UMA VOLTA COMPLETA, em três âncoras.
+   * O BEAT DO CHIP É A VIAGEM. O painel 01 é a APRESENTAÇÃO.
    *
-   * As seis proteções aparecem uma de cada vez enquanto o produto gira
-   * 360° e volta a ficar de frente, já na pose do painel seguinte. As duas
-   * coisas fecham juntas: a última proteção entra com a pilha chegando.
+   * O cliente descreveu o defeito com precisão: "ao entrar na seção 01 AA
+   * tenho que scrollar para a pilha ficar no centro". Era verdade, e a
+   * conta mostrava onde: a última âncora do chip ficava em screenX 0,57 e
+   * escala 1,02, e a do painel em 0,50 e 1,05. A diferença era resolvida
+   * entre 0,684 e 0,75 — ou seja, DENTRO do painel 01, obrigando a rolar
+   * meio beat só para o produto acabar de chegar.
    *
-   *   CHEGADA    ainda de três-quartos e inclinada, como veio das
-   *              recargas. Nada muda no caminho até aqui.
-   *   ENDIREITA  levanta e apresenta a marca de frente. É o fim do gesto
-   *              anterior, não o começo da volta.
-   *   A VOLTA    exatamente 2π depois, de frente outra vez.
+   * Agora o chip termina EXATAMENTE na pose do painel: mesma coluna, mesma
+   * escala, mesma profundidade, mesmo ângulo. Quando o painel 01 começa,
+   * não sobra deslocamento nenhum para fazer.
+   *
+   *   CHEGADA     ainda de três-quartos e inclinada, como veio das
+   *               recargas. Nada muda no caminho até aqui.
+   *   ENDIREITA   levanta e apresenta a marca de frente.
+   *   ESTACIONA   caminha para a pose do painel enquanto as últimas
+   *               proteções aparecem, e chega antes do fim do beat.
+   *
+   * A VOLTA COMPLETA mudou de lugar junto, e passou a ser o assunto do
+   * painel 01, que é o que o cliente pediu: "chegar na 01 AA e apenas
+   * rotacionar 360 graus". Dar uma volta no chip E outra no painel seria
+   * girar duas vezes seguidas com uma pausa no meio.
+   */
+  { at: chipEm(0.1), screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
+  { at: chipEm(0.34), screenX: 0.57, position: [0, 0.28 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA, 0], scale: 1.02 },
+  { at: chipEm(0.9), ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA, 0] },
+
+  /**
+   * Painéis 01, 02 e 03.
+   *
+   * Aqui a face é FRONTAL, não de três-quartos. O desvio existe por causa
+   * do PLUGUE: com o conector apontado para a câmera, ele vira um bloco
+   * preto achatado cobrindo a tampa. Mas o cabo se desconecta lá no beat
+   * do USB-C e nestes painéis não há plugue nenhum, só a porta desenhada
+   * no rótulo. Mantido o desvio, o produto chegava torto sem motivo, e a
+   * pílula de navegação entregava justamente essa pose.
+   *
+   * O PAINEL 01 TEM DUAS ÂNCORAS: a chegada, que repete a pose com que o
+   * chip terminou, e a volta completa. Entre elas o produto não anda nem
+   * cresce, ele só gira — que é exatamente o pedido.
    *
    * Uma volta INTEIRA e não meia: o eixo do cilindro é vertical, então
    * meia volta devolveria a mesma silhueta com o rótulo de trás para a
-   * frente, e o olho não leria giro nenhum, leria a marca sumindo. A volta
-   * fechada é a única quantidade em que o gesto se anuncia e se resolve.
+   * frente, e o olho não leria giro, leria a marca sumindo.
    *
-   * O painel 01 repete o ângulo de A VOLTA, então entre um e outro não
-   * sobra rotação nenhuma: o produto chega montado, que é o que "encaixar
-   * na próxima seção" quer dizer.
+   * Das passagens 01 para 02 e 02 para 03 continua saindo uma volta cada,
+   * e é no MEIO delas, com o produto de costas, que o formato troca sem a
+   * substituição aparecer (ver TROCA_DE_FORMATO).
    */
-  { at: chipEm(0.1), screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
-  { at: chipEm(0.28), screenX: 0.57, position: [0, 0.28 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA, 0], scale: 1.02 },
-  { at: chipEm(0.92), screenX: 0.57, position: [0, 0.24 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.02 },
-
-  /**
-   * Painéis 01, 02 e 03, nos centros 0,67 / 0,81 / 0,95.
-   *
-   * Aqui a face é FRONTAL, não de três-quartos.
-   *
-   * O desvio de três-quartos existe por causa do PLUGUE: com o conector
-   * apontado para a câmera, ele vira um bloco preto achatado cobrindo a
-   * tampa. Mas o cabo se desconecta lá em 0,24 e nestes painéis não há
-   * plugue nenhum, só a porta desenhada no rótulo. Mantido o desvio, o
-   * produto chegava torto ao painel sem nenhum motivo, e a pílula de
-   * navegação entregava justamente essa pose.
-   *
-   * Entre um painel e outro a pilha dá uma volta completa. Somando
-   * exatamente uma VOLTA por passagem, os três terminam no mesmo ângulo: o
-   * giro acontece no caminho, nunca no destino. É no meio de cada passagem,
-   * com o produto de costas, que o formato troca de AA para AAA sem que a
-   * substituição apareça.
-   */
-  { at: centroDoBeat('produto-01'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.05 },
-  { at: centroDoBeat('produto-02'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0], scale: 1.05 },
+  { at: AA_CHEGA, ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA, 0] },
+  { at: AA_VOLTA, ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0] },
+  { at: centroDoBeat('produto-02'), ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0] },
   // O centro EXATO do beat, e não um valor arredondado perto dele: é onde
   // a pílula de navegação para, e um centésimo de diferença já deixava o
   // kit chegando 5° girado.
-  { at: centroDoBeat('produto-03'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 4, 0], scale: 1.05 },
+  { at: centroDoBeat('produto-03'), ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 4, 0] },
 ]
 
 /**
