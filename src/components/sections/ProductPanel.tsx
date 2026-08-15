@@ -191,9 +191,21 @@ export function ProductPanel({ product }: { product: Product }) {
                   em cima ela abria um vão morto entre o texto e a cena.
                   Perto, mas não colada: encostada no topo do produto ela
                   disputa espaço com a tampa em vez de anunciá-la. */}
-              {/* O `hidden md:block` fica na MÁSCARA: no retrato ela some
-                  inteira, em vez de reservar altura para nada */}
-              <span className="mascara-clip mb-[clamp(20px,5vh,56px)] hidden [--folga-descida:8px] md:block">
+              {/**
+               * A frase VOLTA no retrato.
+               *
+               * Ela era `hidden md:block`, escondida porque no celular
+               * "não sobrava altura" — e sumia justamente a linha que diz
+               * o que o painel é: quatro pilhas e um cabo, todas
+               * carregando juntas. Os outros dois painéis mostram a
+               * frase deles em qualquer largura; só este perdia.
+               *
+               * O motivo de esconder também caducou. A cena 3D agora se
+               * dimensiona pela faixa livre que o texto deixa (ver
+               * TetosDoRetrato), então uma linha a mais encolhe um pouco
+               * as pilhas em vez de atropelá-las.
+               */}
+              <span className="mascara-clip mb-[clamp(16px,5vh,56px)] [--folga-descida:8px]">
                 <p data-clip className="texto-lead">
                   {product.highlight}
                 </p>

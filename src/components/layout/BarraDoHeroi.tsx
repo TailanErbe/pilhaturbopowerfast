@@ -99,14 +99,13 @@ export function BarraDoHeroi() {
          * como se fosse um quarto produto da lista — e não é: é a única
          * ação da barra.
          *
-         * Ocupa a LARGURA da coluna, com altura contida.
+         * 120 por 50, medida fechada com o cliente.
          *
-         * Duas tentativas antes desta: caixa da largura inteira e alta
-         * demais, que virava o objeto mais pesado da primeira tela e
-         * disputava com o produto; e caixa justa em volta do ícone, que
-         * sumia no fim da lista. O que resolve é separar as duas medidas
-         * — largura cheia dá presença e alinha o botão com a coluna, e a
-         * altura contida evita o peso.
+         * Está em pixels e não em fração de propósito. A barra é a única
+         * peça da página cuja largura não vem de uma coluna de texto: ela
+         * se dimensiona pelo conteúdo (miniatura mais nome), e amarrar o
+         * botão a essa largura fazia ele mudar de tamanho a cada ajuste
+         * na lista. Aqui o tamanho é a decisão, não a consequência.
          *
          * A régua acima não é enfeite: sem ela o botão flutua no fim da
          * lista sem dizer que mudou de assunto.
@@ -125,7 +124,7 @@ export function BarraDoHeroi() {
         <a
           href={CONTENT.buy.href}
           title={CONTENT.buy.cta}
-          className="pulsa-carrinho mt-4 grid w-full place-items-center rounded-xl bg-brand-orange py-2 text-brand-black transition-colors hover:bg-orange-light"
+          className="pulsa-carrinho mt-4 grid h-[50px] w-[120px] place-items-center self-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light"
         >
           <span className="sr-only">{CONTENT.buy.cta}</span>
           {/**

@@ -159,6 +159,25 @@ export function BrilhoDeCarga() {
           `${(ALTURA.minima + (ALTURA.maxima - ALTURA.minima) * carga).toFixed(1)}vh`,
         )
       }
+
+      /**
+       * ACESO, ele persegue o produto QUADRO A QUADRO.
+       *
+       * O resto desta função é disparado por scroll, e para a cor e a
+       * intensidade isso basta — as duas só mudam com o progresso. A
+       * POSIÇÃO não: o produto continua se movendo depois que a rolagem
+       * parou, porque o amortecimento leva alguns quadros para chegar à
+       * pose e o respiro nunca para.
+       *
+       * Escrevendo só no scroll, o brilho ficava onde o produto ESTAVA no
+       * instante do último evento. Quem abrisse a página e não rolasse
+       * via o halo no lugar em que a pilha começou, não onde ela parou —
+       * que no retrato é meia tela de distância.
+       *
+       * O laço só existe enquanto há brilho na tela; apagado, ninguém
+       * agenda nada.
+       */
+      if (halo > 0 || presenca > 0) agendar()
     }
 
     /**
