@@ -277,20 +277,23 @@ export function poseAt(progress: number): Omit<Pose, 'at'> {
 }
 
 /**
- * Teto do produto no retrato: a linha, em fração da tela, onde o texto do
- * beat atual começa.
+ * A faixa livre do produto no retrato, no progresso dado.
  *
  * Interpola entre beats como `poseAt`, com a mesma suavização, para o
  * produto descer e subir junto com a virada em vez de saltar.
  */
-export function tetoEm(progress: number, tetos: number[]): number {
+export function faixaEm(
+  progress: number,
+  faixas: { de: number; ate: number }[],
+): { de: number; ate: number } {
   const p = Math.max(0, Math.min(1, progress))
 
   let i = 0
   while (i < POSES.length - 2 && POSES[i + 1].at < p) i++
 
-  const a = tetos[i] ?? 1
-  const b = tetos[i + 1] ?? a
+  const cheia = { de: 0, ate: 1 }
+  const a = faixas[i] ?? cheia
+  const b = faixas[i + 1] ?? a
   const span = POSES[i + 1].at - POSES[i].at
   // Limitado como em poseAt, e pelo mesmo motivo: antes da primeira pose
   // o `t` fica negativo e a suavização o devolve positivo, misturando o
@@ -298,7 +301,7 @@ export function tetoEm(progress: number, tetos: number[]): number {
   const t = span <= 0 ? 0 : Math.max(0, Math.min(1, (p - POSES[i].at) / span))
   const e = t * t * (3 - 2 * t)
 
-  return lerp(a, b, e)
+  return { de: lerp(a.de, b.de, e), ate: lerp(a.ate, b.ate, e) }
 }
 
 /**
@@ -327,18 +330,21 @@ export const sceneState = {
     base: number
   } | null,
   /**
-   * Onde o texto começa em cada beat, em fração da altura da tela. Escrito
-   * pelo <TetosDoRetrato />, lido pela <Battery /> só no retrato.
+   * A faixa LIVRE de cada beat no retrato, em fração da altura da tela.
+   * Escrita pelo <TetosDoRetrato />, lida pela <Battery /> só no retrato.
    *
-   * Um valor por beat, na ordem de POSES. É o que separa "a pilha nunca
-   * cobre o texto" de "a pilha fica sempre no alto": o pior beat pede a
-   * faixa de cima inteira, mas o herói tem duas linhas de título e sobra
-   * meia tela. Com um teto por beat o produto desce onde há espaço, em vez
-   * de ficar colado no cabeçalho a viagem toda.
+   * Uma faixa por beat, na ordem de POSES. É o que separa "a pilha nunca
+   * cobre o texto" de "a pilha fica sempre no alto": o beat mais apertado
+   * pede quase toda a tela, mas o herói tem duas linhas e sobra o resto.
+   *
+   * FAIXA, e não um teto. A primeira versão publicava só o teto e presumia
+   * que o texto mora sempre abaixo do produto — verdade em todos os beats
+   * até o herói novo, em que o nome do produto vai para CIMA. Com a
+   * presunção, a conta se invertia e a pilha subia por cima do título.
    *
    * Nulo até medir; enquanto isso vale o palpite conservador do pior caso.
    */
-  tetosDoRetrato: null as number[] | null,
+  faixasDoRetrato: null as { de: number; ate: number }[] | null,
   /**
    * Saída do ato, 0→1. Escrita pela timeline logo depois que o pin solta.
    *

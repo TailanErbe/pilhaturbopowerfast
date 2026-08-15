@@ -67,7 +67,18 @@ export function Hero() {
        * Rodapé do herói: disponibilidade à esquerda, chamada de rolagem à
        * direita. O centro fica vago — é onde o produto e a pílula vivem.
        */}
-      <div className="container-gutter absolute inset-x-0 bottom-6 z-2 hidden items-end justify-between md:flex">
+      {/**
+       * No RETRATO as duas linhas empilham acima da pílula.
+       *
+       * Elas eram `hidden md:flex` e simplesmente sumiam no celular, junto
+       * com a chamada de rolagem — numa página de dezesseis telas de
+       * scroll, justo a instrução de que há algo abaixo. "Não cabe lado a
+       * lado" não é motivo para remover conteúdo; é motivo para empilhar.
+       *
+       * O `bottom` do retrato reserva a altura da pílula, que é fixa e
+       * mora no mesmo canto.
+       */}
+      <div className="container-gutter absolute inset-x-0 bottom-[84px] z-2 flex flex-col items-start gap-1 md:bottom-6 md:flex-row md:items-end md:justify-between">
         <p className="max-w-[34ch] text-sm text-white/60">
           Disponível em AA e AAA, com cabo de recarga simultânea incluso.
         </p>

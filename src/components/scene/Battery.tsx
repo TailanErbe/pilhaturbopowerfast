@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { AAA_SCALE, DIMENSIONS } from '@/data/products'
-import { kitPresenca, poseAt, sceneState, tetoEm, variantEm } from '@/lib/scene-state'
+import { faixaEm, kitPresenca, poseAt, sceneState, variantEm } from '@/lib/scene-state'
 import { asset } from '@/lib/site'
 import { Cable } from './Cable'
 import { BatteryMesh } from './BatteryMesh'
@@ -304,28 +304,38 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
     /**
      * A faixa que sobra para o produto, em fração da altura da tela.
      *
-     * `tetoAqui` é a linha do beat ATUAL, e move o produto. `tetoPior` é a
-     * do beat mais apertado, e fixa o tamanho. O piso impede que uma tela
-     * muito baixa reduza a pilha a um ponto.
-     */
-    const tetos = sceneState.tetosDoRetrato
-    const linha = (t: number) => Math.max(RETRATO.minimo, t - RETRATO.folga)
-    const tetoAqui = tetos
-      ? linha(tetoEm(sceneState.progress, tetos))
-      : RETRATO.tetoPadrao
-    /**
-     * O ÚLTIMO beat fica de fora do pior caso.
+     * `faixaAqui` é a do beat ATUAL, e move o produto. `menorFaixa` é a do
+     * beat mais apertado, e fixa o tamanho — assim o objeto não cresce e
+     * encolhe a cada virada, que denunciaria o truque.
      *
-     * É o painel do kit, e lá o título fica no topo da tela: o teto dele é
-     * 0,08, o piso engolia tudo e a protagonista saía com um quinto do
-     * tamanho a página inteira. Mas nesse beat ela já se dissolveu nas oito
-     * (kitPresenca = 1) e quem ocupa a tela é o <Kit />, que tem faixa
-     * própria medida pelo painel. Ela não disputa espaço com aquele texto.
+     * A folga é descontada dos DOIS lados, porque agora o texto pode estar
+     * de qualquer um deles: no herói ele fica acima do produto, nos demais
+     * abaixo.
      */
-    const tetoPior = tetos
-      ? linha(Math.min(...tetos.slice(0, -1)))
-      : RETRATO.tetoPadrao
-    const alturaNaTela = tetoPior - RETRATO.margem
+    const faixas = sceneState.faixasDoRetrato
+    const util = (f: { de: number; ate: number }) => {
+      const de = f.de > 0 ? f.de + RETRATO.folga : RETRATO.margem
+      const ate = f.ate < 1 ? f.ate - RETRATO.folga : 1 - RETRATO.margem
+      return { de, ate: Math.max(de + RETRATO.minimo, ate) }
+    }
+    const faixaAqui = faixas
+      ? util(faixaEm(sceneState.progress, faixas))
+      : { de: RETRATO.margem, ate: RETRATO.tetoPadrao }
+    /**
+     * O TAMANHO acompanha a faixa DESTE beat, não a menor de todas.
+     *
+     * Era a menor, para o produto não crescer e encolher a cada virada. O
+     * preço apareceu no celular: basta um beat apertado para encolher o
+     * produto na página inteira, inclusive no herói, que é a tela em que
+     * ele está sozinho e deveria ser o maior possível.
+     *
+     * A troca é segura porque a faixa é INTERPOLADA entre beats com a
+     * mesma suavização das poses: o tamanho muda junto com a rolagem, no
+     * mesmo ritmo do resto, e lê como o objeto se acomodando ao espaço —
+     * não como um salto. O que denunciava o truque era o corte, não a
+     * mudança.
+     */
+    const alturaNaTela = faixaAqui.ate - faixaAqui.de
     const retratoEscala = retrato ? alturaNaTela / RETRATO.fracaoCheia : 1
     /**
      * O encolhimento acompanha o esmaecimento, mas discreto: quem some é
@@ -414,7 +424,7 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
      */
     // Centra o produto DENTRO da faixa livre deste beat, não na tela
     const alturaVisivel = meiaAltura * 2
-    const centroDaFaixa = (RETRATO.margem + tetoAqui) / 2
+    const centroDaFaixa = (faixaAqui.de + faixaAqui.ate) / 2
     const subida = retrato ? alturaVisivel * (0.5 - centroDaFaixa) : 0
 
     g.position.y = chegar(g.position.y, alvo.position[0] + flutua + subida)
