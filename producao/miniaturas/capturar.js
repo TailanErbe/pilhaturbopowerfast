@@ -42,13 +42,33 @@
    * São os centros dos beats dos painéis, que é onde a pose é frontal e a
    * pilha está parada. Ver POSES em src/lib/scene-state.ts.
    */
+  /**
+   * `escala` AGRUPA quem tem de ser comparável.
+   *
+   * Todos os alvos de uma mesma escala são recortados com o MESMO lado de
+   * quadrado, calculado a partir do maior deles. Sem isso, cada pilha era
+   * ajustada à própria caixa de tinta e a AA e a palito saíam do mesmo
+   * tamanho na tela — medido nos PNGs antigos: as duas ocupavam 83,6% da
+   * altura, quando a palito é 12% mais curta e 28% mais fina de verdade.
+   *
+   * O menu existe para escolher ENTRE OS FORMATOS, e o enquadramento estava
+   * apagando a única propriedade que os separa. O kit é outra composição e
+   * tem escala própria.
+   *
+   * Os progressos são as ÂNCORAS de cada beat, e não os centros. Eles
+   * estavam em 0,685 e 0,8125, valores de uma coreografia que mudou: hoje
+   * 0,685 cai dentro do beat do chip, e as poses frontais dos painéis são
+   * 0,712 e 0,888 (ver `ancoraDoBeat` em src/lib/scene-state.ts). Capturar
+   * no lugar errado devolve a pilha girada, que foi um defeito já visto
+   * aqui.
+   */
   const ALVOS = [
-    { nome: 'mini-aa', progresso: 0.685, ilha: null },
-    { nome: 'mini-aaa', progresso: 0.8125, ilha: null },
+    { nome: 'mini-aa', progresso: 0.712, ilha: null, escala: 'formato' },
+    { nome: 'mini-aaa', progresso: 0.888, ilha: null, escala: 'formato' },
     /* No beat do kit há DUAS ilhas, uma de cada formato. A miniatura do
        kit leva a da esquerda, que é a de AA: o kit é quatro pilhas de UM
        formato, e mostrar as oito diria que ele traz os dois. */
-    { nome: 'mini-kit', progresso: 0.9375, ilha: 'esquerda' },
+    { nome: 'mini-kit', progresso: 0.95, ilha: 'esquerda', escala: 'kit' },
   ]
 
   /** Respiro em volta do recorte, em fração do lado maior */
@@ -56,18 +76,22 @@
   /** Lado do PNG final. 256 dá nitidez de sobra num alvo de 40 a 72 px */
   const LADO = 256
 
-  const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
-
-  /** Lê o buffer do canvas, já com y na orientação da tela */
+  /**
+   * Lê o buffer, por um ALVO DE RENDER e não pelo canvas.
+   *
+   * `gl.render` seguido de `readPixels` no framebuffer padrão só devolve o
+   * que se acabou de desenhar enquanto a aba está compondo. Numa aba de
+   * fundo — ou num painel de navegador embutido, que é onde isto costuma
+   * rodar — o buffer de apresentação não é preservado entre tarefas e a
+   * leitura volta com o quadro anterior, ou metade dele. Foi assim que uma
+   * rodada inteira de captura saiu com a cena errada.
+   *
+   * `__cena.alvo()` desenha num alvo próprio e lê de lá, o que é válido
+   * sempre. A orientação continua de baixo para cima, como no readPixels.
+   */
   function lerPixels() {
-    const { gl, scene, camera } = window.__cena
-    gl.render(scene, camera)
-    const ctx = gl.getContext()
-    const L = ctx.drawingBufferWidth
-    const A = ctx.drawingBufferHeight
-    const px = new Uint8Array(L * A * 4)
-    ctx.readPixels(0, 0, L, A, ctx.RGBA, ctx.UNSIGNED_BYTE, px)
-    return { px, L, A }
+    const r = window.__cena.alvo()
+    return { px: r.px, L: r.w, A: r.h }
   }
 
   /** Alfa em (x, y), com y contado do topo */
@@ -132,12 +156,18 @@
     return { x0, x1, y0, y1 }
   }
 
-  /** Recorta a caixa num PNG quadrado, centrado, com margem */
-  function recortar(buf, cx) {
+  /**
+   * Recorta a caixa num PNG quadrado, centrado, com margem.
+   *
+   * `lado` vem DE FORA quando o alvo pertence a um grupo de escala: é o
+   * mesmo quadrado para a AA e para a palito, calculado a partir da maior
+   * das duas. É o que devolve a diferença de porte à imagem.
+   */
+  function recortar(buf, cx, ladoForcado) {
     const { px, L, A } = buf
     const larg = cx.x1 - cx.x0 + 1
     const alt = cx.y1 - cx.y0 + 1
-    const lado = Math.ceil(Math.max(larg, alt) * (1 + MARGEM * 2))
+    const lado = ladoForcado ?? Math.ceil(Math.max(larg, alt) * (1 + MARGEM * 2))
 
     const fonte = document.createElement('canvas')
     fonte.width = L
@@ -172,84 +202,83 @@
   }
 
   /**
-   * Espera a pose ASSENTAR, em tempo real, e não por contagem de quadros.
+   * Leva a cena a um progresso e ASSENTA a pose, sem depender de scroll.
    *
-   * A primeira versão escrevia o progresso na barra do painel de depuração
-   * e avançava 400 quadros à mão. Duas coisas davam errado ao mesmo tempo:
+   * A versão anterior rolava a página de verdade e esperava a rotação parar,
+   * e o comentário de `assentar` explica por que: escrever na barra do painel
+   * de depuração não bastava, porque o GSAP desfazia a escrita no primeiro
+   * tique dele.
    *
-   *   · o GSAP continua dirigindo `sceneState.progress` pelo scroll, então
-   *     ele desfazia a escrita da barra no primeiro tique dele
-   *   · `advance()` avança o laço do R3F, mas não o relógio do GSAP, então
-   *     o scrub nunca chegava ao valor pedido
+   * Só que rolar de verdade exige que a aba esteja COMPONDO — sem quadros, a
+   * pose nunca assenta e a captura sai no meio do giro. Num painel embutido
+   * isso é o caso normal, não a exceção.
    *
-   * O resultado saiu na imagem: a AA e a palito foram capturadas no meio do
-   * giro, mostrando a tarja de especificação em vez da marca. O kit escapou
-   * porque as oito pilhas dele têm rotação própria, independente da pose.
-   *
-   * Rolando de verdade e esperando a rotação parar, quem dirige é o mesmo
-   * mecanismo que dirige a página.
+   * Aqui a barra continua sendo a fonte do progresso, mas os quadros são
+   * forçados à mão com `__cena.passo()`. O GSAP não desfaz nada porque ele só
+   * escreve quando há evento de scroll, e não há: ninguém rola. É o mesmo
+   * mecanismo que o resto da depuração desta cena usa.
    */
-  async function assentar(g) {
-    let ant = null
-    for (let k = 0; k < 40; k++) {
-      await esperar(250)
-      const agora = { ry: g.rotation.y, z: g.position.z, s: g.scale.y }
-      if (
-        ant &&
-        Math.abs(agora.ry - ant.ry) < 0.004 &&
-        Math.abs(agora.z - ant.z) < 0.002 &&
-        Math.abs(agora.s - ant.s) < 0.002
-      ) {
-        return k
-      }
-      ant = agora
+  function pousar(progresso, quadros = 340) {
+    const barra = document.querySelector('input[type=range]')
+    if (!barra) throw new Error('painel de depuração não montou')
+    const escrever = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value',
+    ).set
+    escrever.call(barra, String(progresso))
+    barra.dispatchEvent(new Event('input', { bubbles: true }))
+
+    let t = performance.now() / 1000
+    for (let k = 0; k < quadros; k++) {
+      t += 1 / 60
+      window.__cena.passo(t)
     }
-    return 'estourou'
   }
 
   async function capturar() {
     if (!window.__cena) throw new Error('abra com ?debug=scene')
-    const espacador = document.querySelector('.pin-spacer')
-    if (!espacador) throw new Error('o ato pinado ainda não montou')
-    const curso = espacador.offsetHeight - window.innerHeight
-    const irPara = (p) => window.scrollTo(0, Math.round(p * curso))
+    if (!window.__cena.alvo) throw new Error('hook antigo: recarregue a página')
 
-    /* Acha a protagonista comparando duas posições de scroll distantes */
-    const grupos = []
-    window.__cena.scene.traverse((o) => {
-      if (o.isGroup && o.children.length) grupos.push(o)
-    })
-    irPara(0.06)
-    await esperar(2600)
-    const zHeroi = grupos.map((g) => g.position.z)
-    irPara(0.225)
-    await esperar(2600)
-    const i = grupos.findIndex((g, k) => Math.abs(g.position.z - zHeroi[k]) > 0.3)
-    if (i < 0) throw new Error('não achei o grupo da protagonista')
-    const protagonista = grupos[i]
-
+    /**
+     * DUAS PASSADAS, e a primeira existe só para medir.
+     *
+     * O lado do quadrado de cada grupo de escala tem de ser o do MAIOR
+     * integrante, e só dá para saber qual é depois de medir todos. Medir
+     * primeiro e recortar depois é o que garante que a palito seja desenhada
+     * menor que a AA em vez de preencher o próprio quadrado.
+     */
+    const medidos = []
     for (const alvo of ALVOS) {
-      irPara(alvo.progresso)
-      const voltas = await assentar(protagonista)
-      console.log(`${alvo.nome}: assentou em ${voltas}`, {
-        ry: +protagonista.rotation.y.toFixed(3),
-        z: +protagonista.position.z.toFixed(3),
-      })
-
+      pousar(alvo.progresso)
       const buf = lerPixels()
       const cx = caixa(buf, alvo.ilha)
       if (!cx) {
         console.warn(`${alvo.nome}: nada em cena`)
         continue
       }
-      const dados = recortar(buf, cx)
+      medidos.push({ alvo, buf, cx })
+      console.log(alvo.nome, 'caixa', {
+        larg: cx.x1 - cx.x0 + 1,
+        alt: cx.y1 - cx.y0 + 1,
+      })
+    }
 
+    const ladoPorEscala = {}
+    for (const { alvo, cx } of medidos) {
+      const bruto = Math.max(cx.x1 - cx.x0 + 1, cx.y1 - cx.y0 + 1)
+      const lado = Math.ceil(bruto * (1 + MARGEM * 2))
+      ladoPorEscala[alvo.escala] = Math.max(ladoPorEscala[alvo.escala] ?? 0, lado)
+    }
+    console.log('lado por escala', ladoPorEscala)
+
+    for (const { alvo, buf, cx } of medidos) {
+      const dados = recortar(buf, cx, ladoPorEscala[alvo.escala])
       const r = await fetch(`http://127.0.0.1:${PORTA}/`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ nome: alvo.nome, dados }),
       })
-      console.log(alvo.nome, r.ok ? 'ok' : await r.text(), cx)
+      console.log(alvo.nome, r.ok ? 'ok' : await r.text())
     }
     console.log('pronto')
   }
