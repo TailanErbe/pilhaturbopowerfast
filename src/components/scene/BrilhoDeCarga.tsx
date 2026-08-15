@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { BEATS } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
-import { sceneState } from '@/lib/scene-state'
+import { cabeSaida, sceneState } from '@/lib/scene-state'
 
 /**
  * O halo de carga que sobe atrás da pilha, no beat do contador.
@@ -71,7 +71,7 @@ const FORCA = 0.5
  * a barra do herói vira pílula, para não sobrar brilho sem dono no beat
  * seguinte.
  */
-const HALO = { forca: 0.72, some: { de: 0.055, ate: 0.105 } }
+const HALO = { forca: 0.72, some: { de: 0.055, ate: 0.105 }, forcaDoPulso: 0.4 }
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))
@@ -124,7 +124,21 @@ export function BrilhoDeCarga() {
 
       /* ------------------------------------------------ halo do herói */
       const noHeroi = 1 - suave(entre((p - HALO.some.de) / (HALO.some.ate - HALO.some.de)))
-      const halo = Math.round(HALO.forca * noHeroi * 1000) / 1000
+
+      /**
+       * O MESMO halo serve ao pulso da recarga.
+       *
+       * No herói ele diz "pilha carregada"; no beat do cabo, batendo a
+       * cada onda que chega, diz "carregando agora". Dar um brilho novo
+       * ao segundo caso seria inventar um segundo vocabulário para a
+       * mesma ideia — e o leitor teria de aprender os dois.
+       *
+       * O pulso é mais fraco que o do herói: lá o brilho é o assunto da
+       * tela, aqui ele é a consequência de uma coisa que está
+       * acontecendo no cabo, que é para onde o olho deve ir.
+       */
+      const pulso = sceneState.pulsoDeCarga * HALO.forcaDoPulso
+      const halo = Math.round(Math.max(HALO.forca * noHeroi, pulso) * 1000) / 1000
       /**
        * Cada brilho tem o SEU guarda de escrita.
        *
@@ -177,7 +191,16 @@ export function BrilhoDeCarga() {
        * O laço só existe enquanto há brilho na tela; apagado, ninguém
        * agenda nada.
        */
-      if (halo > 0 || presenca > 0) agendar()
+      /**
+       * O laço também roda com o cabo PLUGADO, mesmo com tudo apagado.
+       *
+       * Sem esta condição ele parava assim que os dois brilhos zeravam —
+       * e o pulso da recarga nasce justamente de um valor que estava em
+       * zero. Ninguém estaria olhando para vê-lo subir: a função só
+       * voltaria a rodar no próximo evento de scroll, e o pulso inteiro
+       * teria acontecido no escuro.
+       */
+      if (halo > 0 || presenca > 0 || cabeSaida(p).conectado) agendar()
     }
 
     /**

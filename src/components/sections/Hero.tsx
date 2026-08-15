@@ -119,7 +119,11 @@ export function Hero() {
         <p className="max-w-[34ch] text-sm text-white/60">
           Disponível em AA e AAA, com cabo de recarga simultânea incluso.
         </p>
-        <p className="text-sm text-white/40">Role para explorar</p>
+        {/* No retrato ele vai para o canto OPOSTO ao da disponibilidade:
+            empilhados do mesmo lado, os dois liam como um parágrafo só */}
+        <p className="self-end text-sm text-white/40 md:self-auto">
+          Role para explorar
+        </p>
       </div>
     </section>
   )

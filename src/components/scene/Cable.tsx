@@ -140,6 +140,15 @@ function criarCorpoPlugue(largura: number, altura: number, profundidade: number)
  */
 const FLUXO_PARADO = 0.7
 
+/**
+ * Fase em que a cabeça da onda alcança o conector.
+ *
+ * Sai do shader: `pos = 1.2 - fract(uFluxo) * 1.45`, e a ponta do cabo
+ * é `vAoLongo = 0`. Logo pos = 0 quando fract(uFluxo) = 1,2/1,45.
+ * Se aqueles dois números mudarem lá, este muda junto.
+ */
+const CHEGADA = 1.2 / 1.45
+
 export function Cable({
   raio,
   anguloPorta,
@@ -453,6 +462,24 @@ export function Cable({
       if (saida.conectado) {
         u.uFluxo.value = estatico ? FLUXO_PARADO : (clock.elapsedTime * 0.28) % 1
       }
+
+      /**
+       * A CHEGADA da onda, publicada para o halo do corpo.
+       *
+       * No shader a cabeça vai de `vAoLongo` 1,2 a −0,25 conforme
+       * `fract(uFluxo)` vai de 0 a 1 — ou seja, ela chega ao conector
+       * quando a fase passa de 1,2/1,45 = 0,828.
+       *
+       * O pulso decai rápido depois disso. A onda leva uns três segundos
+       * e meio para percorrer o cabo, e um brilho que durasse tudo isso
+       * viraria luz acesa, não pulso: o que se quer é a batida do que
+       * acabou de entrar.
+       */
+      const fase = u.uFluxo.value % 1
+      const desde = (fase - CHEGADA + 1) % 1
+      sceneState.pulsoDeCarga = saida.conectado
+        ? Math.exp(-desde * 7) * saida.opacidade
+        : 0
     }
 
     /**

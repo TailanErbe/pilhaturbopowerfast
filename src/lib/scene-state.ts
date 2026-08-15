@@ -359,6 +359,19 @@ export const sceneState = {
    */
   centroNaTela: { x: 0.5, y: 0.5 },
   /**
+   * Carga CHEGANDO ao corpo, 0→1. Escrita pelo <Cable /> a cada quadro.
+   *
+   * A onda de neon já percorria o cabo em direção à pilha, mas morria na
+   * porta: entrava energia e não acontecia nada. O que faltava era o
+   * outro lado da frase — a pilha recebendo.
+   *
+   * Este valor sobe no instante em que a onda alcança o conector e cai
+   * logo depois, então o halo atrás do corpo pisca a cada pulso. É o
+   * mesmo halo do herói, e de propósito: ali ele diz "pilha carregada",
+   * aqui diz "carregando agora". Um aspecto só para uma ideia só.
+   */
+  pulsoDeCarga: 0,
+  /**
    * Saída do ato, 0→1. Escrita pela timeline logo depois que o pin solta.
    *
    * O canvas é `fixed inset-0` e nunca desmonta, então sem isto o kit
@@ -415,9 +428,30 @@ export type SaidaDoCabo = {
  * sozinho; no beat da recarga o cabo CHEGA, encaixa e carrega; e sai
  * antes do beat das recargas, para não disputar com o contador.
  */
+/**
+ * O cabo chega DEPOIS que a pilha para de se mexer.
+ *
+ * A entrada começava em 0,115, e ali a pilha ainda está no meio da
+ * virada do herói para este beat: girando 45° e mudando de altura. Como
+ * o cabo é FILHO do grupo dela — precisa ser, para continuar plugado
+ * quando ela gira depois —, ele herdava esse movimento inteiro.
+ *
+ * Medido em 390, a posição de mundo do plugue durante a aproximação:
+ *
+ *   p      x       y       z
+ *   0,10   0,96    1,50    9,81
+ *   0,13   2,46    2,39    8,79    <- desvio lateral
+ *   0,16   1,46    2,73    3,15
+ *   0,19   1,24    3,12    2,11
+ *   0,22   1,34    3,43    2,04    <- subiu 2 unidades no caminho
+ *
+ * Não é linha reta: o plugue faz uma barriga para a direita e sobe.
+ * Nada disso é do cabo, é da pilha — e some sozinho se ele esperar ela
+ * assentar. Em 0,19 a interpolação da pose já está em 97%.
+ */
 const CABO = {
-  entra: { de: 0.115, ate: 0.2 },
-  sai: { de: 0.275, ate: 0.35 },
+  entra: { de: 0.19, ate: 0.24 },
+  sai: { de: 0.29, ate: 0.345 },
 }
 
 /**
