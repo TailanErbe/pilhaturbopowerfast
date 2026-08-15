@@ -1,7 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ALTURAS_DO_ATO, BEATS, CRUZAMENTO } from './labels'
-import { clipRevelar, contarNoScrub, revelarTextos } from './texto'
+import { clipRevelar, contarNoScrub, revelarEmSerie, revelarTextos } from './texto'
 import { sceneState } from '@/lib/scene-state'
 
 /**
@@ -105,6 +105,7 @@ export function montarTimeline(raiz: HTMLElement): Timeline {
    */
   const revelacao = revelarTextos(tl, beats, BEATS)
   clipRevelar(tl, beats, BEATS)
+  revelarEmSerie(tl, beats, BEATS)
   contarNoScrub(tl, beats, BEATS)
 
   /**

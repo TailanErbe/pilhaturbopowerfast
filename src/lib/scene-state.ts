@@ -198,6 +198,19 @@ export function kitPresenca(progress: number): number {
 const AFASTAMENTO = 22.6 / 14
 
 /**
+ * Um ponto DENTRO do beat do chip, em fração dele.
+ *
+ * Aquele beat tem três âncoras de pose e nenhuma delas é o centro, então
+ * `centroDoBeat` não serve. Em fração, os três pontos continuam nos mesmos
+ * lugares relativos se o beat mudar de tamanho outra vez — que é
+ * exatamente o que acabou de acontecer com ele.
+ */
+const chipEm = (f: number) => {
+  const b = beatPorId('chip')
+  return b.inicio + (b.fim - b.inicio) * f
+}
+
+/**
  * Onde a virada do herói para o beat do USB-C TERMINA.
  *
  * Ela terminava no centro do beat, 0,225, e era esse o defeito: a virada
@@ -336,7 +349,32 @@ export const POSES: Pose[] = [
    * porque lá o texto mora nas DUAS bordas e o vão central é do produto.
    */
   { at: centroDoBeat('cycles'), screenX: 0.57, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
-  { at: centroDoBeat('chip'), screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
+
+  /**
+   * O BEAT DO CHIP É UMA VOLTA COMPLETA, em três âncoras.
+   *
+   * As seis proteções aparecem uma de cada vez enquanto o produto gira
+   * 360° e volta a ficar de frente, já na pose do painel seguinte. As duas
+   * coisas fecham juntas: a última proteção entra com a pilha chegando.
+   *
+   *   CHEGADA    ainda de três-quartos e inclinada, como veio das
+   *              recargas. Nada muda no caminho até aqui.
+   *   ENDIREITA  levanta e apresenta a marca de frente. É o fim do gesto
+   *              anterior, não o começo da volta.
+   *   A VOLTA    exatamente 2π depois, de frente outra vez.
+   *
+   * Uma volta INTEIRA e não meia: o eixo do cilindro é vertical, então
+   * meia volta devolveria a mesma silhueta com o rótulo de trás para a
+   * frente, e o olho não leria giro nenhum, leria a marca sumindo. A volta
+   * fechada é a única quantidade em que o gesto se anuncia e se resolve.
+   *
+   * O painel 01 repete o ângulo de A VOLTA, então entre um e outro não
+   * sobra rotação nenhuma: o produto chega montado, que é o que "encaixar
+   * na próxima seção" quer dizer.
+   */
+  { at: chipEm(0.1), screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
+  { at: chipEm(0.28), screenX: 0.57, position: [0, 0.28 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA, 0], scale: 1.02 },
+  { at: chipEm(0.92), screenX: 0.57, position: [0, 0.24 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.02 },
 
   /**
    * Painéis 01, 02 e 03, nos centros 0,67 / 0,81 / 0,95.
@@ -356,12 +394,12 @@ export const POSES: Pose[] = [
    * com o produto de costas, que o formato troca de AA para AAA sem que a
    * substituição apareça.
    */
-  { at: centroDoBeat('produto-01'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA, 0], scale: 1.05 },
-  { at: centroDoBeat('produto-02'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.05 },
+  { at: centroDoBeat('produto-01'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.05 },
+  { at: centroDoBeat('produto-02'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0], scale: 1.05 },
   // O centro EXATO do beat, e não um valor arredondado perto dele: é onde
   // a pílula de navegação para, e um centésimo de diferença já deixava o
   // kit chegando 5° girado.
-  { at: centroDoBeat('produto-03'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0], scale: 1.05 },
+  { at: centroDoBeat('produto-03'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 4, 0], scale: 1.05 },
 ]
 
 /**
@@ -383,7 +421,20 @@ export const POSES: Pose[] = [
  * qualquer ponto do trecho frontal, e zero é o começo dele.
  */
 export function ancoraDoBeat(id: string): number {
-  return id === 'hero' ? 0 : centroDoBeat(id)
+  /**
+   * Duas exceções, e as duas pelo mesmo motivo: nesses beats o centro cai
+   * no MEIO de um gesto, e foto de gesto pela metade não apresenta nada.
+   *
+   *   HERÓI  o centro (0,075) cai dentro de SAIDA_DO_HEROI, com o produto
+   *          já virando. Qualquer ponto do trecho frontal serve, e zero é
+   *          o começo dele.
+   *   CHIP   o centro cai a uns 100° dentro da volta completa, ou seja com
+   *          a costura do rótulo para a câmera. A foto é a CHEGADA, que é
+   *          onde a volta se fecha de frente.
+   */
+  if (id === 'hero') return 0
+  if (id === 'chip') return chipEm(0.92)
+  return centroDoBeat(id)
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t

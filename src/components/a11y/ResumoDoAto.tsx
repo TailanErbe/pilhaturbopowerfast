@@ -47,7 +47,7 @@ export function ResumoDoAto() {
       <p>As {PROTECTIONS.length} proteções integradas:</p>
       <ul>
         {PROTECTIONS.map((p) => (
-          <li key={p}>{p}</li>
+          <li key={p.icone}>{p.nome}</li>
         ))}
       </ul>
 

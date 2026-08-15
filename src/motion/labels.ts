@@ -25,40 +25,47 @@ export type Beat = {
  * A referência usa ~16,3 (11.762px num viewport de 720). Menos que isso e a
  * animação fica frenética; mais e o usuário desiste antes do fim.
  *
- * Subiu de 16 para 18 junto com o alargamento do beat das recargas: o
- * espaço extra é DELE. Redistribuindo dentro dos mesmos 16, o beat do chip
- * e os painéis pagariam a conta, e nenhum dos dois estava sobrando tempo.
+ * Subiu de 16 para 18 junto com o alargamento do beat das recargas, e para
+ * 19 quando o chip virou uma sequência: lá são oito coisas aparecendo uma
+ * de cada vez, mais uma volta completa do produto.
  */
-export const ALTURAS_DO_ATO = 18
+export const ALTURAS_DO_ATO = 19
 
 /**
- * O beat das recargas é o MAIS LONGO, e de propósito.
+ * OS DOIS BEATS QUE ACONTECEM são os mais longos, e de propósito.
  *
- * Ele tem duas coisas acontecendo ao mesmo tempo — o contador subindo até
- * 1.200 e a chuva de pilhas descartáveis — e as duas precisam de tempo de
- * tela para serem lidas como uma coisa só: cada descartável que cai é uma
- * que a Turbo substituiu. Nos 0,15 de antes o número chegava a 1.200 antes
- * de a ideia assentar.
+ * Recargas e chip são os únicos em que algo se desenrola no tempo, e cada
+ * um leva 0,20:
  *
- * Em alturas de tela, com ALTURAS_DO_ATO = 18:
+ *   RECARGAS   o contador sobe até 1.200 enquanto chove descartável, e as
+ *              duas coisas precisam ser lidas como uma só. Nos 0,15 de
+ *              antes o número chegava ao fim antes de a ideia assentar.
+ *   CHIP       oito coisas aparecem uma de cada vez (rótulo, título e as
+ *              seis proteções) enquanto o produto dá uma volta completa e
+ *              volta a ficar de frente para o painel seguinte.
  *
- *   hero   2,70   usbc  2,70   cycles 3,60   chip  2,16
- *   01     2,34   02    2,25   03     2,25
+ * Os painéis de produto são o oposto: composições PARADAS, que se leem de
+ * uma olhada. Eles cederam o tempo, e é o tempo que sobrava neles.
+ *
+ * Em alturas de tela, com ALTURAS_DO_ATO = 19:
+ *
+ *   hero   2,85   usbc  2,85   cycles 3,80   chip  3,80
+ *   01     1,90   02    1,90   03     1,90
  *
  * Herói e USB-C ficaram nos mesmos 0,15 de fração de propósito: as janelas
  * do cabo, da troca da barra pela pílula e do halo do herói são escritas
  * neste mesmo eixo, e mexer nas fronteiras desses dois obrigaria a
- * re-derivar todas elas. O tempo extra que eles ganham vem da altura total,
- * não de uma mudança de proporção.
+ * re-derivar todas elas. O tempo deles vem da altura total, não de uma
+ * mudança de proporção.
  */
 export const BEATS: Beat[] = [
   { id: 'hero', nome: 'Hero', inicio: 0.0, fim: 0.15 },
   { id: 'usbc', nome: 'USB-C', inicio: 0.15, fim: 0.3 },
   { id: 'cycles', nome: '1.200 recargas', inicio: 0.3, fim: 0.5 },
-  { id: 'chip', nome: 'Chip inteligente', inicio: 0.5, fim: 0.62 },
-  { id: 'produto-01', nome: '01 AA', inicio: 0.62, fim: 0.75 },
-  { id: 'produto-02', nome: '02 AAA', inicio: 0.75, fim: 0.875 },
-  { id: 'produto-03', nome: '03 O Kit', inicio: 0.875, fim: 1.0 },
+  { id: 'chip', nome: 'Chip inteligente', inicio: 0.5, fim: 0.7 },
+  { id: 'produto-01', nome: '01 AA', inicio: 0.7, fim: 0.8 },
+  { id: 'produto-02', nome: '02 AAA', inicio: 0.8, fim: 0.9 },
+  { id: 'produto-03', nome: '03 O Kit', inicio: 0.9, fim: 1.0 },
 ]
 
 /** Quanto dura a passagem entre um beat e o seguinte, em progresso */

@@ -150,6 +150,68 @@ export function clipRevelar(
 }
 
 /**
+ * Revelação EM SÉRIE: um item de cada vez, ao longo do beat.
+ *
+ * Diferente de `revelarTextos`, que acende um parágrafo caractere a
+ * caractere, e de `clipRevelar`, que monta o cabeçalho de um painel na
+ * entrada. Aqui os alvos são IRMÃOS que devem aparecer em ORDEM, cada um
+ * com o seu instante: no beat do chip, o rótulo, depois o título, depois
+ * cada uma das seis proteções.
+ *
+ * O motivo é de leitura. Seis itens que aparecem juntos são uma lista, e
+ * lista se varre com o olho e se esquece. Um de cada vez, o leitor conta
+ * junto — são seis, e cada uma tem nome e desenho. É o mesmo argumento do
+ * contador das recargas: ver acontecer vale mais do que ler o resultado.
+ *
+ * `opacity` e `y` porque as duas são de compositor. Foi um gradiente de
+ * tela inteira reescrito por quadro que derrubou o FPS desta página uma
+ * vez; a lição vale para qualquer coisa que ande com a rolagem.
+ */
+export function revelarEmSerie(
+  tl: gsap.core.Timeline,
+  beats: Map<string, HTMLElement>,
+  lista: Beat[],
+) {
+  /** Quanto cada item demora, em passos. Acima de 1 há sobreposição. */
+  const SOBREPOSICAO = 1.6
+
+  for (const b of lista) {
+    const el = beats.get(b.id)
+    if (!el) continue
+
+    const alvos = el.querySelectorAll<HTMLElement>('[data-serie]')
+    if (!alvos.length) continue
+
+    const janela = janelaDoContador(b.id)
+    const total = janela.ate - janela.de
+    /**
+     * O último item TERMINA dentro da janela.
+     *
+     * Com `n` itens, o último começa em `(n-1)` passos e dura
+     * `SOBREPOSICAO` passos, então o passo sai de `n - 1 + SOBREPOSICAO`.
+     * Fixando duração e passo às cegas, uma lista maior estouraria o beat
+     * e a última proteção apareceria já na transição para o painel
+     * seguinte, quando o texto todo está apagando.
+     */
+    const passo = total / (alvos.length - 1 + SOBREPOSICAO)
+
+    alvos.forEach((alvo, i) => {
+      tl.fromTo(
+        alvo,
+        { opacity: 0, y: 18 },
+        {
+          opacity: 1,
+          y: 0,
+          ease: 'power2.out',
+          duration: passo * SOBREPOSICAO,
+        },
+        janela.de + i * passo,
+      )
+    })
+  }
+}
+
+/**
  * Contagem ligada ao scrub.
  *
  * O número nasce no HTML já no valor final (a página precisa fazer sentido

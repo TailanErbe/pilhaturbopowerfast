@@ -63,7 +63,7 @@ export function DadosDoProduto() {
       {
         '@type': 'PropertyValue',
         name: 'Proteções do chip',
-        value: PROTECTIONS.join(', '),
+        value: PROTECTIONS.map((p) => p.nome).join(', '),
       },
       {
         '@type': 'PropertyValue',

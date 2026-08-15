@@ -95,13 +95,22 @@ export type Product = {
  * só três (sobrecarga, superaquecimento, curto-circuito) — estas seis são
  * um argumento de venda mais forte e merecem seção própria.
  */
+/**
+ * O `icone` é uma CHAVE, não um desenho.
+ *
+ * O SVG mora no componente que sabe desenhar (sections/Chip.tsx); aqui
+ * fica só o nome do símbolo. Assim este arquivo continua sendo conteúdo
+ * puro, legível por quem escreve texto e não código, e o dado serve
+ * igualmente ao resumo de acessibilidade e ao JSON-LD, que não desenham
+ * nada.
+ */
 export const PROTECTIONS = [
-  'Sobrecarga',
-  'Sobretensão',
-  'Curto-circuito',
-  'Sobrepotência',
-  'Sobrecorrente',
-  'Superaquecimento',
+  { nome: 'Sobrecarga', icone: 'sobrecarga' },
+  { nome: 'Sobretensão', icone: 'sobretensao' },
+  { nome: 'Curto-circuito', icone: 'curto' },
+  { nome: 'Sobrepotência', icone: 'sobrepotencia' },
+  { nome: 'Sobrecorrente', icone: 'sobrecorrente' },
+  { nome: 'Superaquecimento', icone: 'superaquecimento' },
 ] as const
 
 const SHARED_SPECS: SpecRow[] = [
