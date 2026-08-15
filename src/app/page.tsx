@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer'
 import { ProductPill } from '@/components/layout/ProductPill'
 import { BarraDoHeroi } from '@/components/layout/BarraDoHeroi'
 import { SceneMount } from '@/components/scene/SceneMount'
+import { FundoDoAto } from '@/components/scene/FundoDoAto'
 import { PinnedAct } from '@/components/PinnedAct'
 import { ResumoDoAto } from '@/components/a11y/ResumoDoAto'
 import { Hero } from '@/components/sections/Hero'
@@ -27,6 +28,10 @@ import { PRODUCTS } from '@/data/products'
 export default function Home() {
   return (
     <>
+      {/* O fundo do ato, ABAIXO do canvas. É o que permite o produto
+          passar entre o fundo e o texto — ver FundoDoAto */}
+      <FundoDoAto />
+
       {/* Um canvas só, vivo do hero ao último painel (§6.3) */}
       <SceneMount />
 

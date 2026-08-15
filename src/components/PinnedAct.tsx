@@ -78,7 +78,15 @@ export function PinnedAct({ children }: { children: React.ReactNode }) {
     <div
       ref={raiz}
       data-ato
-      className="relative h-dvh overflow-hidden [&>[data-beat]]:absolute [&>[data-beat]]:inset-0 motion-reduce:h-auto motion-reduce:overflow-visible motion-reduce:[&>[data-beat]]:static"
+      /**
+       * `z-2` põe o ato ACIMA do canvas (z-1) e o canvas acima do fundo
+       * (z-0, ver FundoDoAto). É a inversão que faz o produto passar
+       * ENTRE o fundo e o texto, em vez de na frente de tudo.
+       *
+       * `motion-reduce:z-auto`: sem timeline não há camada de fundo, e
+       * cada seção volta a pintar a sua — aí o ato não precisa subir.
+       */
+      className="relative z-2 h-dvh overflow-hidden [&>[data-beat]]:absolute [&>[data-beat]]:inset-0 motion-reduce:z-auto motion-reduce:h-auto motion-reduce:overflow-visible motion-reduce:[&>[data-beat]]:static"
     >
       {children}
       {/* Mede onde o texto de cada beat começa, para o produto 3D descer

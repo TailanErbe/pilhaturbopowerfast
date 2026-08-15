@@ -1,4 +1,4 @@
-import { CONTENT } from '@/data/products'
+﻿import { CONTENT } from '@/data/products'
 import { SectionBg } from '@/components/layout/Layer'
 
 /**
@@ -25,7 +25,7 @@ export function Hero() {
       id="topo"
       className="relative flex h-full min-h-dvh flex-col overflow-hidden"
     >
-      <SectionBg className="bg-surface-000" />
+      <SectionBg className="bg-surface-000" noAto />
 
       {/**
        * O bloco do nome fica na faixa de cima, acima do produto.

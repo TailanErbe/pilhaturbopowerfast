@@ -1,4 +1,4 @@
-import { PROTECTIONS } from '@/data/products'
+﻿import { PROTECTIONS } from '@/data/products'
 import { SectionBg, EdgeColumn } from '@/components/layout/Layer'
 
 /**
@@ -11,7 +11,7 @@ import { SectionBg, EdgeColumn } from '@/components/layout/Layer'
 export function Chip() {
   return (
     <section className="relative flex h-full min-h-dvh items-center overflow-hidden">
-      <SectionBg className="bg-surface-100" />
+      <SectionBg className="bg-surface-100" noAto />
 
       <div className="container-gutter base-do-retrato">
         <EdgeColumn side="left">

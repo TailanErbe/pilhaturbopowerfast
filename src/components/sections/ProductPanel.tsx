@@ -1,4 +1,4 @@
-import Image from 'next/image'
+﻿import Image from 'next/image'
 import type { Product } from '@/data/products'
 import { SectionBg } from '@/components/layout/Layer'
 import { FaixaDaCena } from '@/components/scene/FaixaDaCena'
@@ -171,7 +171,7 @@ export function ProductPanel({ product }: { product: Product }) {
         id={`produto-${product.index}`}
         className={`relative flex h-full min-h-dvh overflow-hidden ${t.section} ${claro(product.theme)}`}
       >
-        <SectionBg className={t.bg} />
+        <SectionBg className={t.bg} noAto />
 
         <div className="container-gutter relative z-2 flex w-full flex-col py-[clamp(20px,3.5vh,96px)]">
           {cabecalho}
@@ -338,7 +338,7 @@ export function ProductPanel({ product }: { product: Product }) {
       id={`produto-${product.index}`}
       className={`relative flex h-full min-h-dvh items-center overflow-hidden ${t.section} ${claro(product.theme)}`}
     >
-      <SectionBg className={t.bg} />
+      <SectionBg className={t.bg} noAto />
 
       {/* Estrutura da referência: título em faixa larga no topo, régua de
           meta abaixo, e então DUAS colunas nas bordas — o vão central fica

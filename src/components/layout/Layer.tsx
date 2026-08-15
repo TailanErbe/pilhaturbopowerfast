@@ -23,8 +23,33 @@
  * exatamente o que aconteceu antes.
  */
 
-export function SectionBg({ className = '' }: { className?: string }) {
-  return <div aria-hidden className={`absolute inset-0 z-0 ${className}`} />
+export function SectionBg({
+  className = '',
+  noAto = false,
+}: {
+  className?: string
+  /**
+   * A seção vive DENTRO do ato pinado.
+   *
+   * Nesse caso o fundo dela não é pintado aqui: quem pinta é a camada
+   * única do <FundoDoAto />, que fica ABAIXO do canvas 3D. É o que
+   * permite o produto passar entre o fundo e o texto — dentro do ato,
+   * um fundo por seção ficaria por cima do canvas e o esconderia.
+   *
+   * `motion-safe:` e não uma condição em JavaScript: com movimento
+   * reduzido a timeline não é montada, ninguém dirige a cor da camada, e
+   * aí é o fundo da própria seção que tem de valer. As duas metades leem
+   * a MESMA consulta de mídia que o PinnedAct usa para decidir se pina,
+   * então não há como discordarem.
+   */
+  noAto?: boolean
+}) {
+  return (
+    <div
+      aria-hidden
+      className={`absolute inset-0 z-0 ${className} ${noAto ? 'motion-safe:bg-transparent' : ''}`}
+    />
+  )
 }
 
 export function SectionContent({

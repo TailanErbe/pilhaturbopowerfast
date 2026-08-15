@@ -1,4 +1,4 @@
-import { CONTENT } from '@/data/products'
+﻿import { CONTENT } from '@/data/products'
 import { SectionBg } from '@/components/layout/Layer'
 
 /**
@@ -20,7 +20,7 @@ export function UsbC() {
 
   return (
     <section className="relative flex h-full min-h-dvh items-center overflow-hidden">
-      <SectionBg className="bg-surface-000" />
+      <SectionBg className="bg-surface-000" noAto />
 
       {/* Empilhado no mobile, onde não há corredor central a preservar */}
       {/* Mesma ideia de `base-do-retrato`, escrita em grid: o bloco encosta
