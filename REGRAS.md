@@ -528,7 +528,7 @@ Orçamento total: **~19 × 100dvh**. Os beats 1–6 vivem **dentro do mesmo pin*
 > **Acessório nunca aparece maior que o produto.** A foto do cabo chegou a ficar 1,1× a altura das pilhas, e isso inverte a hierarquia do painel na hora. O teto é cerca de **metade** da altura da cartela, que é a proporção real entre um cabo enrolado e uma pilha em pé.
 
 > **Oito pilhas em fila é uma composição larga e baixa.** A altura delas é sempre cerca de **30% da largura da coluna** que as recebe, qualquer que seja a tela. Não existe ajuste de altura que as faça preencher uma coluna alta: a única alavanca é dar mais largura. Se um dia for preciso que ocupem bem mais tela, o caminho é empilhar as duas ilhas na vertical, com o "OU" entre elas, não aumentar a escala.
-| **7** | **Impacto** | 1× | Sai do pin. Contador animado: 1 Gshield substitui até 1.200 descartáveis. Gráfico SVG com trace animado. |
+| **7** | **Impacto** | 1× | Sai do pin. Campo de 1.200 marcas acendendo com o scrub, contadores no mesmo relógio. |
 | **8** | **Compra** | 2,8× | Headline em Bebas, render de apoio, CTA "Onde comprar" com seta animada → gorilashield.com.br. |
 | **9** | **Footer** | 1,3× | Navegação, contato, redes, garantia (3 meses), créditos. |
 
@@ -808,12 +808,16 @@ O `aria-label` com o texto original é preservado pelo plugin: verificado, o lei
 
 ### Sprint 6 — Seções finais · ✅ **CONCLUÍDO 13/08/2026**
 
-- [x] **Beat 7 (impacto): contador ligado ao scrub + SVG com trace** — `GraficoImpacto.tsx`
+- [x] **Beat 7 (impacto): contador ligado ao scrub + campo das 1.200** — `CampoDeDescartaveis.tsx`
 - [x] **Beat 8 (compra):** render de apoio ao lado do CTA, seta que atravessa o botão no hover
 - [x] **Beat 9 (footer):** régua de políticas separada do aviso de direitos
 - [x] Políticas: **linkadas**, não escritas. Ver abaixo
 
-**O gráfico diz uma coisa e não inventa número nenhum.** As duas linhas saem do MESMO ponto e o que as separa é o descarte: a dos descartáveis sobe uma unidade por ciclo, a da Gshield fica deitada em uma, porque é sempre a mesma pilha voltando. O vão entre elas é o argumento. Tudo vem da ficha (1.200 ciclos, uma unidade); nada de custo, que não temos.
+**O gráfico de linha saiu, e o motivo é de codificação.** Ele tinha duas retas saindo do mesmo ponto, e o argumento era o vão entre elas. Só que aquilo codificava dois valores (1.200 e 1) numa variável visual só, a inclinação — e a inclinação não vinha do dado, vinha da CAIXA: o eixo era `{x0:60, y0:300, x1:860, yTopo:44}` num viewBox 900×340, ou seja 256/800. Trocando o viewBox para 900×600, o "argumento" ficava mais íngreme sem um único número mudar. **Forma que muda de força quando se muda o quadro não é medida.** O segundo sinal estava no próprio arquivo: o `aria-label` dizia a frase inteira, e quando a alternativa textual substitui o desenho por completo, o desenho não informa nada.
+
+**No lugar, 1.200 CONTADO.** Doze linhas de cem marcas, conferíveis no DOM, acendendo uma linha por doze avos do scrub. A marca laranja de "uma Gshield" tem `width: 1%` da coluna do campo, que tem cem marcas: ela **é** uma marca, por construção, e continua sendo se alguém mexer na largura. E como os contadores correm em duração 1 na mesma timeline, quando a linha `i` acende o número marca exatamente 100(i+1) — medido: 3 linhas/300, 9/900, 12/1.200. O campo e o número dizem a mesma coisa no mesmo instante.
+
+**A frase de custo e prazo saiu do parágrafo.** Ela dizia "reduz resíduo e custo ao mesmo tempo. A conta fecha já no médio prazo", e a segunda parte afirma **prazo de retorno financeiro**: não existe preço na ficha, nem da Gshield, nem de descartável, nem de energia. Sem os três não há como saber se a conta fecha em três meses ou em três anos. A frase era minha e passou porque soa razoável; soar razoável não é o critério.
 
 **Política de privacidade: linkada, não escrita.** É documento jurídico, e inventar conteúdo legal é pior do que não ter. Os links apontam para as páginas que a loja já mantém, com os caminhos padrão. **Pendência: conferir os endereços.**
 

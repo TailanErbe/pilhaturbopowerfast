@@ -365,9 +365,26 @@ export const CONTENT = {
   /** Beat 7 — impacto */
   impact: {
     title: 'Uma pilha no lugar de 1.200',
+    /**
+     * SAIU UMA AFIRMAÇÃO QUE A FICHA NÃO SUSTENTA.
+     *
+     * O texto anterior era "Trocar descartáveis por recarregáveis reduz
+     * resíduo e custo ao mesmo tempo. A conta fecha já no médio prazo." A
+     * segunda frase afirma PRAZO DE RETORNO FINANCEIRO, e não existe preço
+     * em lugar nenhum da ficha do produto: nem da Gshield, nem de uma
+     * descartável, nem de energia. Sem os três não há como saber se a
+     * conta fecha em três meses ou em três anos.
+     *
+     * Fui eu que escrevi a frase, e ela passou porque soa razoável. Soar
+     * razoável não é o critério; o critério é ter de onde tirar o número.
+     *
+     * O que ficou é o que a ficha realmente diz: são 1.200 ciclos, e cada
+     * ciclo é um uso que não precisou de pilha nova. A conta de dinheiro
+     * fica com quem tem os preços.
+     */
     paragraph:
-      'Trocar descartáveis por recarregáveis reduz resíduo e custo ao mesmo tempo. ' +
-      'A conta fecha já no médio prazo.',
+      'Cada recarga é um uso que dispensou uma pilha nova. O campo abaixo ' +
+      'conta a troca inteira, uma marca para cada descartável.',
     /**
      * `conta` marca o que sobe do zero com a rolagem. A tensão fica de
      * fora: contar até 1,5 V não tem drama nenhum e ainda daria a
