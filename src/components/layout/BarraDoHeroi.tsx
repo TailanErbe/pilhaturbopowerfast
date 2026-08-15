@@ -99,11 +99,17 @@ export function BarraDoHeroi() {
          * como se fosse um quarto produto da lista — e não é: é a única
          * ação da barra.
          *
-         * Centrado sob a régua, mas com a CAIXA justa. Ocupando a linha
-         * inteira em laranja chapado, ele virava o objeto mais pesado da
-         * primeira tela e disputava com o produto; quem tinha de crescer
-         * era o ícone, não o bloco. A régua acima não é enfeite: sem ela
-         * o botão flutua no fim da lista sem dizer que mudou de assunto.
+         * Ocupa a LARGURA da coluna, com altura contida.
+         *
+         * Duas tentativas antes desta: caixa da largura inteira e alta
+         * demais, que virava o objeto mais pesado da primeira tela e
+         * disputava com o produto; e caixa justa em volta do ícone, que
+         * sumia no fim da lista. O que resolve é separar as duas medidas
+         * — largura cheia dá presença e alinha o botão com a coluna, e a
+         * altura contida evita o peso.
+         *
+         * A régua acima não é enfeite: sem ela o botão flutua no fim da
+         * lista sem dizer que mudou de assunto.
          */}
         <span aria-hidden className="mt-4 h-px w-full bg-white/15" />
 
@@ -119,7 +125,7 @@ export function BarraDoHeroi() {
         <a
           href={CONTENT.buy.href}
           title={CONTENT.buy.cta}
-          className="pulsa-carrinho mt-4 grid w-fit self-center place-items-center rounded-xl bg-brand-orange px-4 py-1.5 text-brand-black transition-colors hover:bg-orange-light"
+          className="pulsa-carrinho mt-4 grid w-full place-items-center rounded-xl bg-brand-orange py-2 text-brand-black transition-colors hover:bg-orange-light"
         >
           <span className="sr-only">{CONTENT.buy.cta}</span>
           {/**
