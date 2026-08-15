@@ -161,23 +161,120 @@ export function usePecasDaPilha(raio: number, comprimento: number): PecasDaPilha
  * virar palito (ver Battery). Compartilhado com o kit, aquela troca
  * arrastaria as quatro AA do kit junto.
  */
-export function useMaterialDoCorpo(mapas: MapasDaPilha): THREE.MeshPhysicalMaterial {
-  const material = useMemo(
-    () =>
-      new THREE.MeshPhysicalMaterial({
-        map: mapas.cor,
-        roughnessMap: mapas.rugosidade,
-        metalnessMap: mapas.metalico,
-        normalMap: mapas.normal,
-        // Com os mapas presentes, estes viram multiplicadores
-        roughness: 1,
-        metalness: 1,
-        normalScale: ESCALA_NORMAL,
-        clearcoat: VERNIZ.clearcoat,
-        clearcoatRoughness: VERNIZ.clearcoatRoughness,
-      }),
-    [mapas],
-  )
+/**
+ * A onda de carga que corre DENTRO do corpo.
+ *
+ * O cabo entrega a energia na porta e ela não pode evaporar ali: o cliente
+ * leu exatamente isso como defeito, "o glow do led passando pelo cabo tira
+ * todo o glow da pilha e parece mais um bug do que uma pilha carregando".
+ *
+ * A banda é um anel de luz que desce da porta ao polo negativo, com a
+ * mesma cor e a mesma cabeça gaussiana do neon do cabo, para as duas
+ * leiturem como UMA onda só atravessando duas peças.
+ *
+ * Ela é EMISSIVA e passa do limiar do Bloom, então o brilho sai da
+ * geometria e ocupa o ar em volta — que é o "emanando o mesmo glow" do
+ * pedido. Não é um decalque aceso na superfície.
+ */
+const CARGA = {
+  /** Onde a porta fica no eixo local. Ver `yPorta` em Battery.tsx. */
+  yPorta: 5.05 * (0.5 - 0.18 * 0.58),
+  /** Base do corpo */
+  yBase: -5.05 / 2,
+  /** Fechamento da gaussiana. Alto = anel fino. */
+  aperto: 26,
+  /** Bem acima de 1: é a intensidade que alimenta o Bloom */
+  forca: 4.2,
+}
+
+export function useMaterialDoCorpo(
+  mapas: MapasDaPilha,
+  /**
+   * Só a protagonista recebe a onda.
+   *
+   * As oito do kit usam o mesmo hook, e injetar o trecho de shader nelas
+   * custaria instruções por fragmento em oito corpos para uma luz que
+   * nunca acende ali: no beat do kit não há cabo nenhum.
+   */
+  comCarga = false,
+): THREE.MeshPhysicalMaterial {
+  const material = useMemo(() => {
+    const m = new THREE.MeshPhysicalMaterial({
+      map: mapas.cor,
+      roughnessMap: mapas.rugosidade,
+      metalnessMap: mapas.metalico,
+      normalMap: mapas.normal,
+      // Com os mapas presentes, estes viram multiplicadores
+      roughness: 1,
+      metalness: 1,
+      normalScale: ESCALA_NORMAL,
+      clearcoat: VERNIZ.clearcoat,
+      clearcoatRoughness: VERNIZ.clearcoatRoughness,
+    })
+
+    if (!comCarga) return m
+
+    /**
+     * Injetado no shader do próprio material, e não num segundo objeto.
+     *
+     * Uma casca transparente por cima do corpo traria ordenação de
+     * profundidade e mais preenchimento numa cena que já é limitada por
+     * isso. Aqui a luz nasce onde ela existiria: na superfície da célula.
+     */
+    const uniformes = {
+      uCarga: { value: -1 },
+      uCorCarga: { value: new THREE.Color('#FFA400') },
+    }
+    m.userData.uniformesDaCarga = uniformes
+
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uCarga = uniformes.uCarga
+      shader.uniforms.uCorCarga = uniformes.uCorCarga
+
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vYLocal;')
+        .replace(
+          '#include <begin_vertex>',
+          '#include <begin_vertex>\nvYLocal = position.y;',
+        )
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+           varying float vYLocal;
+           uniform float uCarga;
+           uniform vec3 uCorCarga;`,
+        )
+        /**
+         * Somado em `totalEmissiveRadiance`, que é o termo que o
+         * MeshPhysical soma DEPOIS de toda a iluminação: assim a banda não
+         * é sombreada nem escurecida pelo verniz, ela é luz própria.
+         */
+        .replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+           if (uCarga >= 0.0) {
+             float yOnda = ${CARGA.yPorta.toFixed(4)} + uCarga * (${CARGA.yBase.toFixed(4)} - ${CARGA.yPorta.toFixed(4)});
+             float dOnda = vYLocal - yOnda;
+             float banda = exp(-dOnda * dOnda * ${CARGA.aperto.toFixed(1)});
+             totalEmissiveRadiance += uCorCarga * banda * ${CARGA.forca.toFixed(1)};
+           }`,
+        )
+    }
+
+    /**
+     * Chave de cache PRÓPRIA.
+     *
+     * Sem isto o three reaproveita o programa de um MeshPhysicalMaterial
+     * comum, com os mesmos mapas e as mesmas opções, e o trecho injetado
+     * simplesmente não entra: o defeito aparece como "a onda não acende"
+     * sem nenhum erro no console.
+     */
+    m.customProgramCacheKey = () => 'corpo-com-carga'
+
+    return m
+  }, [mapas, comCarga])
 
   useEffect(() => () => material.dispose(), [material])
 

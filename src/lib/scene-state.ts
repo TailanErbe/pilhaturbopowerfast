@@ -628,6 +628,20 @@ export const sceneState = {
    * objeto.
    */
   inclinacaoNaTela: 0,
+  /**
+   * Onde a onda de carga está DENTRO DO CORPO, de 0 (porta) a 1 (polo
+   * negativo). Fora de 0..1 não há onda no corpo.
+   *
+   * A onda nasce no cabo e não pode morrer no conector. O cliente
+   * descreveu o defeito: "o glow do led passando pelo cabo tira todo o
+   * glow da pilha e parece mais um bug do que uma pilha carregando".
+   * Estava certo: a energia chegava à porta e sumia, o que é o contrário
+   * de carregar.
+   *
+   * Quem calcula é o cabo, que é o dono da fase; quem desenha é o material
+   * do corpo. Passa por aqui porque são componentes irmãos.
+   */
+  cargaNoCorpo: -1,
 }
 
 /**

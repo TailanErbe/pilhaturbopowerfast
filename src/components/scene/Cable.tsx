@@ -147,7 +147,7 @@ const FLUXO_PARADO = 0.7
  * é `vAoLongo = 0`. Logo pos = 0 quando fract(uFluxo) = 1,2/1,45.
  * Se aqueles dois números mudarem lá, este muda junto.
  */
-const CHEGADA = 1.2 / 1.45
+const CHEGADA = 1.2 / 1.55
 
 export function Cable({
   raio,
@@ -428,7 +428,24 @@ export function Cable({
            * O trecho acima de 1,0 é o intervalo entre uma onda e a próxima:
            * a cabeça ainda não entrou no cabo e nada acende.
            */
-          float pos = 1.2 - fract(uFluxo) * 1.45;
+          /**
+           * O curso ficou MAIOR: 1,55 no lugar de 1,45.
+           *
+           * A cabeça agora vai de 1,2 até -0,35, e o trecho negativo não é
+           * sobra: é o CORPO DA PILHA. Ela sai do cabo pelo conector e
+           * continua percorrendo a célula, então o cabo precisa entregá-la
+           * e seguir contando. Ver cargaNoCorpo em scene-state.
+           *
+           * Antes o curso terminava em -0,25 sem ninguém do outro lado: a
+           * energia chegava à porta e evaporava. O cliente leu isso como
+           * defeito, e era: o brilho do cabo tirava todo o brilho da pilha
+           * e parecia bug, não pilha carregando.
+           *
+           * ATENÇÃO: isto está DENTRO do template do shader. Crase aqui
+           * fecha a string e o arquivo deixa de compilar, com o erro
+           * apontando dezenas de linhas abaixo.
+           */
+          float pos = 1.2 - fract(uFluxo) * 1.55;
           float d = vAoLongo - pos;
 
           /**
@@ -496,18 +513,32 @@ export function Cable({
       }
 
       /**
-       * A CHEGADA da onda, publicada para o halo do corpo.
+       * A onda CONTINUA no corpo da pilha, e é a mesma onda.
        *
-       * No shader a cabeça vai de `vAoLongo` 1,2 a −0,25 conforme
-       * `fract(uFluxo)` vai de 0 a 1 — ou seja, ela chega ao conector
-       * quando a fase passa de 1,2/1,45 = 0,828.
+       * No shader a cabeça percorre `vAoLongo` de 1,2 a −0,35 conforme
+       * `fract(uFluxo)` vai de 0 a 1. Ela chega ao conector em
+       * 1,2/1,55 = 0,774; dali em diante `pos` é negativo, e é esse trecho
+       * negativo que percorre a célula.
        *
-       * O pulso decai rápido depois disso. A onda leva uns três segundos
-       * e meio para percorrer o cabo, e um brilho que durasse tudo isso
-       * viraria luz acesa, não pulso: o que se quer é a batida do que
-       * acabou de entrar.
+       * A proporção não é arbitrária: o cabo tem cerca de 10,5 unidades de
+       * traçado e o corpo tem 4,5 da porta ao polo negativo, ou seja 43%.
+       * Dando 0,35 de curso contra 1,2, a onda leva 29% do tempo que levou
+       * no cabo — mais rápido, porque a célula é mais curta, e é assim que
+       * uma velocidade constante se lê em dois trechos de comprimentos
+       * diferentes.
        */
       const fase = u.uFluxo.value % 1
+      const pos = 1.2 - fase * 1.55
+      sceneState.cargaNoCorpo =
+        saida.conectado && pos <= 0 ? Math.min(1, -pos / 0.35) : -1
+
+      /**
+       * E o HALO do fundo bate junto, na chegada.
+       *
+       * O pulso decai rápido: a onda leva uns três segundos e meio para
+       * percorrer o cabo, e um brilho que durasse tudo isso viraria luz
+       * acesa, não pulso. O que se quer é a batida do que acabou de entrar.
+       */
       const desde = (fase - CHEGADA + 1) % 1
       sceneState.pulsoDeCarga = saida.conectado
         ? Math.exp(-desde * 7) * saida.opacidade

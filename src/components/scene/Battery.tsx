@@ -246,7 +246,8 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
    * arrastaria as quatro AA do kit junto na troca.
    */
   const pecas = usePecasDaPilha(raio, comprimento)
-  const corpoMaterial = useMaterialDoCorpo(mapasAA)
+  /* `true`: só a protagonista recebe a onda de carga no shader */
+  const corpoMaterial = useMaterialDoCorpo(mapasAA, true)
 
   useFrame(({ clock, camera, size }, delta) => {
     if (!grupo.current) return
@@ -310,6 +311,23 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
      * 0,881 axial) é o que faz a AAA sair mais esguia em vez de uma AA
      * reduzida por igual.
      */
+    /**
+     * A onda de carga, entregue ao shader do corpo.
+     *
+     * Chega pelo REF da malha, e não pelo material que o hook devolveu: o
+     * compilador do React proíbe mutar o retorno de um hook, e com razão.
+     * É o mesmo caminho que a troca de mapas logo abaixo já usa, e o mesmo
+     * motivo pelo qual o <SaidaDoAto> busca o elemento no DOM em vez de
+     * partir do `gl`.
+     *
+     * Quem calcula a fase é o cabo, dono dela; aqui ela só é entregue.
+     * Valor negativo apaga a banda, e é o que vale em todo beat sem cabo.
+     */
+    const uCarga = (
+      corpo.current?.material as THREE.Material | undefined
+    )?.userData?.uniformesDaCarga as { uCarga: { value: number } } | undefined
+    if (uCarga) uCarga.uCarga.value = sceneState.cargaNoCorpo
+
     const alvoFormato = variantEm(sceneState.progress)
     const mat = corpo.current?.material as THREE.MeshStandardMaterial | undefined
     if (mat && alvoFormato !== formato.current) {
