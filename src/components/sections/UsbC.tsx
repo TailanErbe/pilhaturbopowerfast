@@ -64,16 +64,28 @@ export function UsbC() {
        * O corpo também desceu para perto da escala do site (o beat das
        * recargas usa 18px): 30px aqui destoava de tudo.
        */}
-      <div className="absolute top-[14%] left-0 z-2 hidden w-[40%] px-[var(--spacing-gutter)] md:block">
+      {/**
+       * Os dois blocos na FAIXA CENTRAL da altura, um de cada lado.
+       *
+       * Estavam em alturas diferentes, um no alto e outro no pé, para o
+       * olho não ler os dois como uma coisa só. Isso funcionava quando
+       * cada um tinha três linhas de parágrafo e havia bastante texto para
+       * separar; com uma linha por lado, o degrau passou a parecer
+       * desalinho, e sobrava um vazio grande no meio da tela — justo onde
+       * o cabo cruza, que é o que se quer olhando.
+       *
+       * Na mesma linha, os dois viram legenda do que acontece entre eles.
+       */}
+      <div className="absolute top-1/2 left-0 z-2 hidden w-[36%] -translate-y-1/2 px-[var(--spacing-gutter)] md:block">
         <h2 className="text-(length:--text-display-2)">{esquerda.titulo}</h2>
-        <p data-revelar className="texto-corpo mt-6 text-white/70">
+        <p data-revelar className="texto-corpo mt-4 text-white/70">
           {esquerda.texto}
         </p>
       </div>
 
-      <div className="absolute right-0 bottom-[10%] z-2 hidden w-[40%] px-[var(--spacing-gutter)] md:block">
+      <div className="absolute top-1/2 right-0 z-2 hidden w-[36%] -translate-y-1/2 px-[var(--spacing-gutter)] md:block">
         <h2 className="text-(length:--text-display-2)">{direita.titulo}</h2>
-        <p data-revelar className="texto-corpo mt-6 text-white/70">
+        <p data-revelar className="texto-corpo mt-4 text-white/70">
           {direita.texto}
         </p>
       </div>

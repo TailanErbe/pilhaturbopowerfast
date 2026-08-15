@@ -391,49 +391,66 @@ const CABO = {
 }
 
 /**
- * Fase do cabo: 1 é longe e invisível, 0 é encaixado.
+ * Fase do cabo: 1 é longe e invisível, 0 é encaixado. `saindo` diz qual
+ * dos dois movimentos está em curso.
  *
- * Uma função só para entrada e saída, e por isso um valor só descreve as
- * duas: a entrada é a saída de trás para a frente. Assim o encaixe e o
- * desencaixe usam exatamente a mesma coreografia, e não há como uma
- * ficar mais bonita que a outra.
+ * A fase é a mesma nos dois sentidos, mas a COREOGRAFIA não pode ser.
+ * Entrar não é sair de trás para a frente, e essa suposição produziu um
+ * movimento que o cliente pegou na hora: o plugue aparecia abaixo da
+ * porta, subia, e só então encaixava.
+ *
+ * O motivo é físico. Na SAÍDA a ordem tem causa: o plugue recua, perde o
+ * apoio e só ENTÃO cede à gravidade — a queda é consequência de ter
+ * soltado. Rodando o mesmo filme ao contrário, a entrada começa com o
+ * cabo caído e o faz subir sozinho, como se a gravidade se invertesse.
+ * Ninguém leva um plugue a uma tomada por baixo: leva pelo eixo dela.
  */
-function faseDoCabo(progress: number): number {
+function faseDoCabo(progress: number): { fase: number; saindo: boolean } {
   const suave = (t: number) => t * t * (3 - 2 * t)
   const rampa = (p: number, de: number, ate: number) =>
     suave(Math.max(0, Math.min(1, (p - de) / (ate - de))))
 
-  if (progress <= CABO.entra.de) return 1
-  if (progress < CABO.entra.ate) return 1 - rampa(progress, CABO.entra.de, CABO.entra.ate)
-  if (progress <= CABO.sai.de) return 0
-  return rampa(progress, CABO.sai.de, CABO.sai.ate)
+  if (progress <= CABO.entra.de) return { fase: 1, saindo: false }
+  if (progress < CABO.entra.ate) {
+    return { fase: 1 - rampa(progress, CABO.entra.de, CABO.entra.ate), saindo: false }
+  }
+  if (progress <= CABO.sai.de) return { fase: 0, saindo: false }
+  return { fase: rampa(progress, CABO.sai.de, CABO.sai.ate), saindo: true }
 }
 
 /**
  * O cabo, encenado.
  *
  * Opacidade sozinha entrega o RESULTADO sem entregar a AÇÃO: o cabo
- * simplesmente aparecia ou sumia. Aqui o encaixe acontece em três tempos,
- * todos amarrados ao scrub — rolar de volta desfaz.
+ * simplesmente aparecia ou sumia.
  *
- *   1. o conjunto entra de fora de quadro e a opacidade sobe
- *   2. o cabo se acomoda, deixando de cair
- *   3. o plugue avança pelo eixo da porta e a casca entra na abertura
+ * ENTRADA, em dois tempos: o conjunto vem de fora de quadro deslizando
+ * PELO EIXO da porta, e o plugue completa o encaixe. Sem queda nenhuma —
+ * quem leva um plugue à tomada o leva em linha reta.
  *
- * Na saída, os mesmos três tempos ao contrário.
+ * SAÍDA, em três: o plugue recua e a casca deixa a abertura; já solto, o
+ * conjunto cede à gravidade e cai; então desliza para fora e a opacidade
+ * baixa. Aqui a queda tem causa, e por isso só existe deste lado.
  *
  * A onda de neon só corre PLUGADO: fora da porta não há carga entrando,
  * e mantê-la acesa contaria uma mentira.
  */
 export function cabeSaida(progress: number): SaidaDoCabo {
-  const e = faseDoCabo(progress)
+  const { fase: e, saindo } = faseDoCabo(progress)
 
   const faixa = (de: number, ate: number) =>
     Math.max(0, Math.min(1, (e - de) / (ate - de)))
 
   return {
     recuo: faixa(0, 0.34) * 1.1,
-    queda: faixa(0.26, 1) * 2.2,
+    /**
+     * A queda é SÓ da saída.
+     *
+     * Aplicada também na entrada, ela punha o plugue abaixo da porta e o
+     * fazia subir para encaixar — o movimento estranho que o cliente
+     * apontou. Gravidade não se inverte porque a rolagem inverteu.
+     */
+    queda: saindo ? faixa(0.26, 1) * 2.2 : 0,
     deslize: faixa(0.42, 1) * 11,
     opacidade: 1 - faixa(0.78, 1),
     conectado: e < 0.3,
