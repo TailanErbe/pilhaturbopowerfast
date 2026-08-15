@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { obterTimeline } from '@/motion/registro'
 import { prefersReducedMotion } from '@/lib/motion'
 import { SAIDA_DO_HEROI } from '@/motion/labels'
+import { sceneState } from '@/lib/scene-state'
 
 /**
  * Quanto o herói ainda ocupa a tela, de 1 a 0.
@@ -27,6 +28,49 @@ import { SAIDA_DO_HEROI } from '@/motion/labels'
 const TROCA = SAIDA_DO_HEROI
 
 const suave = (t: number) => t * t * (3 - 2 * t)
+
+/**
+ * Quanto o ATO ainda ocupa a tela, de 1 a 0.
+ *
+ * O ato termina, mas a pílula de navegação não sabia disso: ela é `fixed` e
+ * continuava por cima do impacto, da compra e do rodapé, com o rótulo
+ * congelado em "O KIT". Ali ela não tem destino nenhum — os painéis ficaram
+ * para trás — e ainda cobria parte do número "2.250" da seção de impacto e
+ * flutuava sob a linha de copyright.
+ *
+ * O sinal é o mesmo que apaga a cena: `saidaDoAto`, escrito pelo
+ * ScrollTrigger que roda meia tela depois do fim do pin. Assim a navegação
+ * do ato e o produto do ato saem juntos, que é o que eles são.
+ *
+ * Lê de `sceneState` e não da timeline porque este valor não é o progresso:
+ * é um segundo gatilho, e só ele sabe onde o pin acabou.
+ */
+export function useNoAto(): number {
+  const [presenca, setPresenca] = useState(1)
+
+  useEffect(() => {
+    let agendado = 0
+
+    const medir = () => {
+      agendado = 0
+      const v = 1 - Math.max(0, Math.min(1, sceneState.saidaDoAto))
+      setPresenca((antes) => (Math.abs(antes - v) < 0.01 ? antes : v))
+    }
+
+    const agendar = () => {
+      if (!agendado) agendado = requestAnimationFrame(medir)
+    }
+
+    medir()
+    window.addEventListener('scroll', agendar, { passive: true })
+    return () => {
+      cancelAnimationFrame(agendado)
+      window.removeEventListener('scroll', agendar)
+    }
+  }, [])
+
+  return presenca
+}
 
 export function useNoHeroi(): number {
   /**

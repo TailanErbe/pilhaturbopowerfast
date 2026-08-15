@@ -76,18 +76,38 @@ export function UsbC() {
        *
        * Na mesma linha, os dois viram legenda do que acontece entre eles.
        */}
-      <div className="absolute top-1/2 left-0 z-2 hidden w-[36%] -translate-y-1/2 px-[var(--spacing-gutter)] md:block">
-        <h2 className="text-(length:--text-display-2)">{esquerda.titulo}</h2>
-        <p data-revelar className="texto-corpo mt-4 text-white/70">
-          {esquerda.texto}
-        </p>
-      </div>
+      {/**
+       * Os dois blocos numa LINHA só, alinhados pelo topo.
+       *
+       * Eram duas caixas absolutas independentes, cada uma centrada na
+       * própria altura. Como o parágrafo da direita quebra em duas linhas e
+       * o da esquerda em uma, os dois blocos tinham alturas diferentes — e
+       * centrar cada um por si punha os TÍTULOS em alturas diferentes.
+       * Medido em 1280: o da esquerda começava em y=321 e o da direita em
+       * 308, treze pixels de degrau.
+       *
+       * Treze pixels não se veem como treze pixels; veem-se como desalinho.
+       * Os dois títulos ladeiam o produto e o olho os lê como uma linha só
+       * atravessando a tela, então qualquer diferença entre eles denuncia.
+       *
+       * Numa linha com `items-start`, os dois começam no mesmo y por
+       * construção e os parágrafos ficam pendurados no comprimento que
+       * tiverem. Quem se centra na tela é a LINHA, que é a unidade certa.
+       */}
+      <div className="absolute inset-x-0 top-1/2 z-2 hidden -translate-y-1/2 items-start justify-between px-[var(--spacing-gutter)] md:flex">
+        <div className="w-[36%]">
+          <h2 className="text-(length:--text-display-2)">{esquerda.titulo}</h2>
+          <p data-revelar className="texto-corpo mt-4 text-white/70">
+            {esquerda.texto}
+          </p>
+        </div>
 
-      <div className="absolute top-1/2 right-0 z-2 hidden w-[36%] -translate-y-1/2 px-[var(--spacing-gutter)] md:block">
-        <h2 className="text-(length:--text-display-2)">{direita.titulo}</h2>
-        <p data-revelar className="texto-corpo mt-4 text-white/70">
-          {direita.texto}
-        </p>
+        <div className="w-[36%]">
+          <h2 className="text-(length:--text-display-2)">{direita.titulo}</h2>
+          <p data-revelar className="texto-corpo mt-4 text-white/70">
+            {direita.texto}
+          </p>
+        </div>
       </div>
     </section>
   )

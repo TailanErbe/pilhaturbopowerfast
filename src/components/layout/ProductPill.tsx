@@ -6,7 +6,7 @@ import { PRODUCTS } from '@/data/products'
 import { irParaPosicao } from '@/lib/lenis'
 import { beatEm, scrollDoBeat } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
-import { useNoHeroi } from '@/lib/no-heroi'
+import { useNoAto, useNoHeroi } from '@/lib/no-heroi'
 
 /**
  * Pílula fixa "Nossas pilhas" — o navegador do scrollytelling.
@@ -85,7 +85,21 @@ export function ProductPill() {
    * ela mostraria as duas ao mesmo tempo, oferecendo dois caminhos para
    * o mesmo lugar na tela mais vazia da página.
    */
-  const presenca = 1 - noHeroi
+  /**
+   * A pílula vive entre DUAS bordas, e as duas são de outra peça.
+   *
+   * Ela entra quando o herói entrega a tela e sai quando o ato acaba. A
+   * segunda faltava: `fixed` do jeito que ela é, ela sobrevivia ao pin e
+   * ficava por cima do impacto, da compra e do rodapé, com o rótulo
+   * congelado em "O KIT" e sem destino nenhum na tela — os painéis já
+   * tinham ficado para trás. Medido, ela cobria parte do "2.250" da seção
+   * de impacto e flutuava sob a linha de copyright.
+   *
+   * Multiplicar em vez de escolher uma das duas: nas pontas os dois sinais
+   * valem 1, e no meio quem estiver saindo manda.
+   */
+  const noAto = useNoAto()
+  const presenca = (1 - noHeroi) * noAto
   const oculta = presenca < 0.01
 
   return (

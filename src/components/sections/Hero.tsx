@@ -49,9 +49,23 @@ export function Hero() {
        * ganhar do fundo mais claro que ela vai encontrar, não do mais
        * escuro.
        */}
+      {/**
+       * O recuo da moldura sai da GOTEIRA, e é menor que ela.
+       *
+       * Estava em `inset-4 sm:inset-6`, ou seja 16 px no celular — e a
+       * goteira do conteúdo também é 16 px ali. Medido em 390x844: o
+       * "Role para explorar" terminava em x=374 e o filete da moldura
+       * passava em x=374. Zero folga: o texto encostava na linha, o que
+       * lê como erro de impressão.
+       *
+       * Amarrando à goteira por um fator menor que 1, a folga passa a
+       * existir em toda largura por construção, e não por coincidência
+       * numérica em uma tela. Em 390 são 7 px de moldura contra 16 de
+       * texto; em 1280, 22 contra 48.
+       */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-4 z-3 rounded-xl border border-white/26 sm:inset-6"
+        className="pointer-events-none absolute inset-[calc(var(--spacing-gutter)*0.45)] z-3 rounded-xl border border-white/26"
       />
 
       {/**

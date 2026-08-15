@@ -102,11 +102,47 @@ function DebugHook() {
  */
 function SaidaDoAto() {
   const ultimo = useRef(-1)
+  /** Último deslocamento escrito, em px. Ver `arrastar` abaixo. */
+  const ultimoY = useRef(-1)
   /** Modo do laço, lembrado para não reescrever o store a cada quadro */
   const modo = useRef<'always' | 'never'>('always')
   const setFrameloop = useThree((s) => s.setFrameloop)
 
   useFrame(() => {
+    const saida = sceneState.saidaDoAto
+
+    /**
+     * A CENA VAI EMBORA COM O PAINEL, e não fica parada apagando.
+     *
+     * O canvas é `fixed inset-0`, então quando o pin solta e o painel do
+     * kit sobe com a rolagem, as oito pilhas ficam paradas na tela: elas
+     * se descolam do painel e passam por cima da seção de impacto
+     * enquanto a opacidade cai. As fotos dos cabos, que são DOM, vão
+     * embora certinho — e foi por isso que o cliente pediu que as pilhas
+     * ficassem "fixas igual aos cabos". O que ele viu como animação era o
+     * conjunto NÃO acompanhando a página.
+     *
+     * A saída do ato roda ao longo de meia tela de rolagem, então o
+     * deslocamento é exatamente `saidaDoAto * 0,5 * altura`: a cena anda
+     * o mesmo tanto que o painel andou, e as duas coisas somem juntas.
+     *
+     * `translate3d` e não `top`: é transformação, o compositor resolve sem
+     * repintar, e o container só tem o canvas e os dois halos dentro.
+     *
+     * Escrito SEM o arredondamento que guarda a opacidade: em 800 px de
+     * altura, um passo de 0,01 seriam 4 px de salto, e salto é justamente
+     * o que se está tirando daqui.
+     */
+    const el = document.querySelector<HTMLElement>('[data-cena]')
+    if (el) {
+      const y = saida > 0 ? -saida * window.innerHeight * 0.5 : 0
+      const arred = Math.round(y * 10) / 10
+      if (arred !== ultimoY.current) {
+        ultimoY.current = arred
+        el.style.transform = arred ? `translate3d(0, ${arred}px, 0)` : ''
+      }
+    }
+
     /**
      * A ÚNICA causa de a cena perder opacidade é o ato ter acabado.
      *
@@ -116,7 +152,7 @@ function SaidaDoAto() {
      * nenhum; contra o fundo `#141414` daqueles dois beats, 45% não a
      * deixava discreta, deixava um vulto.
      */
-    const o = Math.round((1 - sceneState.saidaDoAto) * 100) / 100
+    const o = Math.round((1 - saida) * 100) / 100
     if (o === ultimo.current) return
 
     /**
@@ -137,10 +173,6 @@ function SaidaDoAto() {
     }
 
     ultimo.current = o
-    // Busca no DOM em vez de partir do `gl`: o compilador do React proíbe
-    // mutar qualquer coisa alcançável a partir do retorno de um hook. Como
-    // só entra aqui quando o valor muda, a consulta é rara.
-    const el = document.querySelector<HTMLElement>('[data-cena]')
     if (!el) return
     el.style.opacity = String(o)
     el.style.visibility = o <= 0 ? 'hidden' : ''
