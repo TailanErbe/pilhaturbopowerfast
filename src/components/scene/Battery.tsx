@@ -8,7 +8,7 @@ import { AAA_SCALE, DIMENSIONS } from '@/data/products'
 import { faixaEm, kitPresenca, poseAt, sceneState, variantEm } from '@/lib/scene-state'
 import { asset } from '@/lib/site'
 import { Cable } from './Cable'
-import { BatteryMesh } from './BatteryMesh'
+import { BatteryMesh, useMaterialDoCorpo, usePecasDaPilha } from './BatteryMesh'
 import { Kit } from './Kit'
 
 /**
@@ -250,6 +250,16 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
     () => ({ cor: corB, rugosidade: rugB, metalico: metB, normal: normB }),
     [corB, rugB, metB, normB],
   )
+
+  /**
+   * As peças da protagonista, criadas uma vez.
+   *
+   * O material do corpo é DELA, não compartilhado com o kit: ela reaponta
+   * os mapas dele no meio do giro para virar palito, e um material comum
+   * arrastaria as quatro AA do kit junto na troca.
+   */
+  const pecas = usePecasDaPilha(raio, comprimento)
+  const corpoMaterial = useMaterialDoCorpo(mapasAA)
 
   useFrame(({ clock, camera, size }, delta) => {
     if (!grupo.current) return
@@ -521,12 +531,7 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
         {/* Só o corpo: o esmaecimento da virada do kit percorre esta
             subárvore, e o cabo tem opacidade própria (ver corpoDaPilha) */}
         <group ref={corpoDaPilha}>
-          <BatteryMesh
-            raio={raio}
-            comprimento={comprimento}
-            mapas={mapasAA}
-            corpoRef={corpo}
-          />
+          <BatteryMesh pecas={pecas} corpo={corpoMaterial} corpoRef={corpo} />
         </group>
 
         {/* Cabo: filho do grupo da pilha para continuar plugado na porta

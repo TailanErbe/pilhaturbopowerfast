@@ -1,11 +1,11 @@
 'use client'
 
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { Battery } from './Battery'
-import { ancoraDoBeat, sceneState } from '@/lib/scene-state'
+import { ancoraDoBeat, cabeSaida, sceneState } from '@/lib/scene-state'
 import { BEATS } from '@/motion/labels'
 import { isCoarsePointer, prefersReducedMotion } from '@/lib/motion'
 import { useClientValue } from '@/lib/client-value'
@@ -314,6 +314,81 @@ function CenaEstatica() {
 }
 
 /**
+ * O Bloom só existe enquanto há o que florescer.
+ *
+ * ------------------------------------------------------------------
+ * O QUE ELE CUSTAVA PARADO
+ * ------------------------------------------------------------------
+ *
+ * A cadeia é RenderPass, extração de luminância, MipmapBlurPass e
+ * EffectPass. O `levels` do borrão por mipmap vale 8 por padrão, ou seja
+ * oito reduções e oito ampliações: cerca de dezoito trocas de alvo de
+ * render por quadro. Em GPU de celular, que trabalha por ladrilho, cada
+ * troca paga a leitura e a escrita do ladrilho inteiro, independente de
+ * quantos pixels de fato mudaram.
+ *
+ * E o único emissor acima do limiar de 0,95 é a onda de neon do cabo, que
+ * emite 26. O rótulo e a tampa laranja ficam de fora de propósito. Como o
+ * cabo some de cena em `CABO.sai.ate`, dali até o fim da página a cadeia
+ * inteira estava borrando uma imagem preta, sessenta vezes por segundo,
+ * em dois terços da timeline.
+ *
+ * ------------------------------------------------------------------
+ * O CRITÉRIO VEM DO CABO, NÃO DE UM NÚMERO
+ * ------------------------------------------------------------------
+ *
+ * Podia ser `progresso < 0,36`. Seria uma quarta cópia da janela do cabo
+ * espalhada pelo projeto, e ficaria errada calada no dia em que a saída
+ * mudasse. `cabeSaida().opacidade` é a mesma fonte que decide se o cabo
+ * está na tela: se ele não está, não há emissor.
+ *
+ * Desligar é seguro e reversível: a lib sai do laço na primeira linha e
+ * derruba a prioridade do próprio `useFrame` para zero (`o ? s : 0` no
+ * fonte instalado), então o R3F volta a desenhar a cena direto. Nada
+ * desmonta, nenhum shader recompila, nenhum alvo é realocado.
+ *
+ * De brinde, o antisserrilhado volta a valer. Com o composer ligado a cena
+ * é desenhada no alvo dele, que tem `multisampling={0}`, e o `antialias`
+ * do canvas só via o triângulo de tela cheia do passe final: MSAA pago e
+ * jogado fora. Desligado, ele volta a suavizar a silhueta do produto.
+ */
+function BrilhoDoCabo() {
+  const [ligado, setLigado] = useState(true)
+  useFrame(() => {
+    const deve = cabeSaida(sceneState.progress).opacidade > 0
+    if (deve !== ligado) setLigado(deve)
+  })
+
+  return (
+    <EffectComposer enabled={ligado} enableNormalPass={false} multisampling={0}>
+      <Bloom
+        // Raio alto = a névoa se espalha longe do núcleo. É AQUI que
+        // se controla o tamanho do halo, não na espessura da casca:
+        // o neon é uma linha, a dispersão é que é larga.
+        intensity={2.6}
+        // Limiar alto: só o neon (que emite muito acima de 1) passa.
+        // Em 0,82 a tampa laranja iluminada também florescia e jogava
+        // uma névoa âmbar sobre a página inteira.
+        luminanceThreshold={0.95}
+        luminanceSmoothing={0.2}
+        radius={0.96}
+        mipmapBlur
+        /**
+         * O borrão é calculado em METADE da resolução.
+         *
+         * Bloom é o passo mais caro da cena porque toca cada pixel
+         * várias vezes, e é o único que pode ser barateado sem ninguém
+         * notar: o resultado é névoa, uma imagem sem nenhuma frequência
+         * alta para preservar. Meia resolução corta 75% dos pixels
+         * processados e a dispersão sai idêntica ao olho.
+         */
+        resolutionScale={0.5}
+      />
+    </EffectComposer>
+  )
+}
+
+/**
  * Ponteiro normalizado para o parallax do cabo.
  *
  * Escrito direto no objeto de estado, sem passar por React: isto atualiza a
@@ -493,43 +568,11 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
            * lê como neon, por mais que se ajuste o material.
            *
            * O limiar alto deixa o rótulo e a tampa laranja de fora — só o
-           * brilho do cabo, que é emitido acima de 1, atravessa.
+           * brilho do cabo, que é emitido acima de 1, atravessa. E como só
+           * ele atravessa, a cadeia inteira se desliga quando o cabo sai
+           * de cena: ver <BrilhoDoCabo />.
            */}
-          {/**
-           * `multisampling={0}`: o MSAA do composer custa caro e não faz
-           * falta aqui.
-           *
-           * O padrão do EffectComposer é 8 amostras, e ele resolve o
-           * buffer inteiro a cada quadro. A cena tem nove chamadas de
-           * desenho sobre um cilindro liso: o serrilhado que sobra é o da
-           * silhueta, e o Bloom o suaviza de qualquer jeito.
-           */}
-          <EffectComposer enableNormalPass={false} multisampling={0}>
-            <Bloom
-              // Raio alto = a névoa se espalha longe do núcleo. É AQUI que
-              // se controla o tamanho do halo, não na espessura da casca:
-              // o neon é uma linha, a dispersão é que é larga.
-              intensity={2.6}
-              // Limiar alto: só o neon (que emite muito acima de 1) passa.
-              // Em 0,82 a tampa laranja iluminada também florescia e jogava
-              // uma névoa âmbar sobre a página inteira.
-              luminanceThreshold={0.95}
-              luminanceSmoothing={0.2}
-              radius={0.96}
-              mipmapBlur
-              /**
-               * O borrão é calculado em METADE da resolução.
-               *
-               * Bloom é o passo mais caro da cena porque toca cada pixel
-               * várias vezes, e é o único que pode ser barateado sem
-               * ninguém notar: o resultado é névoa, uma imagem sem
-               * nenhuma frequência alta para preservar. Meia resolução
-               * corta 75% dos pixels processados e a dispersão sai
-               * idêntica ao olho.
-               */
-              resolutionScale={0.5}
-            />
-          </EffectComposer>
+          <BrilhoDoCabo />
         </Suspense>
       </Canvas>
     </div>

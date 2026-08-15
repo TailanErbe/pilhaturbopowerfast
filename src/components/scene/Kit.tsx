@@ -5,7 +5,12 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { AAA_SCALE, DIMENSIONS } from '@/data/products'
 import { FACE_FRONTAL, kitPresenca, sceneState } from '@/lib/scene-state'
-import { BatteryMesh, type MapasDaPilha } from './BatteryMesh'
+import {
+  BatteryMesh,
+  useMaterialDoCorpo,
+  usePecasDaPilha,
+  type MapasDaPilha,
+} from './BatteryMesh'
 
 /**
  * O painel 03: DOIS kits, não um conjunto de oito.
@@ -121,6 +126,22 @@ export function Kit({
     () => ({ raio: AA.raio, comprimento: AA.altura }),
     [],
   )
+
+  /**
+   * UM conjunto de peças para as oito, e dois materiais de corpo.
+   *
+   * As oito são geometricamente idênticas: a palito sai da escala não
+   * uniforme aplicada no grupo do slot, não de outra malha. Antes cada
+   * <BatteryMesh /> declarava a própria geometria em JSX, e o painel do
+   * kit gastava 32 buffers e 32 materiais por quadro, no beat mais pesado
+   * da página. Agora são 4 geometrias e 5 materiais, para as oito.
+   *
+   * Os corpos precisam de dois materiais porque o rótulo é outro: a AA e a
+   * palito têm mapas próprios, e é só isso que as distingue além do porte.
+   */
+  const pecas = usePecasDaPilha(dim.raio, dim.comprimento)
+  const corpoAA = useMaterialDoCorpo(mapasAA)
+  const corpoAAA = useMaterialDoCorpo(mapasAAA)
 
   useFrame(({ camera, size }) => {
     const p = kitPresenca(sceneState.progress)
@@ -246,11 +267,7 @@ export function Kit({
            * flutuariam acima do chão das AA.
            */}
           <group position={[0, dim.comprimento / 2, 0]}>
-            <BatteryMesh
-              raio={dim.raio}
-              comprimento={dim.comprimento}
-              mapas={s.aaa ? mapasAAA : mapasAA}
-            />
+            <BatteryMesh pecas={pecas} corpo={s.aaa ? corpoAAA : corpoAA} />
           </group>
         </group>
       ))}

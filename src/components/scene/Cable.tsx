@@ -270,7 +270,21 @@ export function Cable({
     const curva = new THREE.CatmullRomCurve3(pontos, false, 'centripetal')
     // Raio em medida real, não proporcional à pilha: o mesmo cabo acompanha
     // AA e AAA, então não pode encolher junto com o produto.
-    const geo = new THREE.TubeGeometry(curva, 260, TIPO_C.cabo.raio, 14, false)
+    /**
+     * A tesselação do cabo, escolhida pelo que se VÊ, não por segurança.
+     *
+     * Estava em 260 segmentos por 14 lados, ou 7.280 triângulos. O cabo tem
+     * 2 mm de raio e ocupa poucos pixels de largura na tela: com 14 lados,
+     * cada face radial fica menor que o quad de rasterização da GPU, e um
+     * quad é sempre cobrado inteiro. Ou seja, dividir mais parava de
+     * comprar silhueta e passava a comprar só fragmentos repetidos.
+     *
+     * 140 por 10 dá 2.800 triângulos. A curva é centrípeta e suave, e a
+     * silhueta que sobra é a mesma: quem julga é a captura de quadro na
+     * pose do herói, comparando a borda perto do conector, que é o trecho
+     * mais próximo da câmera e o único onde o facetamento poderia aparecer.
+     */
+    const geo = new THREE.TubeGeometry(curva, 140, TIPO_C.cabo.raio, 10, false)
 
     // Pivô no plugue: rotacionar em torno dele mantém a ponta encaixada e
     // faz apenas a parte solta balançar, como um cabo realmente se comporta.
@@ -316,7 +330,25 @@ export function Cable({
      * Casca fina = brilho definido. Bloom = a luz que vaza para o ambiente.
      */
     const NUCLEO = 0.35 * MM
-    const geoBrilho = new THREE.TubeGeometry(curva, 320, TIPO_C.cabo.raio + NUCLEO, 16, false)
+    /**
+     * A casca do brilho era a peça mais cara da cena, e a mais fina dela.
+     *
+     * 320 segmentos por 16 lados dão 10.240 triângulos — mais que o cabo
+     * inteiro — para um tubo 0,35 mm mais gordo que ele. Na tela isso são
+     * uns três pixels de largura. E como ela é aditiva e desenhada por
+     * dentro (BackSide), cai no passe transparente, onde cada fragmento
+     * custa mais.
+     *
+     * Dezesseis lados num cilindro de três pixels produzem triângulos
+     * menores que o quad de rasterização: cada um continua pagando quatro
+     * fragmentos, então o custo por pixel útil dispara. E isso acontecia na
+     * PRIMEIRA TELA da página.
+     *
+     * 160 por 8 dão 2.560. Quem esconde o facetamento aqui não é a malha, é
+     * o bloom: o que se vê deste objeto é a dispersão em volta dele, e
+     * dispersão não tem frequência alta para preservar.
+     */
+    const geoBrilho = new THREE.TubeGeometry(curva, 160, TIPO_C.cabo.raio + NUCLEO, 8, false)
     geoBrilho.translate(-pivo.x, -pivo.y, -pivo.z)
 
     const matBrilho = new THREE.ShaderMaterial({
