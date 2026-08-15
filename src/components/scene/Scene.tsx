@@ -101,81 +101,74 @@ function DebugHook() {
  * recálculo de estilo a cada quadro.
  */
 function SaidaDoAto() {
-  const ultimo = useRef(-1)
-  /** Último deslocamento escrito, em px. Ver `arrastar` abaixo. */
+  /** Último deslocamento escrito, em px */
   const ultimoY = useRef(-1)
+  /** Último estado de visibilidade escrito */
+  const ultimoFora = useRef<boolean | null>(null)
   /** Modo do laço, lembrado para não reescrever o store a cada quadro */
   const modo = useRef<'always' | 'never'>('always')
   const setFrameloop = useThree((s) => s.setFrameloop)
 
   useFrame(() => {
     const saida = sceneState.saidaDoAto
+    const el = document.querySelector<HTMLElement>('[data-cena]')
+    if (!el) return
 
     /**
-     * A CENA VAI EMBORA COM O PAINEL, e não fica parada apagando.
+     * A CENA VAI EMBORA COM A PÁGINA, e não apaga.
      *
      * O canvas é `fixed inset-0`, então quando o pin solta e o painel do
-     * kit sobe com a rolagem, as oito pilhas ficam paradas na tela: elas
-     * se descolam do painel e passam por cima da seção de impacto
-     * enquanto a opacidade cai. As fotos dos cabos, que são DOM, vão
-     * embora certinho — e foi por isso que o cliente pediu que as pilhas
-     * ficassem "fixas igual aos cabos". O que ele viu como animação era o
-     * conjunto NÃO acompanhando a página.
+     * kit sobe com a rolagem, as oito pilhas ficariam paradas na tela: elas
+     * se descolam do painel e passam por cima da seção de impacto. As
+     * fotos dos cabos, que são DOM, vão embora certinho.
      *
-     * A saída do ato roda ao longo de meia tela de rolagem, então o
-     * deslocamento é exatamente `saidaDoAto * 0,5 * altura`: a cena anda
-     * o mesmo tanto que o painel andou, e as duas coisas somem juntas.
+     * Houve aqui uma tentativa de resolver isso com opacidade, e ela
+     * trocou um defeito por outro: as pilhas desbotavam enquanto os cabos
+     * ao lado continuavam sólidos, o que denuncia na hora que aquilo é uma
+     * camada e não conteúdo. O cliente pegou: "o kit pode ficar fixo após
+     * aparecer na tela, sem esse efeito de fade out, já que não tem no
+     * cabo".
+     *
+     * Agora é só geometria. A saída do ato corre por UMA altura de tela e
+     * o deslocamento é `saidaDoAto * altura`, ou seja um pixel por pixel
+     * rolado. Como o canvas tem exatamente o tamanho da janela, uma tela de
+     * rolagem o tira inteiro de quadro por conta própria. Nada apaga, nada
+     * desbota: ele sai como um elemento do documento sairia.
      *
      * `translate3d` e não `top`: é transformação, o compositor resolve sem
      * repintar, e o container só tem o canvas e os dois halos dentro.
-     *
-     * Escrito SEM o arredondamento que guarda a opacidade: em 800 px de
-     * altura, um passo de 0,01 seriam 4 px de salto, e salto é justamente
-     * o que se está tirando daqui.
      */
-    const el = document.querySelector<HTMLElement>('[data-cena]')
-    if (el) {
-      const y = saida > 0 ? -saida * window.innerHeight * 0.5 : 0
-      const arred = Math.round(y * 10) / 10
-      if (arred !== ultimoY.current) {
-        ultimoY.current = arred
-        el.style.transform = arred ? `translate3d(0, ${arred}px, 0)` : ''
-      }
+    const y = saida > 0 ? -saida * window.innerHeight : 0
+    const arred = Math.round(y * 10) / 10
+    if (arred !== ultimoY.current) {
+      ultimoY.current = arred
+      el.style.transform = arred ? `translate3d(0, ${arred}px, 0)` : ''
     }
 
     /**
-     * A ÚNICA causa de a cena perder opacidade é o ato ter acabado.
-     *
-     * Havia uma segunda, que multiplicava aqui: uma atenuação de 45% nos
-     * beats das recargas e do chip, para o texto ter mais leitura. Saiu.
-     * A pilha é o produto que a página vende e não é cenário em beat
-     * nenhum; contra o fundo `#141414` daqueles dois beats, 45% não a
-     * deixava discreta, deixava um vulto.
-     */
-    const o = Math.round((1 - saida) * 100) / 100
-    if (o === ultimo.current) return
-
-    /**
-     * Invisível deixa de desenhar.
+     * FORA DE QUADRO deixa de desenhar.
      *
      * O laço era sempre 'always', então depois do fim do ato a cena
-     * continuava renderizando oito pilhas com Bloom, sessenta vezes por
-     * segundo, por trás do impacto, da compra e do rodapé. Ninguém vê e a
-     * GPU paga.
+     * continuava renderizando oito pilhas sessenta vezes por segundo, por
+     * trás do impacto, da compra e do rodapé. Ninguém vê e a GPU paga.
+     *
+     * O critério deixou de ser a opacidade e passou a ser a posição, que é
+     * o que de fato governa agora: em `saidaDoAto >= 1` a cena já subiu uma
+     * tela inteira e não há um pixel dela em quadro.
      *
      * Só o DESLIGAR mora aqui. Ligar de volta é impossível daqui: com o
      * laço parado este `useFrame` não roda mais, então quem reacende é o
      * ouvinte de scroll abaixo, que independe do laço de render.
      */
-    if (o <= 0 && modo.current !== 'never') {
-      modo.current = 'never'
-      setFrameloop('never')
+    const fora = saida >= 1
+    if (fora !== ultimoFora.current) {
+      ultimoFora.current = fora
+      el.style.visibility = fora ? 'hidden' : ''
+      if (fora && modo.current !== 'never') {
+        modo.current = 'never'
+        setFrameloop('never')
+      }
     }
-
-    ultimo.current = o
-    if (!el) return
-    el.style.opacity = String(o)
-    el.style.visibility = o <= 0 ? 'hidden' : ''
   })
 
   /**

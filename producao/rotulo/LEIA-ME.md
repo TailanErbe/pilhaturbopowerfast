@@ -1,13 +1,24 @@
 # Rótulo oficial da AA — levantamento
 
-Trabalho **em andamento**. Nada aqui entrou ainda na cena 3D: as texturas em
-`public/produto/rotulo_aa*.png` continuam sendo as antigas.
+**Concluído.** As texturas em `public/produto/rotulo_aa*.png` e
+`rotulo_aaa*.png` são geradas por `gerar.mjs` a partir da arte oficial, e
+são as que a cena 3D usa hoje.
+
+> **O PDF do fornecedor mora AQUI, e não em `public/`.**
+>
+> Ele esteve em `public/produto/` e ia para o ar junto com o site: 632 KB
+> num endereço adivinhável, sendo o segundo maior arquivo do export e 12%
+> do peso total, sem nenhuma linha de código apontando para ele. Nada em
+> `public/` é privado, e documento de fornecedor não é material de página.
+>
+> Aqui ele continua versionado e continua sendo a fonte de `gerar.mjs`,
+> que é o único uso real que ele tem.
 
 ## O que já existe nesta branch
 
 | arquivo | o que é |
 |---|---|
-| `../../public/produto/GS-11546 … AA - TIPO C.pdf` | a arte oficial, como veio |
+| `GS-11546 … AA - TIPO C.pdf` | a arte oficial, como veio do fornecedor |
 | `oficial-aa-4000.png` | a mesma arte rasterizada a 4000 px |
 | `rasterizar.mjs` | como o PNG acima foi gerado |
 

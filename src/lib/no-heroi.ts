@@ -53,7 +53,19 @@ export function useNoAto(): number {
 
     const medir = () => {
       agendado = 0
-      const v = 1 - Math.max(0, Math.min(1, sceneState.saidaDoAto))
+      /**
+       * A pílula sai no DOBRO da velocidade da cena.
+       *
+       * A saída do ato passou a correr por uma tela inteira de rolagem,
+       * porque a cena agora sobe junto com a página em vez de apagar. Esse
+       * tempo é da CENA, não da navegação: a pílula acompanhando ele ficava
+       * meio transparente por cima do título da seção seguinte, que é o
+       * pior lugar possível para um elemento a meio caminho.
+       *
+       * Em metade da janela ela já se foi, e o produto continua saindo no
+       * ritmo dele.
+       */
+      const v = 1 - Math.max(0, Math.min(1, sceneState.saidaDoAto * 2))
       setPresenca((antes) => (Math.abs(antes - v) < 0.01 ? antes : v))
     }
 

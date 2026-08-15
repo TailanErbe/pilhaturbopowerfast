@@ -136,14 +136,23 @@ export function montarTimeline(raiz: HTMLElement): Timeline {
    * cima do impacto, da compra e do rodapé. E `progress` não serve de
    * aviso, porque satura em 1 e permanece lá enquanto a página rola.
    *
-   * Este segundo gatilho começa exatamente onde o pin termina e corre por
-   * meia altura de tela. É curto de propósito: o produto sai junto com o
-   * painel que ele ilustra, não depois. Ligado ao scrub, subir de volta
-   * traz a cena junto, sem corte.
+   * UMA ALTURA DE TELA INTEIRA, e não meia.
+   *
+   * A saída era meia tela e a cena se apagava ao longo dela. O cliente
+   * pediu o contrário, e com razão: "o kit pode ficar fixo após aparecer
+   * na tela, sem esse efeito de fade out, já que não tem no cabo". As
+   * fotos dos cabos vão embora porque a PÁGINA as leva; nada nelas
+   * desaparece.
+   *
+   * Agora a cena faz o mesmo. O <SaidaDoAto> a desloca um pixel para cada
+   * pixel rolado, e como o canvas tem exatamente o tamanho da janela, uma
+   * tela de rolagem o tira inteiro de quadro por conta própria. Não sobra
+   * nada para apagar, e some a única coisa que denunciava que aquilo é uma
+   * camada e não conteúdo.
    */
   const saida = ScrollTrigger.create({
     start: () => gatilho.end,
-    end: () => gatilho.end + window.innerHeight * 0.5,
+    end: () => gatilho.end + window.innerHeight,
     scrub: true,
     invalidateOnRefresh: true,
     onUpdate: (self) => {
