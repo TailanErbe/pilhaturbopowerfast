@@ -185,6 +185,27 @@
 }
 
 /**
+ * O halo de carga, pintado NO CONTAINER do canvas.
+ *
+ * O canvas do WebGL é `alpha: true`, então o que estiver pintado atrás
+ * dele aparece atrás do produto. É por isso que este gradiente mora aqui
+ * e não na cena 3D: custa um gradiente do compositor em vez de pixels de
+ * shader, e não passa pelo Bloom, cujo limiar existe justamente para a
+ * tampa laranja não florescer.
+ *
+ * Fica invisível por padrão (`--carga-a: 0`). Quem o acende é o
+ * <BrilhoDeCarga />, escrevendo as variáveis conforme o contador sobe.
+ */
+[data-cena] {
+  background: radial-gradient(
+    ellipse 24vmin var(--carga-h, 0vh) at var(--carga-x, 50%) 58%,
+    rgb(255 156 0 / var(--carga-a, 0)) 0%,
+    rgb(255 120 0 / calc(var(--carga-a, 0) * 0.42)) 42%,
+    rgb(255 100 0 / 0) 72%
+  );
+}
+
+/**
  * A metade de baixo do retrato pertence ao texto.
  *
  * No celular a cena 3D fica NA FRENTE do conteúdo e não há como colocá-la

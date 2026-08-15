@@ -279,21 +279,26 @@ export const CONTENT = {
    * Por isso o conteúdo vem partido em dois blocos curtos, um em cada lado
    * da pilha, em alturas diferentes. Ver REGRAS.md §6.13.
    */
+  /**
+   * O TEXTO AQUI É CURTO DE PROPÓSITO.
+   *
+   * Este beat tinha dois títulos com um parágrafo de três linhas cada, e
+   * era a única tela da página com dois blocos completos. Enquanto isso o
+   * ACONTECIMENTO da cena — o cabo chegando, encaixando e carregando — é
+   * o argumento de verdade, e ninguém olha para ele com seis linhas de
+   * texto pedindo leitura ao lado.
+   *
+   * Uma linha por lado. Quem explica é a cena.
+   */
   usbc: {
     apoio: 'Recarga Turbo PowerFast',
     esquerda: {
       titulo: 'A porta é na pilha',
-      texto:
-        'O conector Tipo-C fica no próprio corpo da pilha. Você liga o cabo direto ' +
-        'nela, do mesmo jeito que carrega o celular. Não precisa tirar de lugar ' +
-        'nenhum nem procurar adaptador na gaveta.',
+      texto: 'Liga o cabo direto nela, como no celular.',
     },
     direita: {
-      titulo: 'Sem acessório nenhum',
-      texto:
-        'Nada de dock, berço ou carregador dedicado ocupando espaço. O cabo que ' +
-        'vem na caixa recarrega até quatro pilhas ao mesmo tempo, ligado em ' +
-        'adaptador de tomada, notebook ou powerbank.',
+      titulo: 'Recarrega até 1.200 vezes',
+      texto: 'Sem dock, sem berço, sem carregador dedicado.',
     },
   },
 

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
 import { POSES, sceneState } from '@/lib/scene-state'
 import { useClientValue } from '@/lib/client-value'
+import { BrilhoDeCarga } from './BrilhoDeCarga'
 
 /**
  * Ponto de montagem da cena.
@@ -138,6 +139,16 @@ export function SceneMount() {
         debug={debug}
         className={`pointer-events-none fixed inset-0 ${debug ? 'z-[800] bg-surface-000' : 'z-1'}`}
       />
+      {/**
+       * Acende o halo atrás do produto no beat do contador. Escreve
+       * variáveis CSS no próprio [data-cena], sem objeto novo em cena.
+       *
+       * Sem condição de movimento reduzido: nesse modo o PinnedAct não
+       * monta a timeline, `obterTimeline()` devolve nulo e o componente
+       * não escreve nada. O halo simplesmente não existe, que é o certo —
+       * ele conta uma carga subindo, e ali não há subida nenhuma.
+       */}
+      <BrilhoDeCarga />
       {debug && <DebugPanel />}
     </>
   )
