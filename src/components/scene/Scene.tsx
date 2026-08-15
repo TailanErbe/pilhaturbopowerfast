@@ -88,12 +88,21 @@ function DebugHook() {
       scene,
       camera,
       render: () => gl.render(scene, camera),
-      alvo: () => {
-        const rt = new THREE.WebGLRenderTarget(gl.domElement.width, gl.domElement.height)
-        rt.texture.colorSpace = gl.outputColorSpace
+      alvo: (hdr?: boolean) => {
+        const rt = new THREE.WebGLRenderTarget(gl.domElement.width, gl.domElement.height, {
+          type: hdr ? THREE.FloatType : THREE.UnsignedByteType,
+        })
+        /**
+         * Em HDR o alvo fica em espaço LINEAR, sem conversão de saída: é
+         * exatamente o que o Bloom recebe, e é a única forma de responder
+         * "quanto do quadro passa do limiar de luminância" sem adivinhar.
+         */
+        rt.texture.colorSpace = hdr ? THREE.LinearSRGBColorSpace : gl.outputColorSpace
         gl.setRenderTarget(rt)
         gl.render(scene, camera)
-        const px = new Uint8Array(rt.width * rt.height * 4)
+        const px = hdr
+          ? new Float32Array(rt.width * rt.height * 4)
+          : new Uint8Array(rt.width * rt.height * 4)
         gl.readRenderTargetPixels(rt, 0, 0, rt.width, rt.height, px)
         gl.setRenderTarget(null)
         rt.dispose()

@@ -215,8 +215,12 @@ export const PRODUCTS: Product[] = [
     // Curto de propósito: a linha vive numa meia coluna, que no retrato
     // tem pouco mais de 150 px. A capacidade já está na ficha técnica.
     kits: [
+      // As duas linhas são PARES: mesma estrutura, mesmo comprimento, só o
+      // formato muda. "Quatro palito" faltava o plural e quebrava o par;
+      // "palito" segue vivo no subtítulo do painel e na ficha, que é onde
+      // ele é apelido e não unidade contada.
       { nome: 'Kit AA', detalhe: 'Quatro AA e o cabo.' },
-      { nome: 'Kit AAA', detalhe: 'Quatro palito e o cabo.' },
+      { nome: 'Kit AAA', detalhe: 'Quatro AAA e o cabo.' },
     ],
     /**
      * Dois cabos, não um. O de duas pontas acompanha a cartela de 2, o de
@@ -407,7 +411,27 @@ export const CONTENT = {
     cta: 'Onde comprar',
     // Página do produto, não a home (definitivo, 13/08/2026)
     href: 'https://www.gorilashield.com.br/pilha-recarregavel-aa-/-aaa-turbo-powerfast-alta-capacidade-ate-1200-recargas-ideal-para-controles-e-eletronicos-gshield',
-    note: 'Para o melhor desempenho, use com os carregadores Gshield.',
+    /**
+     * A nota diz O QUE VEM E O QUE NÃO VEM, e é por isso que ela existe.
+     *
+     * Ela era "Para o melhor desempenho, use com os carregadores Gshield", e
+     * tinha dois defeitos na última linha antes do clique. Afirmava
+     * desempenho sem nenhuma fonte no projeto; e, lida na sequência da
+     * página, desmentia o argumento central — "sem dock, sem berço, sem
+     * carregador dedicado" aparece no beat 2 e nas descrições da AA e da
+     * AAA. Quem chegava aqui entendia que a promessa tinha asterisco.
+     *
+     * O fato, confirmado pelo cliente, é outro e é simples: o kit acompanha
+     * o CABO, não a cabeça de tomada. Dito assim, a nota deixa de competir
+     * com a promessa e passa a fazer o serviço que a última linha antes do
+     * clique deveria fazer — evitar a compra frustrada de quem imaginou uma
+     * fonte na caixa. O link para os carregadores continua, agora como
+     * resposta a uma pergunta que o texto acabou de levantar.
+     *
+     * "Tomada, notebook ou powerbank" não é invenção: é a mesma lista que a
+     * descrição do kit já usa (ver `descriptionPanel` do painel 03).
+     */
+    note: 'O cabo vem no kit; a cabeça de tomada, não. Serve qualquer fonte USB — tomada, notebook ou powerbank.',
     chargerHref: 'https://www.gorilashield.com.br/carregador-turbo',
   },
 

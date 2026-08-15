@@ -150,6 +150,45 @@
     cursor: pointer;
   }
 
+  /**
+   * A página não rola para o lado. NUNCA.
+   *
+   * Isto não é precaução: era um defeito medido. O ScrollTrigger, ao pinar
+   * o ato, grava a largura em linha no `.pin-spacer` e no próprio ato — e o
+   * valor que ele grava é `innerWidth`, que INCLUI a barra de rolagem. Numa
+   * janela de 383 px com barra clássica de 15, a caixa de conteúdo tem 368 e
+   * o pin nasce com 383. Medido: `scrollX` chegava a 15 e o `scrollWidth`
+   * caía para exatos 368 ao forçar a largura do pin na mão.
+   *
+   * O estrago não era só a barra aparecer. O `container-gutter` de 16 px
+   * passou a terminar em 367, ou seja a margem DIREITA de todas as seções
+   * virava 1 px: no painel 01 o "1,5 V" ficava colado na barra.
+   *
+   * `clip` e não `hidden`: `overflow: hidden` transforma o elemento em
+   * container de rolagem, e o `html` virando container de rolagem quebra o
+   * pin do ScrollTrigger e o Lenis junto. `clip` corta sem criar container.
+   * Só no eixo X — `overflow-y` fica `visible`, que é o que mantém a
+   * rolagem da página funcionando.
+   *
+   * E PRECISA SER NOS DOIS. Medido, com o pin montado:
+   *
+   *   só no html          scrollX chega a 15, scrollWidth 383
+   *   html mais body      scrollX 0, scrollWidth 368, vertical intacta
+   *   `hidden` no html    scrollX chega a 15 (não adianta)
+   *
+   * O motivo é a propagação: o overflow do elemento raiz é transferido para
+   * o VIEWPORT, e o `html` fica valendo `visible` para si mesmo. Quem
+   * precisa cortar a caixa de 383 px é, portanto, o `body`.
+   *
+   * No macOS, com barra sobreposta, nada disto aparecia. É o "filete de
+   * rolagem horizontal aparecendo em outro navegador" que o comentário do
+   * SceneMount previu, e apareceu.
+   */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   /* REGRAS.md §6.10 — obrigatório, não opcional */
   @media (prefers-reduced-motion: reduce) {
     *,

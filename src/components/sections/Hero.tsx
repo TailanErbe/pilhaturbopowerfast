@@ -116,7 +116,21 @@ export function Hero() {
         </p>
         {/* No retrato ele vai para o canto OPOSTO ao da disponibilidade:
             empilhados do mesmo lado, os dois liam como um parágrafo só */}
-        <p className="self-end text-sm text-white/40 md:self-auto">
+        {/**
+         * `/50` e não `/40`: a `/40` REPROVAVA em contraste.
+         *
+         * Branco a 40% sobre o preto puro deste beat compõe #666666, que dá
+         * 3,66:1 — abaixo dos 4,5:1 que a WCAG 2.2 (SC 1.4.3) exige de texto
+         * normal, e isto é `text-sm`, ou seja 14 px. A `/50` compõe #808080 e
+         * dá 5,32:1.
+         *
+         * Ela continua um degrau abaixo da linha de disponibilidade, que é
+         * `/60` e mede 7,37:1 — a diferença de peso que a diagramação quer
+         * está preservada; o que muda é ela passar a existir para quem enxerga
+         * pouco. E a folga importa porque o fundo daqui vai clarear: o teto
+         * medido para este texto é fundo 72/255.
+         */}
+        <p className="self-end text-sm text-white/50 md:self-auto">
           Role para explorar
         </p>
       </div>

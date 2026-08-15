@@ -3,6 +3,25 @@ import { SectionBg, EdgeColumn } from '@/components/layout/Layer'
 import { IconeDeProtecao } from './IconeDeProtecao'
 
 /**
+ * Onde cada nome pode PARTIR, se não couber. Só para a lista visual.
+ *
+ * O caractere é o hífen suave (U+00AD): o navegador o ignora quando a
+ * palavra cabe e o transforma num hífen de fim de linha quando não cabe.
+ * Escrito como escape, e não colado literalmente, porque na fonte ele é
+ * invisível — e caractere invisível em arquivo de código é armadilha para
+ * quem editar depois.
+ *
+ * Mora AQUI e não em `PROTECTIONS` de propósito: `nome` também alimenta o
+ * JSON-LD (seo/DadosDoProduto) e a lista do leitor de tela
+ * (a11y/ResumoDoAto), e nenhum dos dois deve receber um caractere de
+ * controle de quebra de linha. A chave é o `icone`, que já é o
+ * identificador estável de cada proteção.
+ */
+const QUEBRA: Record<string, string> = {
+  superaquecimento: 'Super\u00ADaquecimento',
+}
+
+/**
  * Beat 4 — Chip Inteligente.
  *
  * Seis proteções é argumento forte demais para viver escondido num
@@ -56,17 +75,41 @@ export function Chip() {
            * terminava a três pixels da borda da tela, passando por cima da
            * régua do próprio item.
            *
-           * Corpo menor só no retrato, vão menor entre ícone e texto, e a
-           * palavra num elemento que PODE encolher (`min-w-0`) para quebrar
-           * em vez de transbordar. As duas primeiras fazem caber; a terceira
-           * é a rede, para o dia em que a lista ganhar palavra maior ainda.
+           * A REDE ERA PLACEBO, e isso foi medido.
+           *
+           * A rede era `hyphens-auto`. Ela não faz nada: com `lang="pt-BR"`
+           * correto no `<html>` e `hyphens: auto` computado no elemento,
+           * pus "Superaquecimento" numa caixa de prova de 100 px e a altura
+           * deu 20 px com e sem hifenização — uma linha, sem quebra. Este
+           * Chrome não traz dicionário de pt-BR, então `hyphens` é inerte e
+           * a palavra simplesmente transbordava.
+           *
+           * Medido em 383 de largura: a palavra pede 137 px e a caixa dava
+           * 128. Faltavam 9, e por isso ela aparecia cortada em
+           * "Superaqueciment".
+           *
+           * Agora são três coisas de verdade:
+           *
+           *   vão entre colunas menor no retrato   +4 px por coluna
+           *   ícone e vão internos menores         +6 px
+           *   hífen SUAVE dentro da palavra        quebra "Super-/aquecimento"
+           *
+           * As duas primeiras fazem a palavra caber em 383 — medido, 138
+           * disponíveis contra 137 pedidos. Um pixel de folga não é conserto,
+           * é coincidência: num Android de 360 a caixa cai para 126 e a
+           * palavra não cabe de novo. Por isso a terceira, que é a que
+           * realmente resolve — o hífen suave é invisível quando cabe e vira
+           * quebra com hífen quando não cabe, sem depender de dicionário.
+           *
+           * `overflow-wrap: anywhere` fica como último recurso, para o dia em
+           * que a lista ganhar palavra maior e ninguém marcar a quebra dela.
            */}
-          <ul className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 sm:gap-x-10 md:mt-12 md:gap-y-4">
+          <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 sm:gap-x-10 md:mt-12 md:gap-y-4">
             {PROTECTIONS.map((p) => (
               <li
                 key={p.icone}
                 data-serie
-                className="flex items-center gap-2 border-t border-white/20 pt-3 text-sm sm:gap-3 sm:text-base"
+                className="flex items-center gap-1.5 border-t border-white/20 pt-3 text-sm sm:gap-3 sm:text-base"
               >
                 {/**
                  * O ícone entrou no lugar do filete que havia aqui.
@@ -79,9 +122,11 @@ export function Chip() {
                  */}
                 <IconeDeProtecao
                   nome={p.icone}
-                  className="size-7 shrink-0 text-brand-orange sm:size-8"
+                  className="size-6 shrink-0 text-brand-orange sm:size-8"
                 />
-                <span className="min-w-0 hyphens-auto">{p.nome}</span>
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  {QUEBRA[p.icone] ?? p.nome}
+                </span>
               </li>
             ))}
           </ul>

@@ -25,7 +25,20 @@ import { CONTENT, PRODUCTS, PROTECTIONS } from '@/data/products'
  */
 export function ResumoDoAto() {
   return (
-    <section aria-labelledby="resumo-do-ato" className="sr-only">
+    /**
+     * `motion-reduce:hidden`: com movimento reduzido este resumo é DUPLICATA.
+     *
+     * A razão de ele existir é a timeline esconder os beats inativos com
+     * `autoAlpha`, que aplica `visibility: hidden` e os tira da árvore de
+     * acessibilidade. Só que o PinnedAct sai antes de montar a timeline nesse
+     * modo (ver o `prefersReducedMotion()` logo no início do efeito), e os
+     * sete beats ficam desempilhados e visíveis, na ordem do HTML.
+     *
+     * Sem esta linha, quem usa leitor de tela COM movimento reduzido recebia
+     * o ato inteiro duas vezes: uma no documento e outra aqui. É a mesma
+     * consulta de mídia que o fundo do ato e a cena já usam.
+     */
+    <section aria-labelledby="resumo-do-ato" className="sr-only motion-reduce:hidden">
       <h2 id="resumo-do-ato">Resumo do produto</h2>
       <p>
         A apresentação acima é conduzida por rolagem. Este resumo traz o mesmo

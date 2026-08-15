@@ -246,7 +246,17 @@ export function ProductPanel({ product }: { product: Product }) {
                * que a cena nunca ia usar e o "OU" flutuava acima das
                * pilhas, longe do vão que ele nomeia.
                */}
-              <FaixaDaCena className="relative aspect-[2.8/1] max-h-full w-full min-h-0">
+              {/**
+               * `container-type: size` existe para o "OU" logo abaixo.
+               *
+               * Ele precisa se medir pelo VÃO entre as duas ilhas, e o vão
+               * depende das DUAS dimensões desta faixa — o kit é ajustado
+               * por `min(porLargura, porAltura)` em Kit.tsx. Com contenção
+               * só no eixo inline não haveria `cqh`, e a conta ficaria certa
+               * apenas enquanto a proporção 2.8/1 se mantivesse; ela não se
+               * mantém quando `max-h-full` corta a altura.
+               */}
+              <FaixaDaCena className="relative aspect-[2.8/1] max-h-full w-full min-h-0 [container-type:size]">
                 {/**
                  * O "OU" é CHAPADO laranja com tinta preta, não texto
                  * laranja.
@@ -256,9 +266,35 @@ export function ProductPanel({ product }: { product: Product }) {
                  * e a tinta preta sobre ele dá 10,56:1. A marca continua
                  * presente e a leitura passa.
                  */}
+                {/**
+                 * O TAMANHO SAI DO VÃO, não do viewport.
+                 *
+                 * Ele era `clamp(1.75rem, 3.4vw, 3rem)`, e o piso de 1,75rem
+                 * era o defeito: a pílula parava de encolher e o vão não. Num
+                 * 383×839 medi vão de 50,8 px e pílula de 50,5 — sobra de
+                 * 0,4 px, ou seja ela preenchia o vão inteiro e encostava nas
+                 * palito. Foi o que o cliente viu.
+                 *
+                 * O vão é `VAO * ajuste`, e `ajuste` é
+                 * `min(porLargura, porAltura)` (Kit.tsx:184-186). Reescrito
+                 * em fração desta faixa, com VAO=2,2, MEIO_EXTENSAO=7,596,
+                 * OCUPACAO {largura 0,99, altura 0,94} e AA.altura=5,05:
+                 *
+                 *   vão = min(0,1434 · largura ; 0,4095 · altura)
+                 *
+                 * A pílula mede 1,802 vez o corpo da fonte (medido, e a razão
+                 * é invariante porque o padding está em `em`). Ocupando 80%
+                 * do vão, o corpo é 0,8/1,802 = 0,444 do vão, que dá os dois
+                 * coeficientes abaixo. Sobram 10% de vão de cada lado.
+                 *
+                 * Os 20% de folga não são estética: são a margem para a
+                 * Bebas não ter carregado ainda e a fonte reserva medir mais
+                 * largo. Se algum dia VAO, FOLGA ou OCUPACAO mudarem em
+                 * Kit.tsx, estes dois números mudam junto.
+                 */}
                 <span
                   aria-hidden
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-orange px-[0.5em] py-[0.12em] font-display text-[clamp(1.75rem,3.4vw,3rem)] leading-none text-brand-black"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-orange px-[0.5em] py-[0.12em] font-display text-[min(6.37cqw,18.18cqh)] leading-none text-brand-black"
                 >
                   OU
                 </span>
