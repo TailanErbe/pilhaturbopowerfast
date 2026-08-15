@@ -386,8 +386,22 @@ export function ProductPanel({ product }: { product: Product }) {
         {/* No retrato o respiro entre os blocos é menor: com o produto
             ocupando o terço de cima, o que sobra é altura, não largura */}
         <div className="mt-3 grid gap-4 md:mt-12 md:grid-cols-[38%_24%_38%] md:gap-0">
-          {/* Coluna esquerda: a frase de destaque */}
-          <span className="mascara-clip [--folga-descida:8px]">
+          {/**
+           * Coluna esquerda: a frase de destaque, CENTRADA na altura.
+           *
+           * A coluna da direita tem descrição e duas fichas e é bem mais
+           * alta que uma frase de duas linhas. Alinhadas pelo topo, a
+           * esquerda ficava com o texto encostado em cima e um vazio de
+           * meia tela embaixo — a única região grande da página sem nada,
+           * bem no canto para onde o olho vai depois de ler o título.
+           *
+           * Centrada, a frase fica na altura do corpo do produto e o vazio
+           * se reparte nas duas pontas, onde ele lê como respiro.
+           *
+           * Só a partir de `md`: no retrato a coluna é a largura toda e não
+           * existe outra ao lado com quem se alinhar.
+           */}
+          <span className="mascara-clip [--folga-descida:8px] md:self-center">
             <p data-clip className="texto-lead">
               {product.highlight}
             </p>

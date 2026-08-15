@@ -104,6 +104,10 @@ const RETRATO = {
  */
 const SUBIDA_RETRATO = 0.045
 
+/* Reaproveitados por quadro: projetar as pontas do eixo não pode alocar */
+const PONTA_A = new THREE.Vector3()
+const PONTA_B = new THREE.Vector3()
+
 /**
  * A protagonista SAI DE CENA POR OPACIDADE na virada do kit.
  *
@@ -506,6 +510,29 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
       x: 0.5 + g.position.x / (2 * meiaLargura),
       y: 0.5 - g.position.y / (2 * meiaAltura),
     }
+
+    /**
+     * E publica também a INCLINAÇÃO dele na tela.
+     *
+     * O halo de carga é uma elipse alta, e ela estava sempre em pé — mas no
+     * beat do contador o produto está deitado na diagonal. O brilho corria
+     * numa direção e o objeto noutra, e o que deveria ser luz saindo da
+     * pilha lia como uma mancha vertical atrás dela, que é a mesma "mancha
+     * oval" que o cliente já tinha reprovado no herói.
+     *
+     * O ângulo sai da geometria, não da pose: projetar as duas pontas do
+     * eixo do corpo dá a direção real na tela, com rotação, perspectiva e
+     * aspecto já embutidos. Derivar da pose exigiria refazer a projeção à
+     * mão e daria outro número em toda tela de proporção diferente.
+     *
+     * Em graus e no sentido do CSS: `rotate()` positivo é horário, e o eixo
+     * y da tela cresce para baixo, daí o sinal invertido em `dy`.
+     */
+    PONTA_A.set(0, comprimento / 2, 0).applyMatrix4(g.matrixWorld).project(cam)
+    PONTA_B.set(0, -comprimento / 2, 0).applyMatrix4(g.matrixWorld).project(cam)
+    const dx = (PONTA_A.x - PONTA_B.x) * (size.width / 2)
+    const dy = -(PONTA_A.y - PONTA_B.y) * (size.height / 2)
+    sceneState.inclinacaoNaTela = (Math.atan2(dx, -dy) * 180) / Math.PI
   })
 
   return (

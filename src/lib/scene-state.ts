@@ -616,6 +616,18 @@ export const sceneState = {
    * a cena de parecer uma imagem estática enquanto o usuário decide se rola.
    */
   pointer: { x: 0, y: 0 },
+  /**
+   * Inclinação do eixo do produto NA TELA, em graus, sentido horário.
+   *
+   * O halo de carga é uma elipse alta e precisa deitar junto com a pilha:
+   * no beat do contador ela está na diagonal, e um brilho em pé atrás de um
+   * objeto deitado lê como mancha, não como luz saindo dele.
+   *
+   * Publicado pelo mesmo laço que publica `centroNaTela`, e pelo mesmo
+   * motivo: só ele sabe onde a pose, o amortecimento e o respiro deixaram o
+   * objeto.
+   */
+  inclinacaoNaTela: 0,
 }
 
 /**

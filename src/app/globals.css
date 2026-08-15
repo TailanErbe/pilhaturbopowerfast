@@ -314,10 +314,18 @@
  * Vem DEPOIS do halo do herói no documento, e portanto por cima dele:
  * este conta um acontecimento, aquele é ambiente.
  */
+/**
+ * A ordem do transform importa: `rotate` DEPOIS de `scaleY` na escrita
+ * significa que a escala acontece PRIMEIRO, no eixo local da elipse, e só
+ * então tudo gira. É o que faz o halo crescer ao longo do próprio eixo
+ * maior e depois deitar junto com o produto. Invertendo os dois, ele
+ * cresceria na vertical da tela e sairia torto em relação à pilha.
+ */
 .halo-de-carga {
   opacity: var(--carga-a, 0);
   transform: translate(-50%, -50%)
     translate3d(var(--carga-dx, 0px), var(--carga-dy, 0px), 0)
+    rotate(var(--carga-rot, 0deg))
     scaleY(var(--carga-escala, 0.1));
   background-image: radial-gradient(
     ellipse 24vmin 62vh at 50% 50%,

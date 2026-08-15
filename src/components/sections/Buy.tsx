@@ -56,11 +56,26 @@ export function Buy() {
           </p>
         </div>
 
-        {/* Peça de apoio: o que a pessoa leva para casa, ao lado do botão
-            que a leva para lá */}
+        {/**
+         * Peça de apoio: o que a pessoa leva para casa, ao lado do botão
+         * que a leva para lá.
+         *
+         * A FOTO MOSTRA OS DOIS FORMATOS, e AQUI isso está certo.
+         *
+         * Ela mostra oito pilhas, AA e palito juntas, e no painel 03 isso
+         * seria informação errada: lá o assunto é O KIT, que traz quatro de
+         * UM formato, e a cena 3D se dá ao trabalho de separar em duas
+         * ilhas com um "OU" entre elas.
+         *
+         * Nesta seção o assunto é outro. A linha ao lado diz "disponível
+         * nos formatos AA e AAA, em cartelas de 2 ou 4 unidades", e a foto
+         * mostra exatamente essa oferta. O que estava errado era o texto
+         * alternativo, que dizia "kit" no singular e contradizia a imagem
+         * para quem não a vê.
+         */}
         <Image
           src={asset('/produto/cartela-kit-v2.png')}
-          alt="Kit de pilhas recarregáveis Gshield com cabo de recarga"
+          alt="Pilhas recarregáveis Gshield nos formatos AA e palito, com cabo de recarga"
           width={520}
           height={482}
           sizes="(max-width: 768px) 70vw, 34vw"

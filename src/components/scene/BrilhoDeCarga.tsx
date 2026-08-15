@@ -179,6 +179,19 @@ export function BrilhoDeCarga() {
         ultimaCarga = presenca
         carga.style.setProperty('--carga-dx', dx)
         carga.style.setProperty('--carga-dy', dy)
+        /**
+         * O halo DEITA junto com a pilha.
+         *
+         * Ele é uma elipse alta e vivia sempre em pé, mas neste beat o
+         * produto está na diagonal: o brilho corria numa direção e o objeto
+         * noutra, e o que deveria ser luz saindo da pilha lia como uma
+         * mancha vertical atrás dela — a mesma "mancha oval" que já tinha
+         * sido reprovada no herói.
+         */
+        carga.style.setProperty(
+          '--carga-rot',
+          `${sceneState.inclinacaoNaTela.toFixed(1)}deg`,
+        )
         carga.style.setProperty('--carga-a', String(FORCA * presenca))
         /**
          * A altura vira ESCALA da altura cheia, desenhada no CSS.

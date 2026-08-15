@@ -338,14 +338,28 @@ export const CONTENT = {
     },
   },
 
-  /** Beat 3 — o número. Contagem ligada ao scrub. */
+  /**
+   * Beat 3 — o número. Contagem ligada ao scrub.
+   *
+   * O PARÁGRAFO NÃO REPETE O NÚMERO, e isso é decisão, não esquecimento.
+   *
+   * Ele dizia "até 1.200 vezes" e fechava com "repetido mil e duzentas
+   * vezes", numa tela em que o contador ao lado já mostra 1.200 subindo e
+   * as descartáveis caem atrás. Três vezes o mesmo número em três lugares
+   * é o texto disputando com a imagem em vez de completá-la, e quem lê
+   * duas vezes a mesma informação para de ler a terceira.
+   *
+   * O número é do CONTADOR. O parágrafo fica com o que o número não diz:
+   * o que acontece com uma descartável depois do primeiro uso, e o que
+   * cada volta economiza.
+   */
   cycles: {
     number: 1200,
     unit: 'recargas',
     paragraph:
-      'Cada pilha descartável vira lixo depois de um uso. Uma Gshield volta ' +
-      'à tomada até 1.200 vezes. É economia real e um resíduo a menos, ' +
-      'repetido mil e duzentas vezes.',
+      'Cada pilha descartável vira lixo depois de um uso só. Esta volta para ' +
+      'a tomada e recomeça, e cada volta é uma descartável que ninguém ' +
+      'precisou comprar nem jogar fora.',
   },
 
   /** Beat 7 — impacto */
