@@ -7,7 +7,6 @@ import { irParaPosicao } from '@/lib/lenis'
 import { beatEm, scrollDoBeat } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
 import { useNoHeroi } from '@/lib/no-heroi'
-import { useClientValue } from '@/lib/client-value'
 
 /**
  * Pílula fixa "Nossas pilhas" — o navegador do scrollytelling.
@@ -77,22 +76,16 @@ export function ProductPill() {
   const noHeroi = useNoHeroi()
 
   /**
-   * A pílula só cede lugar ONDE a barra existe.
+   * A pílula cede lugar à barra no herói, em QUALQUER largura.
    *
-   * A barra é `hidden md:block` — no retrato ela não cabe. Cedendo lugar
-   * assim mesmo, a primeira tela do celular ficava sem navegação NENHUMA:
-   * a barra escondida por CSS e a pílula apagada pelo sinal do herói.
-   * Medido em 390px, com as duas fora, sobrava só o menu de quatro pontos
-   * do cabeçalho.
-   *
-   * A consulta é a mesma do `md:` do Tailwind, para as duas nunca
-   * discordarem sobre onde a troca acontece.
+   * Houve aqui uma exceção para o retrato, de quando a barra era
+   * `hidden md:block` e a primeira tela do celular ficava sem navegação
+   * nenhuma. A barra passou a ter forma própria no retrato — uma linha
+   * abaixo do produto — e a exceção deixou de fazer sentido: mantida,
+   * ela mostraria as duas ao mesmo tempo, oferecendo dois caminhos para
+   * o mesmo lugar na tela mais vazia da página.
    */
-  const temBarra = useClientValue(
-    () => window.matchMedia('(min-width: 48rem)').matches,
-    false,
-  )
-  const presenca = temBarra ? 1 - noHeroi : 1
+  const presenca = 1 - noHeroi
   const oculta = presenca < 0.01
 
   return (

@@ -41,14 +41,29 @@ export function BarraDoHeroi() {
     irParaPosicao(scrollDoBeat(id, tl.inicio(), tl.altura()))
   }
 
+  /**
+   * A MESMA barra, em duas formas.
+   *
+   * No desktop ela é uma coluna encostada à direita, onde sobra largura.
+   * No retrato não há coluna a ocupar: ela vira uma LINHA abaixo do
+   * produto, acima das duas linhas de serviço do rodapé.
+   *
+   * Antes ela era simplesmente `hidden md:block`, e o celular ficava sem
+   * navegação nenhuma na primeira tela — a barra escondida por CSS e a
+   * pílula apagada pelo sinal do herói. "Não cabe do mesmo jeito" não é
+   * motivo para remover; é motivo para mudar de forma.
+   */
   return (
     <div
       aria-hidden={oculta}
       style={{ opacity: presenca, visibility: oculta ? 'hidden' : 'visible' }}
-      className="pointer-events-none fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 pr-[var(--spacing-gutter)] md:block"
+      className="pointer-events-none fixed inset-x-0 bottom-[152px] z-30 md:inset-x-auto md:top-1/2 md:bottom-auto md:right-0 md:-translate-y-1/2 md:pr-[var(--spacing-gutter)]"
     >
-      <nav aria-label="Nossas pilhas" className="pointer-events-auto flex flex-col items-start gap-1">
-        <p className="mb-3 text-xs tracking-[0.22em] text-white/50 uppercase">
+      <nav
+        aria-label="Nossas pilhas"
+        className="pointer-events-auto flex flex-row items-center justify-center gap-3 md:flex-col md:items-start md:justify-start md:gap-1"
+      >
+        <p className="hidden text-xs tracking-[0.22em] text-white/50 uppercase md:mb-3 md:block">
           Nossas pilhas
         </p>
 
@@ -57,7 +72,14 @@ export function BarraDoHeroi() {
             key={p.index}
             type="button"
             onClick={() => irPara(`produto-${p.index}`)}
-            className="group flex items-center gap-3 rounded-xl py-1.5 pr-3 pl-1.5 text-left transition-colors hover:bg-white/5"
+            /**
+             * No retrato o nome fica ABAIXO da foto, não ao lado.
+             *
+             * Lado a lado, três itens mais o carrinho passam de 390 px e
+             * a linha quebra. Empilhados, cada um ocupa a largura da
+             * própria miniatura e a fileira cabe com folga.
+             */
+            className="group flex flex-col items-center gap-1 rounded-xl p-1.5 transition-colors hover:bg-white/5 md:flex-row md:gap-3 md:py-1.5 md:pr-3 md:pl-1.5 md:text-left"
           >
             {/* A foto vem do mesmo lugar da pílula: é o mesmo destino, e o
                 numeral no canto é a âncora de navegação da página inteira */}
@@ -78,7 +100,9 @@ export function BarraDoHeroi() {
                 {p.index}
               </span>
             </span>
-            <span className="font-display text-lg whitespace-nowrap">{p.name}</span>
+            <span className="font-display text-sm whitespace-nowrap md:text-lg">
+              {p.name}
+            </span>
           </button>
         ))}
 
@@ -110,7 +134,12 @@ export function BarraDoHeroi() {
          * A régua acima não é enfeite: sem ela o botão flutua no fim da
          * lista sem dizer que mudou de assunto.
          */}
-        <span aria-hidden className="mt-4 h-px w-full bg-white/15" />
+        {/* Na coluna a régua separa por cima; na linha, por um filete ao
+            lado, que é o que "acima" quer dizer quando o eixo vira */}
+        <span
+          aria-hidden
+          className="h-8 w-px shrink-0 bg-white/15 md:mt-4 md:h-px md:w-full"
+        />
 
         {/**
          * Laranja chapado com tinta preta, como os painéis claros.
@@ -124,7 +153,7 @@ export function BarraDoHeroi() {
         <a
           href={CONTENT.buy.href}
           title={CONTENT.buy.cta}
-          className="pulsa-carrinho mt-4 grid h-[50px] w-[120px] place-items-center self-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light"
+          className="pulsa-carrinho grid h-[50px] w-[92px] shrink-0 place-items-center self-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-4 md:w-[120px]"
         >
           <span className="sr-only">{CONTENT.buy.cta}</span>
           {/**

@@ -1,5 +1,4 @@
 import { Logo } from './Logo'
-import { MobileMenu } from './MobileMenu'
 import { LinkDeBeat } from './LinkDeBeat'
 
 /**
@@ -21,44 +20,24 @@ import { LinkDeBeat } from './LinkDeBeat'
 export function Header() {
   return (
     <header className="absolute inset-x-0 top-0 z-20 container-gutter py-5">
-      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-start">
-        {/* Mobile: botão de 4 pontos. Desktop: navegação. */}
-        <div className="sm:hidden">
-          <MobileMenu />
-        </div>
-
-        {/**
-         * A navegação de modelos SAIU do cabeçalho.
-         *
-         * Ela vive agora na barra do herói e, dali em diante, na pílula —
-         * as duas com foto do produto e o numeral do painel, que é a
-         * âncora da página inteira. Mantida aqui, seria um terceiro
-         * caminho para o mesmo lugar, empilhado no canto justo na tela em
-         * que o rascunho pede só o logotipo em cima.
-         *
-         * A coluna vazia FICA: é ela que mantém o logotipo no centro
-         * óptico da tela, e não no centro do que sobrou.
-         */}
-        <div aria-hidden className="hidden sm:block" />
-
-        <LinkDeBeat beat="topo" className="justify-self-center">
-          <span className="sr-only">Gshield, início</span>
-          <Logo variant="negativa" width={132} priority />
-        </LinkDeBeat>
-
-        {/**
-         * O "onde comprar" também saiu do cabeçalho: o rascunho pede só o
-         * logotipo em cima.
-         *
-         * A compra não some da página — ela está na barra do herói, na
-         * primeira tela, e na seção final, que é onde a decisão acontece.
-         * No celular continua no menu de quatro pontos.
-         *
-         * A coluna vazia FICA, aqui e do outro lado: são elas que mantêm o
-         * logotipo no centro da TELA, e não no centro do que sobrou.
-         */}
-        <div aria-hidden className="justify-self-end" />
-      </div>
+      {/**
+       * SÓ O LOGOTIPO, como o rascunho pede.
+       *
+       * Saíram daqui, um de cada vez e por motivos que se somam: a
+       * navegação de modelos, o "onde comprar" e o menu de quatro pontos
+       * do celular. Os três levavam aos mesmos lugares que a barra do
+       * herói e a pílula já levam, com foto do produto e o numeral do
+       * painel, que é a âncora da página inteira.
+       *
+       * Três caminhos para o mesmo destino não é redundância útil: é
+       * ruído empilhado no canto justo na tela em que o produto deveria
+       * estar sozinho. Com um elemento só, o logotipo centraliza sem
+       * precisar de colunas vazias para equilibrá-lo.
+       */}
+      <LinkDeBeat beat="topo" className="mx-auto block w-fit">
+        <span className="sr-only">Gshield, início</span>
+        <Logo variant="negativa" width={132} priority />
+      </LinkDeBeat>
     </header>
   )
 }
