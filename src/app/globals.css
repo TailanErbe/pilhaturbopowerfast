@@ -78,55 +78,48 @@
 
 @layer base {
   /**
-   * A BARRA DE ROLAGEM, vestida da página.
+   * A BARRA DE ROLAGEM NÃO APARECE. A rolagem continua inteira.
    *
-   * A padrão do Windows é um trilho branco-acinzentado de 15 px, e numa
-   * página que é preta do começo ao fim ela vira uma faixa clara colada na
-   * borda direita — a única coisa em quadro que não passou por decisão
-   * nenhuma.
+   * A padrão do Windows é um trilho claro de 15 px colado na borda direita
+   * de uma página que é preta do começo ao fim — a única coisa em quadro
+   * que não passou por decisão nenhuma. Ela chegou a ser vestida de escuro
+   * antes de sumir de vez; ficou o registro no histórico.
    *
    * Duas escritas, porque nenhuma cobre todo mundo sozinha:
    *
-   *   `scrollbar-width` e `scrollbar-color` são o padrão CSS e valem no
-   *   Firefox e no Chromium moderno. É o caminho que sobrevive.
+   *   `scrollbar-width: none` é o padrão CSS, e vale no Firefox e no
+   *   Chromium moderno. É o caminho que sobrevive.
    *
-   *   `::-webkit-scrollbar` é o legado da WebKit e é o que o Safari de
-   *   mesa entende — ele ignora as duas propriedades acima.
+   *   `::-webkit-scrollbar { display: none }` é o legado da WebKit, e é o
+   *   que o Safari de mesa entende — ele ignora a propriedade acima.
    *
-   * No iOS não há o que fazer, e não é limitação nossa: lá a barra é
-   * sobreposta, desenhada pelo sistema, e some sozinha. Nada disto a
-   * alcança, e isso está certo — é convenção da plataforma.
+   * No iOS nada disto é necessário: lá a barra já é sobreposta, desenhada
+   * pelo sistema, e some sozinha.
    *
-   * `scrollbar-gutter: stable` reserva a calha SEMPRE. Sem ela, a barra
-   * aparecendo e sumindo muda a largura útil em 15 px, e como o pin do
-   * ScrollTrigger congela a largura que mediu, essa diferença já produziu
-   * rolagem lateral aqui uma vez.
+   * ESCONDER NÃO É DESLIGAR. `overflow` continua `auto`, então roda,
+   * teclado, barra de espaço, Home/End e leitor de tela seguem funcionando
+   * igual; o que sai é só o desenho. Some com ele a única indicação de
+   * QUANTO FALTA numa página de dezenove alturas de tela — é o preço, e é
+   * uma escolha de projeto, não um descuido.
+   *
+   * E some, de brinde, a causa raiz de um defeito que já foi consertado por
+   * cima: o pin do ScrollTrigger grava `innerWidth`, que inclui a barra,
+   * enquanto o conteúdo tem a largura sem ela. Sem barra os dois números
+   * voltam a ser o mesmo. O `overflow-x: clip` abaixo fica como defesa, não
+   * como remendo — ele é barato e cobre o dia em que alguém reintroduzir
+   * uma barra clássica.
+   *
+   * NADA de `scrollbar-gutter: stable` aqui: ele reservaria uma calha para
+   * uma barra que não existe mais, ou seja uma faixa morta na direita.
    */
   html {
     background-color: var(--color-surface-000);
     -webkit-text-size-adjust: 100%;
-    scrollbar-gutter: stable;
-    scrollbar-width: thin;
-    /* polegar, trilho */
-    scrollbar-color: #4a4a4a var(--color-surface-000);
+    scrollbar-width: none;
   }
 
-  /* Safari de mesa: mesma barra, escrita no dialeto dele */
   html::-webkit-scrollbar {
-    width: 10px;
-  }
-  html::-webkit-scrollbar-track {
-    background: var(--color-surface-000);
-  }
-  html::-webkit-scrollbar-thumb {
-    background: #4a4a4a;
-    border-radius: 999px;
-    /* A borda é do MESMO tom do trilho: ela não pinta nada, só afina o
-       polegar sem mudar a área de arrasto, que continua com 10 px */
-    border: 2px solid var(--color-surface-000);
-  }
-  html::-webkit-scrollbar-thumb:hover {
-    background: #6a6a6a;
+    display: none;
   }
 
   body {
