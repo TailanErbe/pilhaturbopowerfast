@@ -443,36 +443,22 @@
  * base, o bloco cresce para CIMA e o que falta é espaço, não conteúdo.
  */
 /**
- * O pulso do carrinho: chamar atenção sem pedir socorro.
+ * O PULSO DO CARRINHO SAIU. Ficam o porquê e o que ele era.
  *
- * Duas coisas ao mesmo tempo, e de propósito: a peça cresce muito pouco
- * (3,5%) e um anel sai dela e se dissolve. O anel é quem chama; a escala
- * sozinha, no tamanho que resolve, já viraria salto.
+ * Era um anel que se expandia da peça a cada 2,5 s, com a caixa crescendo
+ * 3,5%. Bem feito: ciclo longo para ler como convite e não como alerta, e
+ * atrás de `prefers-reduced-motion` como a §6.10 manda.
  *
- * O ciclo é longo. Pulso curto lê como alerta — algo errado que precisa
- * de clique. Em dois segundos e meio ele lê como convite, que é o que um
- * botão de compra deve parecer.
+ * O problema não era a animação, era ONDE ela estava. A régua existe para
+ * escolher entre AA, AAA e o kit, e o carrinho é o único item dela que não
+ * navega — sai da página. O sinal de atenção mais forte que a página tinha
+ * estava justamente nele, enquanto o CTA de verdade, o da seção de compra,
+ * é estático. No retrato o anel ainda atravessava o filete e encostava no
+ * terceiro ladrilho a cada ciclo.
  *
- * `motion-safe` porque isto é animação decorativa e contínua, o tipo
- * exato que a §6.10 manda desligar quando o sistema pede menos movimento.
+ * Se um dia a compra precisar de acento, o lugar é o botão da seção de
+ * compra, não a navegação.
  */
-@keyframes pulso-carrinho {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgb(255 164 0 / 0.5);
-  }
-  50% {
-    transform: scale(1.035);
-    box-shadow: 0 0 0 12px rgb(255 164 0 / 0);
-  }
-}
-
-@utility pulsa-carrinho {
-  @media (prefers-reduced-motion: no-preference) {
-    animation: pulso-carrinho 2.5s ease-in-out infinite;
-  }
-}
 
 @utility base-do-retrato {
   @media (width < 48rem) {

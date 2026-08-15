@@ -139,12 +139,34 @@ export function ProductPill() {
                  * havendo, a âncora nativa leva ao painel — que naquele modo
                  * está desempilhado e visível.
                  */}
+                {/**
+                 * O ATIVO não pode usar a mesma tinta do HOVER.
+                   *
+                   * Os dois eram `bg-black/5`, o mesmo literal. Com o mouse
+                   * sobre o item 01 enquanto o ativo é o 02, os dois ficavam
+                   * exatamente `rgb(242,242,242)` — o menu passava a informar
+                   * errado onde a pessoa está, que é a única coisa que ele
+                   * tem de fazer além de navegar. Conferido no navegador: os
+                   * três itens carregam `hover:bg-black/5` e o ativo carrega
+                   * `bg-black/5` por cima.
+                   *
+                   * O ativo ganha um anel interno. Preto a 50% sobre o branco
+                   * do painel dá cerca de 3,9:1, acima dos 3:1 que a WCAG 2.2
+                   * pede para elemento de interface (SC 1.4.11) — o fundo a
+                   * 5% sozinho dá 1,12:1 e nunca cumpriu esse papel.
+                   *
+                 * E o `hover:` sai de dentro do ramo do selecionado de
+                 * propósito: enquanto os dois estiverem na mesma declaração,
+                 * um continua virando o outro.
+                 */}
                 <LinkDeBeat
                   beat={`produto-${p.index}`}
                   onNavegar={() => setAberto(false)}
                   atual={selecionado}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-black/5 ${
-                    selecionado ? 'bg-black/5' : ''
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    selecionado
+                      ? 'bg-black/5 ring-1 ring-black/50 ring-inset'
+                      : 'hover:bg-black/5'
                   }`}
                 >
                   {/**
@@ -185,12 +207,36 @@ export function ProductPill() {
         </ul>
       )}
 
+      {/**
+       * O FOCO DESTE BOTÃO ERA BRANCO SOBRE BRANCO, e por duas razões que se
+       * somam. Ele é o controle mais permanente da página, então valia achar.
+       *
+       * 1. A regra base é `:focus-visible { outline: #fff 2px; box-shadow:
+       *    #000 0 0 0 2px, #fff 0 0 0 6px }` — quem dá contraste em fundo
+       *    claro é o box-shadow, não o contorno. Só que `shadow-lg` é
+       *    utilitário e utilitário vence base na ordem de camadas do
+       *    Tailwind v4: o par preto-branco é sobrescrito e sobra o contorno
+       *    BRANCO, numa pílula branca, sobre o painel 03 que é branco.
+       *
+       * 2. A correção que existe para superfícies claras,
+       *    `.superficie-clara :focus-visible`, é seletor de DESCENDENTE. Este
+       *    botão CARREGA a classe, não é filho de quem a carrega — conferido
+       *    no navegador: `classList.contains` verdadeiro e `closest` no pai
+       *    falso. Ela nunca o alcançou.
+       *
+       * Por isso o par entra aqui como `focus-visible:`, que é utilitário e
+       * empata a disputa no mesmo nível.
+       *
+       * O `ring-1 ring-black/10` é outro assunto e vale sempre: em repouso a
+       * pílula branca sobre o painel branco do kit tem contorno de ~1,1:1, ou
+       * seja nenhum.
+       */}
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-controls={painelId}
-        className="superficie-clara pointer-events-auto flex items-center gap-3 rounded-full bg-brand-white py-2.5 pr-3 pl-5 text-brand-black shadow-lg transition-transform hover:scale-[1.02]"
+        className="superficie-clara pointer-events-auto flex items-center gap-3 rounded-full bg-brand-white py-2.5 pr-3 pl-5 text-brand-black shadow-lg ring-1 ring-black/10 transition-transform hover:scale-[1.02] focus-visible:outline-black focus-visible:[box-shadow:0_0_0_2px_#fff,0_0_0_6px_#000]"
       >
         <span className="font-display text-lg whitespace-nowrap">{rotulo}</span>
         <span

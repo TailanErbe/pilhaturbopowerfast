@@ -124,7 +124,19 @@ export function BarraDoHeroi() {
              * a linha quebra. Empilhados, cada um ocupa a largura da
              * própria miniatura e a fileira cabe com folga.
              */
-            className="group flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition-colors hover:bg-white/5 md:flex-row md:gap-4 md:py-2 md:pr-4 md:pl-2 md:text-left"
+            /**
+             * RETORNO AO MOUSE E AO DEDO, que praticamente não existia.
+             *
+             * `hover:bg-white/5` sobre o fundo quase preto move a linha em
+             * 1,08:1 — abaixo do que o olho separa. E não havia `:active`
+             * nenhum: no celular, tocar "AA" não devolvia nada até o Lenis
+             * começar uma rolagem de 2,2 s, o que faz o toque parecer perdido.
+             *
+             * O anel branco a 40% dá cerca de 3,7:1. O `scale-[0.97]` leva o
+             * item de 68×98 para 66×95, muito acima do mínimo de 24 px da
+             * WCAG 2.2 (SC 2.5.8).
+             */
+            className="group flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition-colors hover:bg-white/5 hover:ring-1 hover:ring-white/40 hover:ring-inset active:scale-[0.97] md:flex-row md:gap-4 md:py-2 md:pr-4 md:pl-2 md:text-left"
           >
             {/**
              * O ladrilho cresceu de 40 para 56 no retrato e 72 no desktop.
@@ -219,10 +231,22 @@ export function BarraDoHeroi() {
          * importa, e sobre ele o preto dá 10,56:1 de contraste (texto
          * branco daria 1,99:1 e reprovaria).
          */}
+        {/**
+         * E SEM PULSO. O que pulsava era o único item da régua que NÃO navega.
+         *
+         * A régua existe para escolher entre AA, AAA e o kit; o carrinho sai
+         * da página. O sinal de atenção mais forte que a página tinha — um
+         * anel se expandindo a cada 2,5 s — estava justamente nele, enquanto o
+         * CTA de verdade, o da seção de compra, é estático. Conferido:
+         * `pulsa-carrinho` tinha uso único em todo o repositório.
+         *
+         * O que o cliente pediu foi o ÍCONE de carrinho no lugar de "Onde
+         * comprar" (ver o comentário acima); o pulso não veio de pedido nenhum.
+         */}
         <a
           href={CONTENT.buy.href}
-          title={CONTENT.buy.cta}
-          className="pulsa-carrinho mt-1.5 grid h-14 w-[92px] shrink-0 place-items-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-5 md:h-[58px] md:w-full md:self-center"
+          title={`${CONTENT.buy.cta} — ${CONTENT.footer.site}`}
+          className="mt-1.5 grid h-14 w-[92px] shrink-0 place-items-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-5 md:h-[58px] md:w-full md:self-center"
         >
           <span className="sr-only">{CONTENT.buy.cta}</span>
           {/**
