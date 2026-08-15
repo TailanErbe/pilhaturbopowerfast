@@ -87,6 +87,29 @@ const RETRATO = {
 const LARGURA_RETRATO = 768
 
 /**
+ * A protagonista SAI DE CENA POR OPACIDADE na virada do kit.
+ *
+ * Ela sumia só por escala, com o argumento de que um objeto que encolhe
+ * até virar outros lê como multiplicação. O argumento vale quando os dois
+ * ocupam o mesmo ponto — e aqui não ocupam: a protagonista está no eixo
+ * central e as oito nascem dentro da coluna esquerda do painel, que é uma
+ * faixa medida no DOM. Encolhendo no lugar dela, ela virava uma pilha
+ * pequena parada ao lado do kit, e a leitura era de três grupos de
+ * pilhas, não de um virando outro.
+ *
+ * Então: ela apaga cedo, antes de o kit chegar à metade, e o que sobra é
+ * um cruzamento limpo. Opacidade aqui é barata porque é UM corpo; no kit
+ * continua sendo escala, que lá são oito corpos se cruzando e a
+ * transparência custaria ordenação e preenchimento sem ganho de leitura.
+ */
+const SUMICO = {
+  /** Fração da presença do kit em que a protagonista já está invisível */
+  ate: 0.42,
+  /** Encolhimento que acompanha o esmaecimento. Sutil: quem some é a tinta */
+  encolhe: 0.35,
+}
+
+/**
  * `estatico`: movimento reduzido, uma foto por beat (ver CenaEstatica).
  *
  * Duas coisas mudam, e as duas são movimento que este componente inventa
@@ -98,6 +121,19 @@ const LARGURA_RETRATO = 768
 export function Battery({ estatico = false }: { estatico?: boolean }) {
   const grupo = useRef<THREE.Group>(null)
   const corpo = useRef<THREE.Mesh>(null)
+  /**
+   * Só o CORPO, sem o cabo.
+   *
+   * O esmaecimento do kit percorre esta subárvore. O cabo é irmão dela
+   * dentro do mesmo grupo e tem opacidade própria, escrita todo quadro
+   * por Cable.tsx: incluí-lo aqui seria duas mãos escrevendo no mesmo
+   * material, e a última a rodar ganharia.
+   */
+  const corpoDaPilha = useRef<THREE.Group>(null)
+  /** Materiais dessa subárvore, colhidos uma vez */
+  const materiais = useRef<THREE.Material[]>([])
+  /** Último `transparent` aplicado: mudá-lo recompila o shader */
+  const transparente = useRef(false)
   /** Último formato aplicado, para trocar os mapas só quando muda */
   const formato = useRef<'AA' | 'AAA'>('AA')
   const { gl } = useThree()
@@ -183,9 +219,17 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
   useFrame(({ clock, camera, size }, delta) => {
     if (!grupo.current) return
 
-    // A protagonista encolhe conforme o kit toma a cena
+    /**
+     * A protagonista apaga conforme o kit toma a cena.
+     *
+     * `sumico` vai de 0 a 1 bem antes de o kit terminar de crescer, então
+     * não existe momento com os dois inteiros na tela — que era o defeito:
+     * a pilha ficava parada ao lado do conjunto, do outro lado do painel.
+     */
     const kit = kitPresenca(sceneState.progress)
-    grupo.current.visible = kit < 0.995
+    const sumico = Math.min(1, kit / SUMICO.ate)
+    const presenca = 1 - sumico
+    grupo.current.visible = presenca > 0.002
     const alvo = poseAt(sceneState.progress)
     const g = grupo.current
     const z = alvo.position[1]
@@ -283,7 +327,13 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
       : RETRATO.tetoPadrao
     const alturaNaTela = tetoPior - RETRATO.margem
     const retratoEscala = retrato ? alturaNaTela / RETRATO.fracaoCheia : 1
-    const aplicados = axialAtual * Math.max(0.001, 1 - kit) * retratoEscala
+    /**
+     * O encolhimento acompanha o esmaecimento, mas discreto: quem some é
+     * a tinta. Encolher até zero era o que produzia a pilha minúscula
+     * pousada ao lado do kit.
+     */
+    const fatorKit = 1 - sumico * SUMICO.encolhe
+    const aplicados = axialAtual * fatorKit * retratoEscala
     const anterior = g.scale.y / aplicados
     const base = chegar(anterior, alvo.scale)
     const radial = formato.current === 'AAA' ? AAA_SCALE.radial : 1
@@ -298,8 +348,35 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
      */
     // Ver o comentário da subida, adiante: no retrato o produto cede
     // espaço ao texto encolhendo junto com a mudança de altura
-    const restante = base * (1 - kit) * retratoEscala
+    const restante = base * fatorKit * retratoEscala
     g.scale.set(restante * radial, restante * axialAtual, restante * radial)
+
+    /**
+     * O esmaecimento, escrito nos materiais do corpo.
+     *
+     * `transparent` só é tocado na TRANSIÇÃO: mudá-lo invalida o programa
+     * do material e força recompilação de shader, que num scroll a 60 fps
+     * apareceria como engasgo. Fora da virada do kit ele volta a false e o
+     * caminho opaco é o de sempre.
+     */
+    if (!materiais.current.length && corpoDaPilha.current) {
+      corpoDaPilha.current.traverse((o) => {
+        const m = (o as THREE.Mesh).material
+        if (!m) return
+        materiais.current.push(...(Array.isArray(m) ? m : [m]))
+      })
+    }
+    const querTransparente = presenca < 0.999
+    if (querTransparente !== transparente.current) {
+      transparente.current = querTransparente
+      materiais.current.forEach((m) => {
+        m.transparent = querTransparente
+        m.needsUpdate = true
+      })
+    }
+    if (querTransparente) {
+      materiais.current.forEach((m) => { m.opacity = presenca })
+    }
 
     // Respiro: flutuação e balanço leves somados à pose.
     // NÃO é a narrativa — essa continua sendo `progress`, dirigido pelo
@@ -347,12 +424,16 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
   return (
     <>
       <group ref={grupo}>
-        <BatteryMesh
-          raio={raio}
-          comprimento={comprimento}
-          mapas={mapasAA}
-          corpoRef={corpo}
-        />
+        {/* Só o corpo: o esmaecimento da virada do kit percorre esta
+            subárvore, e o cabo tem opacidade própria (ver corpoDaPilha) */}
+        <group ref={corpoDaPilha}>
+          <BatteryMesh
+            raio={raio}
+            comprimento={comprimento}
+            mapas={mapasAA}
+            corpoRef={corpo}
+          />
+        </group>
 
         {/* Cabo: filho do grupo da pilha para continuar plugado na porta
             mesmo enquanto o produto gira */}

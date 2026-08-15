@@ -226,7 +226,23 @@ async function limpar() {
  */
 function svgDaPorta({ largura, altura, esquerda, topo, w, h }, cores) {
   const r = Math.min(w, h) / 2
-  const lingueta = h * 0.34
+
+  /**
+   * A LÍNGUA CORRE PELO LADO MAIOR, seja ele qual for.
+   *
+   * Isto era `w * 0,68` por `h * 0,34`, fixo. Na AA, deitada, dava uma
+   * barra fina e comprida, que é o que se vê num USB-C. Na palito, em pé,
+   * a mesma conta produzia um bloco de 64 por 95 — quase redondo, no meio
+   * do vão. Deixava de ler como conector e virava um botão.
+   *
+   * Num USB-C de verdade a língua acompanha o comprimento da abertura e
+   * ocupa cerca de um terço da altura dela. Medindo pelo lado maior, a
+   * mesma função serve às duas orientações sem caso especial.
+   */
+  const emPe = h > w
+  const lLarg = emPe ? w * 0.34 : w * 0.68
+  const lAlt = emPe ? h * 0.68 : h * 0.34
+
   return Buffer.from(`<svg width="${largura}" height="${altura}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
@@ -238,8 +254,8 @@ function svgDaPorta({ largura, altura, esquerda, topo, w, h }, cores) {
     <rect x="${-w * 0.045}" y="${-h * 0.09}" width="${w * 1.09}" height="${h * 1.18}"
           rx="${r * 1.14}" fill="${cores.aro}"/>
     <rect width="${w}" height="${h}" rx="${r}" fill="url(#fundo)"/>
-    <rect x="${w * 0.16}" y="${(h - lingueta) / 2}" width="${w * 0.68}" height="${lingueta}"
-          rx="${lingueta / 2}" fill="${cores.lingueta}"/>
+    <rect x="${(w - lLarg) / 2}" y="${(h - lAlt) / 2}" width="${lLarg}" height="${lAlt}"
+          rx="${Math.min(lLarg, lAlt) / 2}" fill="${cores.lingueta}"/>
   </g>
 </svg>`)
 }
