@@ -62,6 +62,18 @@ export function BarraDoHeroi() {
       <nav
         aria-label="Nossas pilhas"
         /**
+         * Declara que esta caixa OCUPA a tela no beat do herói.
+         *
+         * A cena 3D dimensiona o produto pelo maior vão livre e mede esse
+         * vão no DOM (ver TetosDoRetrato). A barra é `fixed`, mora fora da
+         * seção do beat, e por isso não entrava nessa conta: depois de ela
+         * crescer, sobrou um pixel entre a base da pilha e o topo dela.
+         *
+         * O nome do beat vem daqui e não de uma lista lá: só a peça sabe
+         * em que tela ela aparece.
+         */
+        data-ocupa="hero"
+        /**
          * No retrato a fileira alinha pelo TOPO, não pelo centro.
          *
          * Os itens de produto têm ícone em cima e nome embaixo, 76 px ao
@@ -92,28 +104,45 @@ export function BarraDoHeroi() {
              * a linha quebra. Empilhados, cada um ocupa a largura da
              * própria miniatura e a fileira cabe com folga.
              */
-            className="group flex flex-col items-center gap-1 rounded-xl p-1.5 transition-colors hover:bg-white/5 md:flex-row md:gap-3 md:py-1.5 md:pr-3 md:pl-1.5 md:text-left"
+            className="group flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition-colors hover:bg-white/5 md:flex-row md:gap-4 md:py-2 md:pr-4 md:pl-2 md:text-left"
           >
-            {/* A foto vem do mesmo lugar da pílula: é o mesmo destino, e o
-                numeral no canto é a âncora de navegação da página inteira */}
+            {/**
+             * O ladrilho cresceu de 40 para 56 no retrato e 72 no desktop.
+             *
+             * Com 40 e uma foto de cartela dentro, o cliente resumiu bem:
+             * "quase não dá pra ver as imagens dos produtos". Uma pilha é
+             * um objeto ESGUIO — cerca de 1 para 3,5 —, então numa caixa
+             * quadrada de 40 px ela ocupa uns 11 px de largura útil. Não há
+             * o que reconhecer nisso.
+             *
+             * Em 72 a mesma pilha tem 20 px de largura, que é onde a tampa
+             * laranja, o corpo escuro e a marca passam a se separar. A
+             * imagem também deixou de ser foto de blister e virou render do
+             * próprio modelo (ver `miniatura` em data/products.ts), o que
+             * dobra o ganho: além de maior, agora é UMA pilha e não uma
+             * cartela inteira encolhida.
+             */}
             <span
               aria-hidden
-              className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/5"
+              className="relative grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-white/5 md:h-[72px] md:w-[72px]"
             >
+              {/* `size-full` e não uma medida menor: o render já vem com o
+                  respiro embutido na margem do recorte, e encolher de novo
+                  aqui seria margem duas vezes */}
               <Image
                 src={p.miniatura.src}
                 alt=""
-                width={40}
-                height={40}
-                sizes="40px"
+                width={72}
+                height={72}
+                sizes="72px"
                 quality={92}
-                className="size-8 object-contain"
+                className="size-full object-contain p-1"
               />
-              <span className="font-display absolute -top-1 -left-1 grid h-4 w-4 place-items-center rounded-full bg-brand-orange text-[10px] text-brand-black">
+              <span className="font-display absolute -top-1.5 -left-1.5 grid h-5 w-5 place-items-center rounded-full bg-brand-orange text-[11px] text-brand-black md:h-6 md:w-6 md:text-[13px]">
                 {p.index}
               </span>
             </span>
-            <span className="font-display text-sm whitespace-nowrap md:text-lg">
+            <span className="font-display text-base whitespace-nowrap md:text-2xl">
               {p.name}
             </span>
           </button>
@@ -136,13 +165,17 @@ export function BarraDoHeroi() {
          * como se fosse um quarto produto da lista — e não é: é a única
          * ação da barra.
          *
-         * 120 por 50, medida fechada com o cliente.
+         * A altura é fechada em pixels; a LARGURA passou a ser a da coluna.
          *
-         * Está em pixels e não em fração de propósito. A barra é a única
-         * peça da página cuja largura não vem de uma coluna de texto: ela
-         * se dimensiona pelo conteúdo (miniatura mais nome), e amarrar o
-         * botão a essa largura fazia ele mudar de tamanho a cada ajuste
-         * na lista. Aqui o tamanho é a decisão, não a consequência.
+         * Ela esteve em 120 por 50, medida acertada com o cliente quando os
+         * ladrilhos tinham 40 px. Com eles em 72 e o nome em 24, a coluna
+         * inteira ficou mais larga que o botão, e um botão mais estreito
+         * que a lista que ele fecha lê como item solto, não como a ação do
+         * conjunto. `w-full` devolve o casamento que ele pediu.
+         *
+         * A altura continua em pixel de propósito: ela não vem de conteúdo
+         * nenhum, é decisão de peso visual. 58 por ficar entre os 50 de
+         * antes e os 72 do ladrilho, sem competir com eles.
          *
          * A régua acima não é enfeite: sem ela o botão flutua no fim da
          * lista sem dizer que mudou de assunto.
@@ -151,9 +184,10 @@ export function BarraDoHeroi() {
             lado, que é o que "acima" quer dizer quando o eixo vira */}
         {/* O filete acompanha a fileira de ícones: 40 px de altura com o
             mesmo recuo de 6 px dos ladrilhos */}
+        {/* O filete acompanha a altura nova dos ladrilhos */}
         <span
           aria-hidden
-          className="mt-1.5 h-10 w-px shrink-0 bg-white/15 md:mt-4 md:h-px md:w-full"
+          className="mt-1.5 h-14 w-px shrink-0 bg-white/15 md:mt-5 md:h-px md:w-full"
         />
 
         {/**
@@ -168,7 +202,7 @@ export function BarraDoHeroi() {
         <a
           href={CONTENT.buy.href}
           title={CONTENT.buy.cta}
-          className="pulsa-carrinho mt-1.5 grid h-10 w-[88px] shrink-0 place-items-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-4 md:h-[50px] md:w-[120px] md:self-center"
+          className="pulsa-carrinho mt-1.5 grid h-14 w-[92px] shrink-0 place-items-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-5 md:h-[58px] md:w-full md:self-center"
         >
           <span className="sr-only">{CONTENT.buy.cta}</span>
           {/**

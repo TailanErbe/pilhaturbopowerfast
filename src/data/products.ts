@@ -133,10 +133,20 @@ export const PRODUCTS: Product[] = [
     name: 'AA',
     meta: { format: 'Pilha recarregável', capacity: '3400 mWh', period: '1,5 V' },
     dimensions: DIMENSIONS.AA,
-    // A mesma foto serve aos painéis 01 e 02: é a cartela de 2 com o cabo,
-    // e na miniatura da pílula a diferença de tamanho entre AA e palito
-    // não seria legível de qualquer forma
-    miniatura: { src: asset('/produto/cartela-2-v2.png'), alt: 'Cartela de duas pilhas AA com cabo' },
+    /**
+     * A miniatura é um RENDER da cena, não uma foto de cartela.
+     *
+     * As três eram fotos de blister exibidas em 32 px, e duas delas eram o
+     * MESMO arquivo: a da AAA mostrava duas AA. As duas escolhas mais
+     * importantes da primeira tela ficavam idênticas, e uma mostrava o
+     * produto errado. Em 32 px uma cartela inteira também não tem o que
+     * mostrar: vira um borrão escuro.
+     *
+     * Saindo do modelo 3D, cada uma mostra o seu formato, de frente, com a
+     * diferença real de diâmetro e comprimento entre AA e palito. Ver
+     * `producao/miniaturas/` para o procedimento e para quando regerar.
+     */
+    miniatura: { src: asset('/produto/mini-aa.png'), alt: 'Pilha recarregável AA' },
     highlight: 'Energia firme mesmo nos aparelhos que bebem mais.',
     description:
       'A AA entrega 3400 mWh de carga estável para dispositivos de alto consumo. ' +
@@ -156,7 +166,7 @@ export const PRODUCTS: Product[] = [
     subtitle: 'Palito',
     meta: { format: 'Pilha recarregável', capacity: '1100 mWh', period: '1,5 V' },
     dimensions: DIMENSIONS.AAA,
-    miniatura: { src: asset('/produto/cartela-2-v2.png'), alt: 'Cartela de duas pilhas palito com cabo' },
+    miniatura: { src: asset('/produto/mini-aaa.png'), alt: 'Pilha recarregável AAA, formato palito' },
     highlight: 'O mesmo padrão, no formato que cabe em tudo.',
     description:
       'A AAA, o palito, leva 1100 mWh e a mesma tecnologia Turbo PowerFast ' +
@@ -174,7 +184,16 @@ export const PRODUCTS: Product[] = [
     name: 'O KIT',
     subtitle: 'AA ou AAA',
     meta: { format: 'Cartela de 4', capacity: 'Um formato por kit', period: 'Cabo incluso' },
-    miniatura: { src: asset('/produto/cartela-kit-v2.png'), alt: 'Kit de pilhas recarregáveis com cabo de quatro pontas' },
+    /**
+     * QUATRO pilhas, de um formato só.
+     *
+     * A foto que estava aqui mostra as oito, os dois formatos juntos com um
+     * cabo, e é justamente o que o kit NÃO é: são dois kits, cada um com
+     * quatro pilhas de um formato mais o cabo. O painel 3D se dá ao
+     * trabalho de separar em duas ilhas com um "OU" no meio, e a miniatura
+     * ao lado desmentia isso.
+     */
+    miniatura: { src: asset('/produto/mini-kit.png'), alt: 'Kit com quatro pilhas recarregáveis' },
     highlight: 'Quatro pilhas e um cabo. Todas carregando juntas.',
     /**
      * IMPORTANTE: o kit NÃO traz os dois formatos juntos.

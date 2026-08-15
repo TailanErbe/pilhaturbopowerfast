@@ -63,8 +63,18 @@ const RETRATO = {
    * 2% da tela, o amortecimento chega ao alvo por aproximação, e as poses
    * dos painéis ainda somam 5% de escala por conta própria. Sem essa
    * reserva, os três juntos encostavam a base da pilha no título.
+   *
+   * Caiu de 0,08 para 0,04 quando a medida do vão passou a enxergar as
+   * peças FIXAS da tela (ver `data-ocupa` em TetosDoRetrato). Metade
+   * daquele valor era folga contra um desconhecido: a barra do herói
+   * ocupava o pé da primeira tela e não entrava em conta nenhuma, então o
+   * número precisava cobrir um erro que ninguém sabia medir.
+   *
+   * Medindo de verdade, 0,04 (34 px em 844) cobre com sobra os ~17 px do
+   * respiro, e o produto recupera o tamanho: com 0,08 ele tinha caído para
+   * 27% da altura da tela no herói do celular, contra os 42% de antes.
    */
-  folga: 0.08,
+  folga: 0.04,
   /** Respiro acima do produto, em fração da tela */
   margem: 0.045,
   /** Fração da tela que o produto ocuparia com escala 1, medida no retrato */
@@ -462,9 +472,28 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
      * pontas, e no herói isso lê como duas coisas soltas em vez de um
      * título anunciando um objeto.
      */
+    /**
+     * A subida é LIMITADA pela sobra da faixa, e não é um valor fixo.
+     *
+     * Ela é 4,5% da tela e o produto é apenas ~8% menor que a própria
+     * faixa (a escala da pose), então sobram uns 4% ao todo, 2% de cada
+     * lado. Subir 4,5% dentro disso empurra o topo do objeto para FORA da
+     * faixa por cima.
+     *
+     * Nos painéis de celular isso era visível: a faixa livre começa no
+     * topo da tela, a margem reservada ali é justamente 4,5%, e a subida
+     * a cancelava por completo — a pilha encostava em y=0 e lia como
+     * cortada pela borda. Aqui no herói o efeito era o oposto e igualmente
+     * feio: colada no título em cima, com um vão morto sobre a barra.
+     *
+     * Limitando pela metade da sobra, ela sobe o quanto couber e nada
+     * além. Em faixa folgada o gesto continua o mesmo; em faixa apertada
+     * ele simplesmente não acontece, que é o certo — não há para onde ir.
+     */
     const alturaVisivel = meiaAltura * 2
-    const centroDaFaixa =
-      (faixaAqui.de + faixaAqui.ate) / 2 - (retrato ? SUBIDA_RETRATO : 0)
+    const sobraDaFaixa = Math.max(0, alturaNaTela - alturaNaTela * alvo.scale)
+    const subidaUtil = retrato ? Math.min(SUBIDA_RETRATO, sobraDaFaixa / 2) : 0
+    const centroDaFaixa = (faixaAqui.de + faixaAqui.ate) / 2 - subidaUtil
     const subida = retrato ? alturaVisivel * (0.5 - centroDaFaixa) : 0
     const poseY = retrato ? 0 : alvo.position[0]
 

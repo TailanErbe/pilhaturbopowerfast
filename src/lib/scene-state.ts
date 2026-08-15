@@ -14,7 +14,7 @@
  * comentário. Importar troca a cópia pela fonte.
  */
 
-import { beatPorId, centroDoBeat, SAIDA_DO_HEROI } from '@/motion/labels'
+import { BEATS, beatPorId, centroDoBeat, SAIDA_DO_HEROI } from '@/motion/labels'
 
 export type Pose = {
   /** Posição no progresso global, 0→1 */
@@ -381,11 +381,36 @@ export function poseAt(progress: number): Omit<Pose, 'at'> {
   }
 }
 
+/** Os centros dos beats, que é onde cada faixa medida vale por inteiro */
+const CENTROS = BEATS.map((b) => (b.inicio + b.fim) / 2)
+
 /**
  * A faixa livre do produto no retrato, no progresso dado.
  *
- * Interpola entre beats como `poseAt`, com a mesma suavização, para o
- * produto descer e subir junto com a virada em vez de saltar.
+ * Interpola entre beats com a mesma suavização das poses, para o produto
+ * descer e subir junto com a virada em vez de saltar.
+ *
+ * ------------------------------------------------------------------
+ * INDEXA POR BEAT, E NÃO POR POSE
+ * ------------------------------------------------------------------
+ *
+ * Esta função caminhava sobre POSES, e funcionava por COINCIDÊNCIA: havia
+ * exatamente uma pose por beat, então o índice de uma servia para a outra.
+ * `faixas` sempre teve um item por beat, vindo de TetosDoRetrato.
+ *
+ * A coincidência morreu no dia em que as poses deixaram de ser uma por
+ * beat: o herói ganhou duas âncoras iguais para segurar a pose frontal, e
+ * a virada para o USB-C ganhou uma terceira para terminar antes do cabo.
+ * Nove poses contra sete faixas, e a partir da terceira cada beat passou a
+ * usar a faixa de outro.
+ *
+ * Medido em 390x844, no painel 01: o produto foi parar em 342..513 usando
+ * a faixa do painel 02, com o título do 01 começando em 379. Ou seja,
+ * exatamente o defeito que a faixa existe para impedir, causado por quem
+ * deveria impedi-lo.
+ *
+ * Caminhando sobre BEATS, os dois conjuntos voltam a ter o mesmo tamanho
+ * por definição, e não por acaso.
  */
 export function faixaEm(
   progress: number,
@@ -394,16 +419,16 @@ export function faixaEm(
   const p = Math.max(0, Math.min(1, progress))
 
   let i = 0
-  while (i < POSES.length - 2 && POSES[i + 1].at < p) i++
+  while (i < CENTROS.length - 2 && CENTROS[i + 1] < p) i++
 
   const cheia = { de: 0, ate: 1 }
   const a = faixas[i] ?? cheia
   const b = faixas[i + 1] ?? a
-  const span = POSES[i + 1].at - POSES[i].at
-  // Limitado como em poseAt, e pelo mesmo motivo: antes da primeira pose
+  const span = CENTROS[i + 1] - CENTROS[i]
+  // Limitado como em poseAt, e pelo mesmo motivo: antes do primeiro centro
   // o `t` fica negativo e a suavização o devolve positivo, misturando o
   // beat seguinte no trecho em que só deveria valer o primeiro
-  const t = span <= 0 ? 0 : Math.max(0, Math.min(1, (p - POSES[i].at) / span))
+  const t = span <= 0 ? 0 : Math.max(0, Math.min(1, (p - CENTROS[i]) / span))
   const e = t * t * (3 - 2 * t)
 
   return { de: lerp(a.de, b.de, e), ate: lerp(a.ate, b.ate, e) }

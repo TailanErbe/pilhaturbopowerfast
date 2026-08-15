@@ -54,6 +54,14 @@ export function TetosDoRetrato() {
          * vão do meio. É o mesmo cálculo para os três casos.
          */
         const blocos: [number, number][] = []
+        const anotar = (r: DOMRect) => {
+          if (r.width < 2 || r.height < 2) return
+          blocos.push([
+            (r.top - caixa.top) / caixa.height,
+            (r.bottom - caixa.top) / caixa.height,
+          ])
+        }
+
         secao
           .querySelectorAll('h1, h2, h3, p, li, a, button, summary')
           .forEach((el) => {
@@ -61,13 +69,28 @@ export function TetosDoRetrato() {
             // Conteúdo de <details> fechado ainda reporta caixa no Chrome
             const det = el.closest('details')
             if (det && !det.open && el.tagName !== 'SUMMARY') return
-            const r = el.getBoundingClientRect()
-            if (r.width < 2 || r.height < 2) return
-            blocos.push([
-              (r.top - caixa.top) / caixa.height,
-              (r.bottom - caixa.top) / caixa.height,
-            ])
+            anotar(el.getBoundingClientRect())
           })
+
+        /**
+         * Peças FIXAS que também ocupam a tela, e que a busca acima não vê.
+         *
+         * A barra do herói mora fora da seção, presa ao viewport, e por
+         * isso era invisível para esta conta. Medido em 390x844 depois de
+         * ela crescer: o produto terminava em y=593 e a barra começava em
+         * 594. Um pixel. Não é que o cálculo tenha errado — é que ele
+         * estava respondendo a uma pergunta menor do que a real, "onde o
+         * TEXTO DA SEÇÃO está", quando o que importa é onde há algo na
+         * tela.
+         *
+         * O vínculo é declarado no DOM (`data-ocupa="hero"`), e não
+         * presumido aqui: só a peça sabe em que beat ela aparece. Somando
+         * a barra a todos os beats, os outros reservariam espaço para algo
+         * que já se apagou.
+         */
+        document
+          .querySelectorAll<HTMLElement>(`[data-ocupa="${beat.getAttribute('data-beat')}"]`)
+          .forEach((el) => anotar(el.getBoundingClientRect()))
 
         if (!blocos.length) return CHEIA
 
