@@ -20,6 +20,8 @@ const THEMES = {
     bg: 'bg-surface-000',
     section: 'text-brand-white',
     rule: 'border-white/25',
+    /* A régua de meta é um elemento, não um border: ver `regua-vazada` */
+    regua: 'bg-white/25',
     muted: 'text-white/70',
     accent: 'text-brand-orange',
   },
@@ -27,6 +29,7 @@ const THEMES = {
     bg: 'bg-brand-orange',
     section: 'text-brand-black',
     rule: 'border-black/25',
+    regua: 'bg-black/25',
     muted: 'text-black/70',
     accent: 'text-brand-black',
   },
@@ -34,6 +37,7 @@ const THEMES = {
     bg: 'bg-brand-white',
     section: 'text-brand-black',
     rule: 'border-black/20',
+    regua: 'bg-black/20',
     muted: 'text-black/70',
     /**
      * PRETO, não laranja.
@@ -126,27 +130,48 @@ export function ProductPanel({ product }: { product: Product }) {
         </h2>
       </span>
 
-      {/* Régua de meta: extremos da largura, centro vago */}
+      {/**
+       * Régua de meta: extremos da largura, CENTRO VAGO.
+       *
+       * Ela era um `border-t` no <dl>, e um border vai de ponta a ponta:
+       * a linha atravessava o corpo da pilha. O produto é o herói da
+       * página e nada passa por cima dele (§6.4c) — nem um filete de um
+       * pixel, que num render fosco é justamente o tipo de detalhe que
+       * denuncia que o objeto foi colado ali.
+       *
+       * Aqui ela é um elemento próprio, e some no corredor central. A
+       * dissolução é suave nas bordas: um corte seco leria como linha
+       * quebrada, e o que se quer é a linha PASSANDO ATRÁS.
+       *
+       * Vazada só nos painéis 01 e 02. No do kit a cena mora na coluna
+       * esquerda e bem mais abaixo, então ali a linha não encontra nada
+       * e um vão no meio seria um buraco sem motivo.
+       */}
       <span className="mascara-clip mt-6">
-        <dl
-          data-clip
-          className={`flex flex-wrap items-center justify-between gap-x-8 gap-y-2 border-t pt-4 text-sm ${t.rule} ${t.muted}`}
-        >
-          <div className="flex gap-8">
-            <div className="flex gap-2">
-              <dt className="sr-only">Formato</dt>
-              <dd>{product.meta.format}</dd>
+        <div data-clip>
+          <span
+            aria-hidden
+            className={`block h-px w-full ${t.regua} ${escolha ? '' : 'regua-vazada'}`}
+          />
+          <dl
+            className={`flex flex-wrap items-center justify-between gap-x-8 gap-y-2 pt-4 text-sm ${t.muted}`}
+          >
+            <div className="flex gap-8">
+              <div className="flex gap-2">
+                <dt className="sr-only">Formato</dt>
+                <dd>{product.meta.format}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="sr-only">Capacidade</dt>
+                <dd>{product.meta.capacity}</dd>
+              </div>
             </div>
             <div className="flex gap-2">
-              <dt className="sr-only">Capacidade</dt>
-              <dd>{product.meta.capacity}</dd>
+              <dt className="sr-only">Tensão</dt>
+              <dd>{product.meta.period}</dd>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <dt className="sr-only">Tensão</dt>
-            <dd>{product.meta.period}</dd>
-          </div>
-        </dl>
+          </dl>
+        </div>
       </span>
     </div>
   )

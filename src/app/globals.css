@@ -455,6 +455,49 @@
   margin-bottom: calc(var(--folga-descida, 4px) * -1);
 }
 
+/**
+ * A régua de meta dos painéis 01 e 02, VAZADA no corredor do produto.
+ *
+ * Ela era um `border-t` no bloco de meta, e border não tem buraco: a linha
+ * cruzava o corpo da pilha de ponta a ponta. Num render fosco um filete de
+ * um pixel atravessando o objeto é exatamente o detalhe que denuncia que
+ * ele foi colado por cima da página, e a regra da casa é que nada passa
+ * sobre o produto.
+ *
+ * O vão acompanha o corredor central da grade dos painéis, que é
+ * `38% 24% 38%`. A zona limpa (42% a 58%) é mais estreita que o corredor
+ * de propósito: a pilha ocupa por volta de 46% a 54% da largura, e as
+ * franjas de dissolução precisam caber inteiras antes de ela começar.
+ *
+ * A queda é SUAVE nas duas bordas. Cortando seco, o olho lê duas linhas
+ * curtas e desalinhadas; dissolvendo, lê uma linha só que passa por trás
+ * do objeto, que é o que de fato acontece.
+ *
+ * `mask-image` e não gradiente de fundo: a cor da régua vem do tema, em
+ * classe do Tailwind, e mascarar deixa as duas decisões separadas.
+ *
+ * Só a partir de `md`. Abaixo disso não existe corredor: o produto fica
+ * ACIMA do texto no retrato, e a régua não encontra nada no caminho.
+ *
+ * 64rem porque `md` AQUI vale 1024, não os 768 do padrão do Tailwind: os
+ * breakpoints são sobrescritos no @theme lá em cima. Escrever 48rem por
+ * hábito abriria o vão numa faixa de larguras onde o produto ainda está
+ * acima do texto, e a régua ficaria com um buraco sem nada por trás.
+ */
+@utility regua-vazada {
+  @media (width >= 64rem) {
+    mask-image: linear-gradient(
+      90deg,
+      #000 0%,
+      #000 34%,
+      transparent 42%,
+      transparent 58%,
+      #000 66%,
+      #000 100%
+    );
+  }
+}
+
 /** A frase de destaque dos painéis. Um tamanho só, em todos eles. */
 @utility texto-lead {
   font-family: var(--font-display);

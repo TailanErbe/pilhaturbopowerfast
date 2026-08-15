@@ -6,7 +6,15 @@
  * escreve `progress` aqui; a cena só interpola rumo à pose correspondente.
  *
  * Unidades: 1 unidade = 10 mm. A AA tem 50,5 mm → 5,05 unidades.
+ *
+ * O import de `labels` não contradiz o parágrafo acima. Daqui saem só as
+ * FRONTEIRAS dos beats, que são números num eixo; a cena continua sem
+ * escutar scroll, sem consultar o DOM e sem saber que existem seções. As
+ * poses sempre foram derivadas desses números, só que à mão, copiados num
+ * comentário. Importar troca a cópia pela fonte.
  */
+
+import { beatPorId, centroDoBeat } from '@/motion/labels'
 
 export type Pose = {
   /** Posição no progresso global, 0→1 */
@@ -90,10 +98,15 @@ const FAIXA = 0.5
  * giro de 360°: com o produto de costas para a câmera, a substituição não
  * é percebida como corte. Trocar com a face de frente entregaria o truque.
  */
+/**
+ * O meio exato entre as poses dos painéis 01 e 02. Com uma volta completa
+ * entre elas, é ali que o produto está de costas para a câmera.
+ */
+const TROCA_DE_FORMATO =
+  (centroDoBeat('produto-01') + centroDoBeat('produto-02')) / 2
+
 export function variantEm(progress: number): 'AA' | 'AAA' {
-  // 0,74 é o meio exato entre as poses dos painéis 01 (0,67) e 02 (0,81).
-  // Com uma volta completa entre eles, é ali que o produto está de costas.
-  return progress < 0.74 ? 'AA' : 'AAA'
+  return progress < TROCA_DE_FORMATO ? 'AA' : 'AAA'
 }
 
 /**
@@ -107,14 +120,30 @@ export function variantEm(progress: number): 'AA' | 'AAA' {
  * nunca desmonta) continua valendo em espírito: o que muda é a
  * composição, não a cena.
  */
+/**
+ * A dissolução começa ANTES do painel do kit e termina na pose dele.
+ *
+ * O fim é o centro do beat 03, que é onde a pílula de navegação para: se
+ * as oito ainda estivessem se formando ali, quem chegasse pela pílula veria
+ * a cena montando em vez de montada.
+ *
+ * O começo entra um quarto de beat mais cedo, ainda dentro da passagem do
+ * painel 02. É o que dá sobreposição entre a protagonista encolhendo e as
+ * oito crescendo, e sobreposição é o que faz a troca ler como dissolução
+ * em vez de corte.
+ */
+const KIT = (() => {
+  const beat = beatPorId('produto-03')
+  return {
+    inicio: beat.inicio - (beat.fim - beat.inicio) * 0.25,
+    fim: centroDoBeat('produto-03'),
+  }
+})()
+
 export function kitPresenca(progress: number): number {
-  // Formado ao chegar em 0,94, que é o centro do painel 03 e o ponto onde
-  // a pílula de navegação para
-  const inicio = 0.85
-  const fim = 0.94
-  if (progress <= inicio) return 0
-  if (progress >= fim) return 1
-  const t = (progress - inicio) / (fim - inicio)
+  if (progress <= KIT.inicio) return 0
+  if (progress >= KIT.fim) return 1
+  const t = (progress - KIT.inicio) / (KIT.fim - KIT.inicio)
   return t * t * (3 - 2 * t)
 }
 
@@ -126,7 +155,10 @@ export function kitPresenca(progress: number): number {
  * chegava ao painel já girado. Ancorar no meio garante que a pose de
  * destino aconteça com o painel inteiro na tela.
  *
- * Se BEATS mudar em motion/labels.ts, estes valores mudam junto.
+ * Os valores VÊM de BEATS por `centroDoBeat`, e não são copiados de lá.
+ * Copiados, eles já estavam certos e teriam ficado errados no dia em que
+ * o beat das recargas foi alargado: sete números a corrigir à mão, cada um
+ * capaz de errar em silêncio.
  */
 /**
  * O afastamento em z acompanha a distância da câmera.
@@ -165,6 +197,15 @@ export const POSES: Pose[] = [
    * Descendo 0,9 unidade e encolhendo para 0,92, ele passa a morar entre o
    * título e as duas linhas do rodapé, que ficam em 756.
    */
+  /**
+   * A ÚNICA pose que não fica no centro do beat.
+   *
+   * O herói dura 0,15 e o seu centro cairia em 0,075 — depois da janela em
+   * que a barra do herói cede lugar à pílula (0,055 a 0,105). O produto
+   * ainda estaria assentando enquanto a navegação troca, e a primeira tela
+   * teria duas coisas se mexendo ao mesmo tempo. Em 0,06 ele chega parado
+   * antes de a troca começar.
+   */
   { at: 0.06, screenX: FAIXA, position: [-0.6, 0], rotation: [0.04, FACE_FRONTAL, 0.02], scale: 0.92 },
 
   /**
@@ -182,7 +223,7 @@ export const POSES: Pose[] = [
    * (0,4), então o produto só respira para a frente enquanto gira um
    * pouco. Quem se move é o cabo.
    */
-  { at: 0.22, screenX: FAIXA, position: [0.15, 0.5 * AFASTAMENTO], rotation: [-0.16, FACE_MARCA + 0.28, 0.02], scale: 1.03 },
+  { at: centroDoBeat('usbc'), screenX: FAIXA, position: [0.15, 0.5 * AFASTAMENTO], rotation: [-0.16, FACE_MARCA + 0.28, 0.02], scale: 1.03 },
 
   /**
    * Beats 3 e 4 — recargas (0,37) e chip (0,52): saem do centro.
@@ -203,8 +244,8 @@ export const POSES: Pose[] = [
    * coluna de texto, que também é percentual. Os painéis voltam a 0,5,
    * porque lá o texto mora nas DUAS bordas e o vão central é do produto.
    */
-  { at: 0.37, screenX: 0.57, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
-  { at: 0.52, screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
+  { at: centroDoBeat('cycles'), screenX: 0.57, position: [0, 0.4 * AFASTAMENTO], rotation: [0.1, FACE_MARCA - 1.3, -0.62], scale: 1.02 },
+  { at: centroDoBeat('chip'), screenX: 0.57, position: [0, 0.3 * AFASTAMENTO], rotation: [0.06, FACE_MARCA - 3.4, -0.2], scale: 1.02 },
 
   /**
    * Painéis 01, 02 e 03, nos centros 0,67 / 0,81 / 0,95.
@@ -224,12 +265,12 @@ export const POSES: Pose[] = [
    * com o produto de costas, que o formato troca de AA para AAA sem que a
    * substituição apareça.
    */
-  { at: 0.67, screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA, 0], scale: 1.05 },
-  { at: 0.81, screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.05 },
-  // 0,94 e não 0,95: é o centro exato do beat produto-03, que é onde a
-  // pílula de navegação para. Um centésimo de diferença já deixava o kit
-  // chegando 5° girado.
-  { at: 0.94, screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0], scale: 1.05 },
+  { at: centroDoBeat('produto-01'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA, 0], scale: 1.05 },
+  { at: centroDoBeat('produto-02'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0], scale: 1.05 },
+  // O centro EXATO do beat, e não um valor arredondado perto dele: é onde
+  // a pílula de navegação para, e um centésimo de diferença já deixava o
+  // kit chegando 5° girado.
+  { at: centroDoBeat('produto-03'), screenX: FAIXA, position: [0, 0.2 * AFASTAMENTO], rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0], scale: 1.05 },
 ]
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
