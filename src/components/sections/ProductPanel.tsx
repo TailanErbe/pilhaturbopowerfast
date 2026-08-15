@@ -67,14 +67,60 @@ type Tema = (typeof THEMES)[keyof typeof THEMES]
 const claro = (tema: Product['theme']) =>
   tema === 'dark' ? '' : 'superficie-clara'
 
+/**
+ * O cabeçalho de um acordeão, com ALVO e AFORDÂNCIA.
+ *
+ * Dois defeitos moravam aqui, e os dois só apareciam no toque.
+ *
+ * 1. O `py-3 md:py-4` estava no `<details>`, não no `<summary>`. Padding no
+ *    pai não entra na caixa do filho, então o alvo clicável era só a linha
+ *    de texto: cerca de 20 px de altura, abaixo do mínimo de 24 do
+ *    SC 2.5.8 da WCAG 2.2. No desktop ninguém percebe porque o ponteiro é
+ *    preciso; no polegar, erra.
+ *
+ * 2. `list-none` tirou o triângulo padrão e não pôs nada no lugar. No
+ *    desktop sobra o `cursor: pointer` que globals.css dá a `summary`, e
+ *    isso é afordância de MOUSE — no celular não existe cursor, e o que
+ *    restava era um texto em negrito que ninguém adivinha que abre.
+ *
+ * O sinal é um `+` que vira `−` por rotação, e não um chevron: com
+ * `rotate-45` o mesmo par de traços faz as duas figuras, então não há
+ * segundo ícone para carregar nem trocar.
+ */
+function Acordeao({
+  titulo,
+  t,
+  children,
+}: {
+  titulo: string
+  t: Tema
+  children: React.ReactNode
+}) {
+  return (
+    <details className={`group border-t ${t.rule}`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-bold md:py-4">
+        {titulo}
+        {/* Fechado é `+`, aberto é `×`: as duas barras FICAM e o par gira.
+            Girar e apagar a vertical ao mesmo tempo deixava uma barra
+            diagonal sozinha, que não lê nem como mais nem como menos. */}
+        <span
+          aria-hidden
+          className="relative grid size-6 shrink-0 place-items-center transition-transform duration-200 group-open:rotate-45"
+        >
+          <span className="absolute h-px w-3 bg-current" />
+          <span className="absolute h-3 w-px bg-current" />
+        </span>
+      </summary>
+      {children}
+    </details>
+  )
+}
+
 function Fichas({ product, t }: { product: Product; t: Tema }) {
   return (
     <div>
-      <details className={`border-t py-3 md:py-4 ${t.rule}`}>
-        <summary className="cursor-pointer list-none text-sm font-bold">
-          Ficha técnica
-        </summary>
-        <dl className="mt-4 grid gap-2 text-sm">
+      <Acordeao titulo="Ficha técnica" t={t}>
+        <dl className="mt-4 grid gap-2 pb-3 text-sm md:pb-4">
           {product.technicalSheet.map((row) => (
             <div key={row.label} className="flex justify-between gap-6">
               <dt className={t.muted}>{row.label}</dt>
@@ -82,18 +128,15 @@ function Fichas({ product, t }: { product: Product; t: Tema }) {
             </div>
           ))}
         </dl>
-      </details>
+      </Acordeao>
 
-      <details className={`border-t py-3 md:py-4 ${t.rule}`}>
-        <summary className="cursor-pointer list-none text-sm font-bold">
-          Compatibilidade
-        </summary>
-        <ul className={`mt-4 grid gap-1 text-sm ${t.muted}`}>
+      <Acordeao titulo="Compatibilidade" t={t}>
+        <ul className={`mt-4 grid gap-1 pb-3 text-sm md:pb-4 ${t.muted}`}>
           {product.compatibility.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-      </details>
+      </Acordeao>
     </div>
   )
 }
@@ -156,19 +199,31 @@ export function ProductPanel({ product }: { product: Product }) {
           <dl
             className={`flex flex-wrap items-center justify-between gap-x-8 gap-y-2 pt-4 text-sm ${t.muted}`}
           >
+            {/**
+             * O rótulo vem do DADO, não daqui.
+             *
+             * Estes três `<dt>` eram fixos — "Formato", "Capacidade",
+             * "Tensão" —, e o painel do kit usa os mesmos três lugares para
+             * outra coisa: quem usa leitor de tela ouvia "Capacidade: Um
+             * formato por kit" e "Tensão: Cabo incluso". Régua é
+             * diagramação; o que cada número significa é conteúdo, e mora
+             * junto dele em data/products.ts.
+             *
+             * O ÚLTIMO item vai para a direita da régua e os demais ficam
+             * juntos à esquerda — é o arranjo que já existia, agora escrito
+             * em função do tamanho da lista em vez de à mão.
+             */}
             <div className="flex gap-8">
-              <div className="flex gap-2">
-                <dt className="sr-only">Formato</dt>
-                <dd>{product.meta.format}</dd>
-              </div>
-              <div className="flex gap-2">
-                <dt className="sr-only">Capacidade</dt>
-                <dd>{product.meta.capacity}</dd>
-              </div>
+              {product.meta.slice(0, -1).map((m) => (
+                <div key={m.rotulo} className="flex gap-2">
+                  <dt className="sr-only">{m.rotulo}</dt>
+                  <dd>{m.valor}</dd>
+                </div>
+              ))}
             </div>
             <div className="flex gap-2">
-              <dt className="sr-only">Tensão</dt>
-              <dd>{product.meta.period}</dd>
+              <dt className="sr-only">{product.meta[product.meta.length - 1].rotulo}</dt>
+              <dd>{product.meta[product.meta.length - 1].valor}</dd>
             </div>
           </dl>
         </div>

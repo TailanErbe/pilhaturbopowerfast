@@ -3,10 +3,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import Image from 'next/image'
 import { PRODUCTS } from '@/data/products'
-import { irParaPosicao } from '@/lib/lenis'
-import { beatEm, scrollDoBeat } from '@/motion/labels'
+import { beatEm } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
 import { useNoAto, useNoHeroi } from '@/lib/no-heroi'
+import { LinkDeBeat } from './LinkDeBeat'
 
 /**
  * Pílula fixa "Nossas pilhas" — o navegador do scrollytelling.
@@ -122,17 +122,27 @@ export function ProductPill() {
                 className="item-pilula"
                 style={{ '--i': i } as React.CSSProperties}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAberto(false)
-                    const tl = obterTimeline()
-                    if (!tl) return
-                    irParaPosicao(
-                      scrollDoBeat(`produto-${p.index}`, tl.inicio(), tl.altura()),
-                    )
-                  }}
-                  aria-current={selecionado ? 'true' : undefined}
+                {/**
+                 * ÂNCORA, e não botão. Este item já foi um `<button>` cujo
+                 * clique fazia `if (!tl) return`.
+                 *
+                 * Com `prefers-reduced-motion` — que no Windows muita gente
+                 * liga por DESEMPENHO, sem nenhuma intenção de acessibilidade
+                 * — o PinnedAct não monta a timeline, `obterTimeline()`
+                 * devolve nulo para sempre, e o resultado era o pior tipo de
+                 * defeito: a pílula ficava visível a página inteira, bem
+                 * grande e branca, com os três itens INERTES. Clicar não
+                 * fazia nada, e nada explicava por quê.
+                 *
+                 * O <LinkDeBeat /> resolve porque o `href` continua no HTML:
+                 * havendo timeline ele intercepta e rola pela cena; não
+                 * havendo, a âncora nativa leva ao painel — que naquele modo
+                 * está desempilhado e visível.
+                 */}
+                <LinkDeBeat
+                  beat={`produto-${p.index}`}
+                  onNavegar={() => setAberto(false)}
+                  atual={selecionado}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-black/5 ${
                     selecionado ? 'bg-black/5' : ''
                   }`}
@@ -168,7 +178,7 @@ export function ProductPill() {
                       <span className="text-xs text-black/50">{p.subtitle}</span>
                     )}
                   </span>
-                </button>
+                </LinkDeBeat>
               </li>
             )
           })}

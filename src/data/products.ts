@@ -56,8 +56,20 @@ export type Product = {
   name: string
   /** Complemento comercial: "Palito" na AAA, "4 unidades" no kit */
   subtitle?: string
-  /** Linha de meta: aparece na régua sob o título */
-  meta: { format: string; capacity: string; period: string }
+  /**
+   * Linha de meta: aparece na régua sob o título.
+   *
+   * O RÓTULO vem junto com o dado, e não fixo na diagramação. Ele era fixo:
+   * o componente escrevia `<dt class="sr-only">Formato</dt>`, `Capacidade` e
+   * `Tensão`, nesta ordem, para os três valores. Nos painéis 01 e 02 isso
+   * batia; no do kit, que usa os mesmos três lugares para outra coisa, o
+   * leitor de tela ouvia "Capacidade: Um formato por kit" e "Tensão: Cabo
+   * incluso".
+   *
+   * São dois a três itens: o primeiro grupo fica junto à esquerda e o
+   * último vai para a direita da régua (ver ProductPanel).
+   */
+  meta: { rotulo: string; valor: string }[]
   /** Medidas reais em mm — usadas pela cena 3D. Ausente no painel do kit. */
   dimensions?: { length: number; diameter: number }
   /** Frase de destaque — máx. 2 linhas na tela. É a única copy grande do painel. */
@@ -140,7 +152,11 @@ export const PRODUCTS: Product[] = [
   {
     index: '01',
     name: 'AA',
-    meta: { format: 'Pilha recarregável', capacity: '3400 mWh', period: '1,5 V' },
+    meta: [
+      { rotulo: 'Formato', valor: 'Pilha recarregável' },
+      { rotulo: 'Capacidade', valor: '3400 mWh' },
+      { rotulo: 'Tensão nominal', valor: '1,5 V' },
+    ],
     dimensions: DIMENSIONS.AA,
     /**
      * A miniatura é um RENDER da cena, não uma foto de cartela.
@@ -173,7 +189,11 @@ export const PRODUCTS: Product[] = [
     // "Palito" é como o formato é vendido no varejo brasileiro
     name: 'AAA',
     subtitle: 'Palito',
-    meta: { format: 'Pilha recarregável', capacity: '1100 mWh', period: '1,5 V' },
+    meta: [
+      { rotulo: 'Formato', valor: 'Pilha recarregável' },
+      { rotulo: 'Capacidade', valor: '1100 mWh' },
+      { rotulo: 'Tensão nominal', valor: '1,5 V' },
+    ],
     dimensions: DIMENSIONS.AAA,
     miniatura: { src: asset('/produto/mini-aaa.png'), alt: 'Pilha recarregável AAA, formato palito' },
     highlight: 'O mesmo padrão, no formato que cabe em tudo.',
@@ -192,7 +212,13 @@ export const PRODUCTS: Product[] = [
     index: '03',
     name: 'O KIT',
     subtitle: 'AA ou AAA',
-    meta: { format: 'Cartela de 4', capacity: 'Um formato por kit', period: 'Cabo incluso' },
+    /* Os mesmos três lugares da régua, com o significado REAL deste painel:
+       antes o leitor de tela ouvia "Capacidade: Um formato por kit" */
+    meta: [
+      { rotulo: 'Conteúdo', valor: 'Cartela de 4' },
+      { rotulo: 'Formato', valor: 'Um formato por kit' },
+      { rotulo: 'Acompanha', valor: 'Cabo incluso' },
+    ],
     /**
      * QUATRO pilhas, de um formato só.
      *

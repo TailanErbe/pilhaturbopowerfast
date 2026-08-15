@@ -23,6 +23,7 @@ export function LinkDeBeat({
   className,
   children,
   onNavegar,
+  atual,
 }: {
   /** Id do beat, como em motion/labels.ts. `topo` volta ao começo. */
   beat: string
@@ -30,18 +31,29 @@ export function LinkDeBeat({
   children: React.ReactNode
   /** Para o menu mobile fechar antes de rolar */
   onNavegar?: () => void
+  /** Marca o destino em que já estamos, para o leitor de tela */
+  atual?: boolean
 }) {
   return (
     <a
       href={`#${beat === 'topo' ? 'topo' : beat}`}
       className={className}
+      aria-current={atual ? 'true' : undefined}
       onClick={(e) => {
+        /**
+         * `onNavegar` corre nos DOIS caminhos, e isso importa.
+         *
+         * Ele é quem fecha o menu. Chamando-o só depois do `preventDefault`,
+         * o caminho sem timeline — movimento reduzido — deixava o menu
+         * aberto por cima da página enquanto a âncora nativa rolava.
+         */
+        onNavegar?.()
+
         const tl = obterTimeline()
         // Sem timeline (movimento reduzido, ou antes da montagem) o
         // comportamento nativo da âncora é o correto
         if (!tl) return
         e.preventDefault()
-        onNavegar?.()
         irParaPosicao(
           beat === 'topo' ? 0 : scrollDoBeat(beat, tl.inicio(), tl.altura()),
         )

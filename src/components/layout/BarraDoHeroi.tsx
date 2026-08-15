@@ -2,10 +2,8 @@
 
 import Image from 'next/image'
 import { CONTENT, PRODUCTS } from '@/data/products'
-import { irParaPosicao } from '@/lib/lenis'
-import { scrollDoBeat } from '@/motion/labels'
-import { obterTimeline } from '@/motion/registro'
 import { useNoHeroi } from '@/lib/no-heroi'
+import { LinkDeBeat } from './LinkDeBeat'
 
 /**
  * A barra da primeira tela: AA, AAA, o kit e onde comprar.
@@ -34,12 +32,6 @@ export function BarraDoHeroi() {
    * dois de uma vez e ainda permite a transição de opacidade.
    */
   const oculta = presenca < 0.01
-
-  const irPara = (id: string) => {
-    const tl = obterTimeline()
-    if (!tl) return
-    irParaPosicao(scrollDoBeat(id, tl.inicio(), tl.altura()))
-  }
 
   /**
    * A MESMA barra, em duas formas.
@@ -112,11 +104,19 @@ export function BarraDoHeroi() {
           Nossas pilhas
         </p>
 
+        {/**
+         * ÂNCORAS, e não botões — mesma razão da pílula.
+         *
+         * O `irPara` daqui fazia `if (!tl) return`, então com movimento
+         * reduzido esta barra também não navegava. Ela some nesse modo (a
+         * presença do herói congela em zero), mas some por CSS, e barra que
+         * some por CSS reaparece na primeira mudança de sinal. Deixar três
+         * botões mortos esperando isso é dívida com juros.
+         */}
         {PRODUCTS.map((p) => (
-          <button
+          <LinkDeBeat
             key={p.index}
-            type="button"
-            onClick={() => irPara(`produto-${p.index}`)}
+            beat={`produto-${p.index}`}
             /**
              * No retrato o nome fica ABAIXO da foto, não ao lado.
              *
@@ -165,7 +165,7 @@ export function BarraDoHeroi() {
             <span className="font-display text-base whitespace-nowrap md:text-2xl">
               {p.name}
             </span>
-          </button>
+          </LinkDeBeat>
         ))}
 
         {/**

@@ -15,6 +15,54 @@ import { SectionBg } from '@/components/layout/Layer'
  * então perder o miolo atrás da pilha não custa leitura — diferente dos
  * blocos, que carregam o argumento.
  */
+/**
+ * Um bloco do beat: título mais apoio. UMA definição, dois layouts.
+ *
+ * ------------------------------------------------------------------
+ * POR QUE ISTO VIROU COMPONENTE
+ * ------------------------------------------------------------------
+ *
+ * O beat é diagramado de duas formas genuinamente diferentes — no retrato
+ * os dois blocos empilham na base, no desktop eles ladeiam o produto numa
+ * linha só — e por isso existiam DUAS cópias do conteúdo, uma em cada
+ * ramo. Cópia de conteúdo não fica igual sozinha, e esta já tinha
+ * divergido: só os parágrafos do desktop levavam `data-revelar`, ou seja a
+ * revelação de texto letra a letra, que é a assinatura da página inteira,
+ * simplesmente não acontecia no celular.
+ *
+ * Agora o conteúdo tem uma definição só e o que se repete é a CAIXA, que é
+ * o que de fato muda entre as duas telas. Não dá para divergir de novo sem
+ * editar este componente, e editá-lo muda os dois lados juntos.
+ *
+ * `tamanho` continua por fora porque é decisão de diagramação: no retrato o
+ * título é menor que o `--text-display-2` do desktop, e essa diferença é
+ * deliberada.
+ */
+function Bloco({
+  titulo,
+  texto,
+  tamanho,
+  espaco,
+  children,
+}: {
+  titulo: string
+  texto: string
+  tamanho: string
+  espaco: string
+  /** O rótulo de apoio, que só o retrato encaixa aqui dentro */
+  children?: React.ReactNode
+}) {
+  return (
+    <div>
+      {children}
+      <h2 className={tamanho}>{titulo}</h2>
+      <p data-revelar className={`texto-corpo ${espaco} text-white/70`}>
+        {texto}
+      </p>
+    </div>
+  )
+}
+
 export function UsbC() {
   const { apoio, esquerda, direita } = CONTENT.usbc
 
@@ -29,15 +77,20 @@ export function UsbC() {
         {/* O rótulo entra COLADO no primeiro título, não como linha própria
             do grid: sozinho ele gastava um vão inteiro para vinte pixels de
             texto, e é altura que o produto 3D precisa acima */}
-        <div>
+        <Bloco
+          titulo={esquerda.titulo}
+          texto={esquerda.texto}
+          tamanho="text-[clamp(1.5rem,7vw,2.5rem)]"
+          espaco="mt-2"
+        >
           <p className="mb-2 text-sm tracking-[0.2em] text-brand-orange uppercase">{apoio}</p>
-          <h2 className="text-[clamp(1.5rem,7vw,2.5rem)]">{esquerda.titulo}</h2>
-          <p className="texto-corpo mt-2 text-white/70">{esquerda.texto}</p>
-        </div>
-        <div>
-          <h2 className="text-[clamp(1.5rem,7vw,2.5rem)]">{direita.titulo}</h2>
-          <p className="texto-corpo mt-2 text-white/70">{direita.texto}</p>
-        </div>
+        </Bloco>
+        <Bloco
+          titulo={direita.titulo}
+          texto={direita.texto}
+          tamanho="text-[clamp(1.5rem,7vw,2.5rem)]"
+          espaco="mt-2"
+        />
       </div>
 
       {/**
@@ -96,17 +149,21 @@ export function UsbC() {
        */}
       <div className="absolute inset-x-0 top-1/2 z-2 hidden -translate-y-1/2 items-start justify-between px-[var(--spacing-gutter)] md:flex">
         <div className="w-[36%]">
-          <h2 className="text-(length:--text-display-2)">{esquerda.titulo}</h2>
-          <p data-revelar className="texto-corpo mt-4 text-white/70">
-            {esquerda.texto}
-          </p>
+          <Bloco
+            titulo={esquerda.titulo}
+            texto={esquerda.texto}
+            tamanho="text-(length:--text-display-2)"
+            espaco="mt-4"
+          />
         </div>
 
         <div className="w-[36%]">
-          <h2 className="text-(length:--text-display-2)">{direita.titulo}</h2>
-          <p data-revelar className="texto-corpo mt-4 text-white/70">
-            {direita.texto}
-          </p>
+          <Bloco
+            titulo={direita.titulo}
+            texto={direita.texto}
+            tamanho="text-(length:--text-display-2)"
+            espaco="mt-4"
+          />
         </div>
       </div>
     </section>
