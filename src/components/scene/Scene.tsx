@@ -9,8 +9,9 @@ import { ChuvaDeDescartaveis } from './ChuvaDeDescartaveis'
 import * as THREE from 'three'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 import { ancoraDoBeat, cabeSaida, kitPresenca, sceneState } from '@/lib/scene-state'
-import { CARGA_CHEIA, luzEm } from '@/lib/luz'
-import { BEATS, janelaDoContador } from '@/motion/labels'
+import { CARGA_CHEIA, gelDeAmbiente, luzEm, misturaDaCarga } from '@/lib/luz'
+import { Brasa } from './Brasa'
+import { BEATS, beatPorId } from '@/motion/labels'
 import { isCoarsePointer, prefersReducedMotion } from '@/lib/motion'
 import { useClientValue } from '@/lib/client-value'
 
@@ -129,9 +130,23 @@ function DebugHook() {
  * CSS resolve de graça. Só escreve quando o valor muda, para não forçar
  * recálculo de estilo a cada quadro.
  */
+/**
+ * Enquanto o herói manda, o canvas fica ACIMA do ato.
+ *
+ * A troca acontece no FIM do beat do herói, e não no meio da saída dele.
+ * Estava em `SAIDA_DO_HEROI.meio` (0,08) e o título do herói só apaga entre
+ * 0,105 e 0,15: havia sete centésimos em que o canvas já estava embaixo e o
+ * texto ainda na tela, com o "TURBO POWERFAST" desenhado POR CIMA da tampa
+ * da pilha. 0,15 é a única janela em que os dois textos estão em opacidade
+ * zero, ou seja em que não há um pixel de texto para trocar de lado.
+ */
+const TROCA_DE_CAMADA = beatPorId('hero').fim
+
 function SaidaDoAto() {
   /** Último deslocamento escrito, em px */
   const ultimoY = useRef(-1)
+  /** Último z escrito. String, para comparar antes de tocar no estilo */
+  const ultimoZ = useRef('')
   /** Último estado de visibilidade escrito */
   const ultimoFora = useRef<boolean | null>(null)
   /** Modo do laço, lembrado para não reescrever o store a cada quadro */
@@ -172,6 +187,29 @@ function SaidaDoAto() {
     if (arred !== ultimoY.current) {
       ultimoY.current = arred
       el.style.transform = arred ? `translate3d(0, ${arred}px, 0)` : ''
+    }
+
+    /**
+     * A TROCA DE CAMADA DO HERÓI MORA AQUI, e não no <FundoDoAto />.
+     *
+     * Lá ela lia `tl.progresso()`, que é o progresso CRU do ScrollTrigger,
+     * enquanto a cena inteira lê `sceneState.progress`, escrubado com
+     * `scrub: 1`. Os dois relógios andam separados por alguns centésimos
+     * durante toda rolagem rápida.
+     *
+     * Com o canvas quase transparente na fronteira isso não aparecia. Com a
+     * brasa acesa dos dois lados de 0,150, o canvas passa da FRENTE para
+     * ATRÁS do texto enquanto, pelo relógio atrasado, esse texto ainda tem
+     * opacidade — e o título troca de cor de um quadro para o outro.
+     *
+     * Aqui os dois lados da comparação saem do mesmo relógio, e a troca
+     * continua caindo em `beatPorId('hero').fim`, que é a única janela em
+     * que os dois textos estão em opacidade zero.
+     */
+    const z = sceneState.progress < TROCA_DE_CAMADA ? '3' : '1'
+    if (z !== ultimoZ.current) {
+      ultimoZ.current = z
+      el.style.zIndex = z
     }
 
     /**
@@ -526,12 +564,19 @@ function ContraLuz() {
      * pintado atrás do produto, a parede atrás dele fica mais quente e
      * mais forte, e o que se vê na pilha é luz batendo nela.
      */
-    const j = janelaDoContador('cycles')
-    const carga = Math.max(0, Math.min(1, (p - j.de) / (j.ate - j.de)))
-    const q = carga * carga * (3 - 2 * carga)
-    const misturaCarga = p > j.de && p < BEATS[3].inicio ? q : 0
+    /* A conta mora em luz.ts: a contraluz e a brasa TÊM de esquentar juntas,
+       porque são a mesma fonte — uma invisível e outra visível */
+    const misturaCarga = misturaDaCarga(p)
 
-    l.position.set(sceneState.centroDeMundo, v.parede.y, v.parede.z)
+    /**
+     * A luz sobe junto com o produto no RETRATO.
+     *
+     * `subidaDoRetrato` é zero em paisagem, então nenhuma medida de paisagem
+     * se move. No celular o corpo vai para o terço de cima e a contraluz
+     * ficava em y=0: o que se via era luz de chão atrás de um objeto alto.
+     */
+    const ySujeito = v.parede.y + sceneState.subidaDoRetrato
+    l.position.set(sceneState.centroDeMundo, ySujeito, v.parede.z)
     l.width = v.parede.largura
     l.height = v.parede.altura
     l.intensity =
@@ -542,7 +587,7 @@ function ContraLuz() {
       (v.parede.cor[1] + (CARGA_CHEIA.cor[1] - v.parede.cor[1]) * misturaCarga) / 255,
       (v.parede.cor[2] + (CARGA_CHEIA.cor[2] - v.parede.cor[2]) * misturaCarga) / 255,
     )
-    l.lookAt(sceneState.centroDeMundo, 0, 0)
+    l.lookAt(sceneState.centroDeMundo, ySujeito, 0)
 
     cena.environmentIntensity = v.ambiente
     /* O giro some quando o kit se forma: são oito corpos em pé, e girar o
@@ -749,7 +794,29 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
              * que corre o comprimento inteiro, e é esse rasgo que o olho
              * usa para ler a curvatura.
              */}
-            <Lightformer intensity={8.0} position={[-5.0, 1.46, 3.88]} scale={[1.5, 20, 1]} />
+            {/**
+             * O GEL é o que atende ao "manter essa luz meio amarelada em
+             * todas as seções": estes quatro são globais aos sete beats.
+             *
+             * O número que fica escrito é o FLUXO — o valor medido —, e a
+             * intensidade sai de `fluxo / L(cor)`. Escrever a intensidade à
+             * mão depois de trocar a cor é a forma silenciosa de mexer em
+             * todas as medidas do produto; aqui isso é impossível.
+             *
+             * E `gelDeAmbiente` DECODIFICA o hex, porque `Color.setStyle`
+             * decodifica: aplicar a fórmula linear num hex dá 0,9627 onde o
+             * valor real é 0,9179, ou seja 5% de erro em cima da fonte que
+             * responde por 63% do fluxo da cena.
+             *
+             * `#FFF4E8` é quase neutro de propósito na chave e no cartão: é
+             * ela que renderiza o laranja impresso do rótulo, e gelatinar a
+             * chave demais mudaria a cor da marca no produto.
+             */}
+            <Lightformer
+              {...gelDeAmbiente('#FFF4E8', 8.0)}
+              position={[-5.0, 1.46, 3.88]}
+              scale={[1.5, 20, 1]}
+            />
 
             {/**
              * O CARTÃO DE OMBRO: largo, fraco, do MESMO lado da chave.
@@ -765,17 +832,42 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
              * estreito do verniz quase não. O pico próprio dele cai em 37%
              * da largura, que é exatamente onde a foto marca 46.
              */}
-            <Lightformer intensity={0.3} position={[-3.68, 0.77, 6.37]} scale={[7, 10, 1]} />
+            <Lightformer
+              {...gelDeAmbiente('#FFF4E8', 0.3)}
+              position={[-3.68, 0.77, 6.37]}
+              scale={[7, 10, 1]}
+            />
 
             {/* Teto: dá o topo do corpo e o aro do terminal sem preencher
                 a barriga, porque em +82° de elevação ele está fora do
                 horizonte especular */}
-            <Lightformer intensity={0.38} position={[0, 8.12, 1.14]} scale={[9, 9, 1]} />
+            {/* Teto e piso podem esquentar bem mais que a chave: eles não
+                desenham realce nenhum, só preenchem, e é no preenchimento
+                que o tom da casa aparece sem competir com o rótulo */}
+            <Lightformer
+              {...gelDeAmbiente('#FFE2BE', 0.38)}
+              position={[0, 8.12, 1.14]}
+              scale={[9, 9, 1]}
+            />
 
             {/* Piso, quase apagado: tira o preto morto do pé sem devolver
                 o achatamento que a direcional causava */}
-            <Lightformer intensity={0.04} position={[0, -5.64, 2.05]} scale={[10, 6, 1]} />
+            <Lightformer
+              {...gelDeAmbiente('#FFB260', 0.04)}
+              position={[0, -5.64, 2.05]}
+              scale={[10, 6, 1]}
+            />
           </Environment>
+
+          {/**
+           * A BRASA, a fonte âmbar que a pilha tapa.
+           *
+           * A ordem no JSX não decide nada aqui: quem decide é `transparent`,
+           * que joga o plano para depois de todos os opacos na fila de
+           * desenho — que é exatamente onde a oclusão pelo depth buffer
+           * acontece. Ver o cabeçalho de Brasa.tsx.
+           */}
+          <Brasa estatico={reduzido} />
 
           {/* O formato vem do progresso, não de prop: ver variantEm() */}
           <Battery estatico={reduzido} />

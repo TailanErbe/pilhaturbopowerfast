@@ -547,6 +547,26 @@ export function Battery({ estatico = false }: { estatico?: boolean }) {
     const dx = (PONTA_A.x - PONTA_B.x) * (size.width / 2)
     const dy = -(PONTA_A.y - PONTA_B.y) * (size.height / 2)
     sceneState.inclinacaoNaTela = (Math.atan2(dx, -dy) * 180) / Math.PI
+
+    /**
+     * E publica o TAMANHO da silhueta, para quem precisa esconder algo atrás.
+     *
+     * Sai das MESMAS duas pontas já projetadas acima — nenhuma projeção nova,
+     * custo zero. O comprimento do eixo na tela, dividido por dois, é a
+     * meia-altura; a meia-largura vem da razão do modelo (raio sobre
+     * meio-comprimento) aplicada a ela.
+     *
+     * Derivar a largura da razão em vez de projetar um terceiro ponto torna a
+     * medida CONSERVADORA quando o corpo tomba em profundidade: o eixo
+     * encurta na tela e a largura estimada encolhe junto, quando na verdade a
+     * silhueta engorda. Conservador aqui é o lado seguro — dá um `kx` menor,
+     * ou seja o joelho mais para dentro do corpo, que é onde ele tem de ficar.
+     */
+    const eixoEmMeiasAlturas = Math.hypot(dx, dy) / (size.height / 2)
+    sceneState.meiaAlturaNaTela = eixoEmMeiasAlturas / 2
+    sceneState.meiaLarguraNaTela =
+      (sceneState.meiaAlturaNaTela * (raio * radial)) / ((comprimento / 2) * axialAtual)
+    sceneState.subidaDoRetrato = subida
   })
 
   return (

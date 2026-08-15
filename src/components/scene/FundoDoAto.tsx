@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { BEATS, beatPorId, CRUZAMENTO } from '@/motion/labels'
+import { BEATS, CRUZAMENTO } from '@/motion/labels'
 import { obterTimeline } from '@/motion/registro'
 import { luzEm } from '@/lib/luz'
 import { sceneState } from '@/lib/scene-state'
@@ -68,24 +68,18 @@ const CORES: [number, number, number][] = [
 ]
 
 /**
- * Enquanto o herói manda, o canvas fica ACIMA do ato.
+ * A TROCA DE CAMADA DO CANVAS SAIU DAQUI.
  *
- * A troca de camada acontece no FIM do beat do herói, e não no meio da
- * saída dele.
+ * Ela mora no `<SaidaDoAto />`, dentro de Scene.tsx, e a razão é o RELÓGIO.
+ * Este componente lê `tl.progresso()`, que é o progresso cru do
+ * ScrollTrigger; a cena lê `sceneState.progress`, escrubado com `scrub: 1`.
+ * Os dois andam separados por alguns centésimos em toda rolagem rápida, e
+ * com a brasa acesa nos dois lados da fronteira isso aparecia como o título
+ * trocando de cor de um quadro para o outro.
  *
- * Ela estava em `SAIDA_DO_HEROI.meio`, ou seja 0,08. Só que o título do
- * herói não some ali: ele apaga entre 0,105 e 0,15, junto com o beat. Com
- * a troca em 0,08, havia sete centésimos de progresso em que o canvas já
- * estava embaixo e o texto ainda estava na tela — e o resultado era o
- * "TURBO POWERFAST" desenhado POR CIMA da tampa da pilha, que é o oposto
- * da regra da casa: no herói o produto é o assunto e não fica sob nada.
- *
- * 0,15 é a única janela limpa que existe. A saída do herói roda em
- * [0,105 ; 0,15] e a entrada do USB-C em [0,15 ; 0,195], então exatamente
- * ali os dois textos estão em opacidade zero: dá para trocar a ordem de
- * pintura sem que haja um pixel de texto para trocar de lado.
+ * O que continua aqui é a cor de fundo e a parede, que são do mesmo relógio
+ * cru e do mesmo cruzamento — e portanto continuam batendo entre si.
  */
-const TROCA_DE_CAMADA = beatPorId('hero').fim
 
 const suave = (t: number) => t * t * (3 - 2 * t)
 const entre = (t: number) => Math.max(0, Math.min(1, t))
@@ -115,18 +109,15 @@ export function FundoDoAto() {
   useEffect(() => {
     let agendado = 0
     let ultimaCor = ''
-    let ultimoZ = ''
     let ultimaClara = -1
     let ultimaEscura = -1
-    /** O canvas entra por import dinâmico: podem não existir ainda */
-    let cena: HTMLElement | null = null
+    /** As paredes entram por import dinâmico: podem não existir ainda */
     let clara: HTMLElement | null = null
     let escura: HTMLElement | null = null
 
     const aplicar = () => {
       agendado = 0
       const tl = obterTimeline()
-      cena ??= document.querySelector<HTMLElement>('[data-cena]')
       /**
        * Sem timeline não há o que dirigir: com movimento reduzido o fundo
        * volta a ser o de cada seção (ver `noAto` em SectionBg), e no
@@ -177,17 +168,6 @@ export function FundoDoAto() {
         }
       }
 
-      /**
-       * O z do canvas, dirigido pelo progresso.
-       *
-       * Escrito como string e comparado antes: mudar z-index a cada
-       * quadro forçaria o compositor a refazer as camadas sem necessidade.
-       */
-      const z = p < TROCA_DE_CAMADA ? '3' : '1'
-      if (z !== ultimoZ && cena) {
-        ultimoZ = z
-        cena.style.zIndex = z
-      }
     }
 
     const agendar = () => {
@@ -202,7 +182,6 @@ export function FundoDoAto() {
       cancelAnimationFrame(agendado)
       window.removeEventListener('scroll', agendar)
       window.removeEventListener('resize', agendar)
-      if (cena) cena.style.zIndex = ''
     }
   }, [])
 

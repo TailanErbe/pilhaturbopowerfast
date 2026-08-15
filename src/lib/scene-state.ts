@@ -681,6 +681,32 @@ export const sceneState = {
    */
   inclinacaoNaTela: 0,
   /**
+   * A SILHUETA do produto, medida NA TELA, em unidades de meia-altura de
+   * tela. Publicada pelo mesmo laço que publica `inclinacaoNaTela`.
+   *
+   * Existe porque a brasa precisa esconder o joelho da sua curva DENTRO do
+   * corpo. Em constante de tela isso funcionaria só no desktop: no retrato o
+   * produto encolhe, e o joelho apareceria em volta de uma pilha pequena —
+   * que é a mancha reprovada três vezes, na tela em que o cliente mais olha.
+   *
+   * Em fração da silhueta, a folga é a mesma em qualquer aparelho.
+   *
+   * Os padrões são os valores do herói em paisagem, para o primeiro quadro
+   * já sair certo — antes de a <Battery /> ter rodado uma vez.
+   */
+  meiaAlturaNaTela: 0.583,
+  /** O eixo APERTADO: é ele que esconde o joelho, e é dele que sai o `kx` */
+  meiaLarguraNaTela: 0.167,
+  /**
+   * Quanto o produto subiu no retrato, em unidades de MUNDO.
+   *
+   * Zero em paisagem — e é por isso que ligar a contraluz a este número não
+   * move nenhuma das medidas de paisagem já conquistadas. No celular ela
+   * passa a subir junto com o produto; parada em y=0 enquanto o corpo vai
+   * para o terço de cima, o que se via era luz de chão.
+   */
+  subidaDoRetrato: 0,
+  /**
    * O x de MUNDO do sujeito, para a contraluz segui-lo.
    *
    * Medido no beat do kit: com a luz parada em x=0, os oito corpos a viam

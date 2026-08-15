@@ -323,13 +323,21 @@
  * não tem joelho, e oito paradas ainda evitam o bandeamento que um degradê
  * longo em 8 bits produz.
  *
- * A cor é quase branca com viés quente, e não laranja: a fonte que ilumina
- * este cenário é a mesma que ilumina o produto, e ela é #FFE9D2.
+ * A cor ESQUENTOU junto com o resto do rig, e continua sendo cor de PAREDE,
+ * não de fonte: a luz que ilumina este cenário é âmbar, então a parede que
+ * ela banha puxa para âmbar — mas atenuada, porque parede reflete, não emite.
  *
  * As opacidades aqui são as CHEIAS. Quem as atenua é o `opacity` do
- * elemento, escrito por beat pelo <FundoDoAto />. No pico do herói ele vale
- * 0,085, o que sobre preto dá rgb(22,20,18) e luminância 0,0062: 0,107 vez
- * o pico especular do produto.
+ * elemento, escrito por beat pelo <FundoDoAto />.
+ *
+ * E o pico do herói CAIU, de 0,085 para 0,045. Não é recuo: é que agora há
+ * duas fontes contando a mesma história, e esta é a fraca e a de cor errada.
+ * A brasa (ver scene/Brasa.tsx) entrega nove vezes isto, na cor certa, com
+ * oclusão pela silhueta e sem morrer dentro do quadro. Aqui sobra o papel de
+ * dar CORPO ao fundo longe do produto, onde a brasa já é saia fina.
+ *
+ * Em números: o pico daqui sai de L=0,0062 para L=0,0033, ou seja de 0,107
+ * para 0,057 vez o pico especular do produto.
  */
 /**
  * Apagada por padrão, e não por variável CSS.
@@ -344,14 +352,14 @@
   opacity: 0;
   background-image: radial-gradient(
     ellipse 34vw 62vh at calc(50% + 8.8vw) calc(50% - 3.9vh),
-    rgb(255 236 214 / 1) 0%,
-    rgb(255 230 202 / 0.62) 14%,
-    rgb(255 224 190 / 0.36) 28%,
-    rgb(255 217 178 / 0.19) 44%,
-    rgb(255 210 166 / 0.09) 60%,
-    rgb(255 205 158 / 0.035) 76%,
-    rgb(255 200 150 / 0.008) 90%,
-    rgb(255 198 146 / 0) 100%
+    rgb(255 226 190 / 1) 0%,
+    rgb(255 220 180 / 0.62) 14%,
+    rgb(255 214 168 / 0.36) 28%,
+    rgb(255 208 158 / 0.19) 44%,
+    rgb(255 202 148 / 0.09) 60%,
+    rgb(255 197 140 / 0.035) 76%,
+    rgb(255 192 132 / 0.008) 90%,
+    rgb(255 190 128 / 0) 100%
   );
 }
 
