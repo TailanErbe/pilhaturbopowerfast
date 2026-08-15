@@ -233,7 +233,20 @@ export function poseAt(progress: number): Omit<Pose, 'at'> {
   const a = POSES[i]
   const b = POSES[i + 1] ?? a
   const span = b.at - a.at
-  const t = span <= 0 ? 0 : (p - a.at) / span
+  /**
+   * O `t` é LIMITADO a 0..1, e isso não é zelo: sem limitar, a
+   * interpolação EXTRAPOLA fora das poses.
+   *
+   * A primeira pose mora em 0,06, mas a página começa em 0. Ali t valia
+   * −0,375, e como a suavização t²(3−2t) devolve +0,53 para esse valor, o
+   * produto abria com metade do giro do beat 2 já aplicado: 24,6° fora do
+   * frontal, justamente na tela em que ele está sozinho e deveria se
+   * apresentar inteiro. O mesmo acontecia depois da última pose.
+   *
+   * Limitando, o trecho antes da primeira pose e depois da última fica
+   * exatamente na pose, que é o que "primeira" e "última" querem dizer.
+   */
+  const t = span <= 0 ? 0 : Math.max(0, Math.min(1, (p - a.at) / span))
   // suaviza a passagem entre poses sem tirar a ligação com o scroll
   const e = t * t * (3 - 2 * t)
 
@@ -268,10 +281,13 @@ export function tetoEm(progress: number, tetos: number[]): number {
   const a = tetos[i] ?? 1
   const b = tetos[i + 1] ?? a
   const span = POSES[i + 1].at - POSES[i].at
-  const t = span <= 0 ? 0 : (p - POSES[i].at) / span
+  // Limitado como em poseAt, e pelo mesmo motivo: antes da primeira pose
+  // o `t` fica negativo e a suavização o devolve positivo, misturando o
+  // beat seguinte no trecho em que só deveria valer o primeiro
+  const t = span <= 0 ? 0 : Math.max(0, Math.min(1, (p - POSES[i].at) / span))
   const e = t * t * (3 - 2 * t)
 
-  return lerp(a, b, Math.max(0, Math.min(1, e)))
+  return lerp(a, b, e)
 }
 
 /**
