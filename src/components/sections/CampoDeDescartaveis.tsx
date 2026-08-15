@@ -270,9 +270,25 @@ export function CampoDeDescartaveis({ children }: { children: ReactNode }) {
          * substituía a figura inteira por uma frase, e alternativa
          * escondida que alguém precisa lembrar de atualizar é dívida.
          */}
+        {/**
+         * "ATÉ 1.200", e o "até" não é preciosismo jurídico.
+         *
+         * Esta legenda era o ÚNICO lugar da página que prometia o número
+         * cheio: ela dizia "São 1.200, que é quantas vezes uma Gshield pode
+         * ser recarregada". A ficha técnica diz "Até 1.200"
+         * (products.ts:118), o beat 2 diz "Recarrega até 1.200 vezes", e o
+         * próprio endereço da loja termina em `ate-1200-recargas`. O rótulo
+         * oficial não traz número de ciclos nenhum, ou seja não existe
+         * segunda fonte para o absoluto.
+         *
+         * E a estrutura do campo também entrou na frase. No celular as cem
+         * marcas de uma linha ficam com passo de 2,8 px, e contar deixa de
+         * ser possível — que era justamente a razão de ser da peça. Dizendo
+         * "doze linhas de cem", o desenho fica conferível sem contar traço.
+         */}
         <figcaption className="texto-nota mt-[18px] text-white/60">
-          Cada traço é uma descartável. São 1.200, que é quantas vezes uma
-          Gshield pode ser recarregada.
+          Cada traço é uma descartável: doze linhas de cem. São até 1.200, o
+          máximo de recargas de uma Gshield.
         </figcaption>
       </figure>
 

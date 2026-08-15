@@ -400,13 +400,27 @@ export const CONTENT = {
       'Cada recarga é um uso que dispensou uma pilha nova. O campo abaixo ' +
       'conta a troca inteira, uma marca para cada descartável.',
     /**
-     * `conta` marca o que sobe do zero com a rolagem. A tensão fica de
-     * fora: contar até 1,5 V não tem drama nenhum e ainda daria a
-     * impressão de que a tensão varia, que é o oposto do argumento.
+     * `conta` marca o que sobe do zero com a rolagem, e só o PRIMEIRO sobe.
+     *
+     * A tensão sempre ficou de fora: contar até 1,5 V não tem drama nenhum e
+     * ainda daria a impressão de que a tensão varia, que é o oposto do
+     * argumento.
+     *
+     * A CAPACIDADE saiu pelo mesmo motivo, e por mais um. Contando, a tela
+     * exibia capacidades que não existem — com seis linhas do campo acesas
+     * ela dizia "1.700 mWh na AA", e numa captura minha estava em "3.354".
+     * Número de ficha técnica não tem estado intermediário: ou é 3400 ou
+     * está errado. Já as 1.200 descartáveis SÃO uma contagem, e ver a
+     * contagem acontecer é o argumento da seção.
+     *
+     * De quebra some uma divergência de grafia: `contarNoScrub` aplica
+     * `toLocaleString('pt-BR')`, então assim que o script assumia o número
+     * virava "3.400" — enquanto o HTML servido, o painel do produto e o
+     * rótulo oficial escrevem "3400".
      */
     stats: [
-      { value: '1.200', label: 'descartáveis substituídas por unidade', conta: 1200 },
-      { value: '3400', label: 'mWh na AA', conta: 3400 },
+      { value: '1.200', label: 'descartáveis substituídas por pilha', conta: 1200 },
+      { value: '3400', label: 'mWh na AA', conta: undefined },
       // `conta: undefined` explícito: com `as const` o TypeScript trata
       // cada item como um tipo próprio, e omitir a chave faz a união
       // perder a propriedade inteira
