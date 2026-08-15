@@ -148,29 +148,40 @@ const FLUXO_PARADO = 0.7
  * Se aqueles dois números mudarem lá, este muda junto.
  */
 /**
- * O CURSO da cabeça da onda, e por que ele vale isto.
+ * O PERCURSO DA ONDA, EM TRÊS TRECHOS, e todos na mesma velocidade.
  *
- * A cabeça vai de 1,2 até `1,2 - CURSO`. O trecho de 1,2 a 1,0 é a espera
- * entre uma onda e a próxima; de 1,0 a 0 ela atravessa o cabo; abaixo de 0
- * ela percorre o CORPO da pilha (ver `cargaNoCorpo`).
+ * A cabeça vai de 1,2 para baixo. De 1,2 a 1,0 é a espera entre uma onda e
+ * a próxima; de 1,0 a 0 ela atravessa o cabo; e abaixo de zero vêm os dois
+ * trechos que faltavam.
  *
- * O curso esteve em 1,55, escolhido supondo que o cabo tivesse por volta de
- * 10,5 unidades de traçado. Medido, ele tem 16,65: a curva é bem mais longa
- * que a distância entre as pontas dela. Com o número errado, a onda ENTRAVA
- * NO CORPO 22% MAIS DEVAGAR do que vinha no cabo, e o cliente sentiu
- * exatamente isso: "parece que dá uma travada quando sai do cabo e vai pra
- * pilha".
+ * O comprimento de referência é o TRAÇADO DO CABO, medido: 16,65 unidades
+ * para 1,0 de curso. Todo o resto é proporcional a isso, e é essa
+ * proporcionalidade que garante velocidade constante.
  *
- * Para a velocidade de MUNDO ser a mesma dos dois lados, o trecho do corpo
- * tem de ser proporcional ao comprimento dele:
+ * DOIS ERROS FORAM CORRIGIDOS AQUI, um de cada vez, e vale registrar os
+ * dois porque o sintoma foi o mesmo: "dá uma travada".
  *
- *   corpo / cabo = 4,52 / 16,65 = 0,2715
+ * 1. O curso esteve em 1,55, escolhido supondo que o cabo tivesse ~10,5
+ *    unidades, que é a DISTÂNCIA ENTRE AS PONTAS. A curva é bem mais longa
+ *    que a reta entre os extremos dela. Com o número errado, a onda entrava
+ *    no corpo 22% mais devagar.
  *
- * Então o curso é 1,2 (espera mais cabo) + 0,2715 (corpo) = 1,4715.
+ * 2. Corrigida a velocidade, sobrou uma travada menor: O PLUGUE. Ele tem
+ *    2,1 unidades entre o fim do cabo e a superfície da célula, e ninguém
+ *    acendia nele. A onda não desacelerava ali, ela SUMIA: 0,31 segundo de
+ *    escuro total num ciclo de 3,57. O código já dizia isso em voz alta,
+ *    no comentário de `saida`, e ninguém tinha ligado uma coisa à outra.
  */
-const CURSO = 1.4715
-/** O trecho abaixo de zero, que é o corpo da pilha */
-const CURSO_NO_CORPO = CURSO - 1.2
+/** Traçado do cabo, medido com `curva.getLength()` */
+const CABO_EM_UNIDADES = 16.65
+/** Casca mais corpo mais alívio, do fim do cabo até a superfície */
+const PLUGUE_EM_UNIDADES = 2.1
+/** Da porta ao polo negativo */
+const CORPO_EM_UNIDADES = 4.52
+
+const CURSO_NO_PLUGUE = PLUGUE_EM_UNIDADES / CABO_EM_UNIDADES
+const CURSO_NO_CORPO = CORPO_EM_UNIDADES / CABO_EM_UNIDADES
+const CURSO = 1.2 + CURSO_NO_PLUGUE + CURSO_NO_CORPO
 
 const CHEGADA = 1.2 / CURSO
 
@@ -196,6 +207,14 @@ export function Cable({
   const tubo = useRef<THREE.Mesh>(null)
   /** Envolve cabo E plugue: os dois deixam a porta juntos */
   const conjunto = useRef<THREE.Group>(null)
+  /**
+   * Só o PLUGUE, para ele acender quando a onda o atravessa.
+   *
+   * Alcançado por ref e não pelos materiais do `useMemo`: o compilador do
+   * React proíbe mutar o que sai de um hook, e é o mesmo caminho que a
+   * <Battery /> usa para a banda do corpo.
+   */
+  const plugue = useRef<THREE.Group>(null)
 
   const {
     geometria,
@@ -549,8 +568,41 @@ export function Cable({
        */
       const fase = u.uFluxo.value % 1
       const pos = 1.2 - fase * CURSO
+      /** Quanto a cabeça já andou depois de deixar o cabo */
+      const depois = -pos
+
+      /**
+       * O PLUGUE ACENDE quando a onda passa por ele.
+       *
+       * Sem isto a energia atravessava dois centímetros de conector no
+       * escuro, e era essa a travadinha que sobrou depois de igualar as
+       * velocidades. Um plugue é condutor: ele acender enquanto a carga
+       * passa não é licença poética, é o que a peça faz.
+       *
+       * A rampa sobe e desce nas bordas do trecho para não haver degrau de
+       * brilho na entrada nem na saída dele.
+       */
+      const noPlugue = depois / CURSO_NO_PLUGUE
+      const aceso =
+        saida.conectado && noPlugue > -0.15 && noPlugue < 1.15
+          ? Math.exp(-Math.pow((noPlugue - 0.5) * 2.4, 2))
+          : 0
+
+      const g = plugue.current
+      if (g) {
+        g.traverse((o) => {
+          const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial
+          if (!m || !m.emissive) return
+          m.emissive.setHex(0xffa400)
+          m.emissiveIntensity = aceso * 2.2
+        })
+      }
+
+      /* O corpo só começa DEPOIS do plugue */
       sceneState.cargaNoCorpo =
-        saida.conectado && pos <= 0 ? Math.min(1, -pos / CURSO_NO_CORPO) : -1
+        saida.conectado && depois >= CURSO_NO_PLUGUE
+          ? Math.min(1, (depois - CURSO_NO_PLUGUE) / CURSO_NO_CORPO)
+          : -1
 
       /**
        * E o HALO do fundo bate junto, na chegada.
@@ -618,6 +670,7 @@ export function Cable({
       {/* Plugue Tipo-C encaixado na porta. A geometria é extrudada no eixo
           +Z local, então o grupo é girado para +Z apontar para FORA. */}
       <group
+        ref={plugue}
         position={[Math.sin(anguloPorta) * raio, yPorta, Math.cos(anguloPorta) * raio]}
         rotation={[0, anguloPorta, 0]}
       >
