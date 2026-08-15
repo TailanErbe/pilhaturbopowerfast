@@ -364,30 +364,74 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
         frameloop="always"
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.35} />
-          <directionalLight position={[4, 8, 6]} intensity={1.6} />
-          <directionalLight position={[-6, 2, -4]} intensity={0.5} />
+          {/**
+           * A luz foi remontada em cima da FOTO do produto, não do gosto.
+           *
+           * Varrendo uma linha horizontal do corpo escuro em
+           * cartela-2-v2.png, da esquerda para a direita, a luminância faz:
+           *
+           *   14 …  33 · 68 · 46 …  11 · 8 · 5 · 2 · 2 · 1
+           *          ^^^^^^^^^
+           *          pico estreito a 28% da largura
+           *
+           * Três coisas saem daí, e as três estavam erradas:
+           *
+           *   1. O pico é ESTREITO. As fontes laterais tinham 6 de largura,
+           *      o que dá um degradê largo e sem forma. Um cilindro só lê
+           *      como cilindro quando a softbox é uma FRESTA alta: o realce
+           *      vira um rasgo que corre o comprimento inteiro, e é esse
+           *      rasgo que o olho usa para ler a curvatura.
+           *   2. O lado direito vai a UM. Havia uma fonte de 1,1 ali, e ela
+           *      preenchia o lado que no objeto real é escuro. Sem sombra
+           *      não há volume: o cilindro saía chapado.
+           *   3. O ambiente era 0,35. Com esse piso, nenhuma parte da cena
+           *      chega perto de 1 em 255, e o contraste inteiro se comprime.
+           *
+           * A direcional do topo fica: é ela que acende o aço do terminal,
+           * que na foto é a região mais clara da pilha (lum 200).
+           */}
+          <ambientLight intensity={0.06} />
+          <directionalLight position={[-3, 9, 7]} intensity={1.9} />
 
-          <Environment resolution={256}>
+          {/**
+           * 512 e não 256.
+           *
+           * O cubemap é montado UMA vez e não custa nada por quadro; o que
+           * ele paga é memória. Com o verniz do rótulo (clearcoat) o realce
+           * ficou nítido o bastante para a fonte aparecer refletida nele, e
+           * em 256 a fresta chegava com a borda serrilhada.
+           */}
+          <Environment resolution={512}>
             {/* Faixa larga no topo: marca o metal do terminal */}
             <Lightformer
-              intensity={2.4}
+              intensity={2.2}
               position={[0, 6, 2]}
               rotation={[Math.PI / 2, 0, 0]}
               scale={[10, 4, 1]}
             />
-            {/* Recorte lateral: dá volume ao cilindro preto */}
+            {/* A FRESTA: alta e estreita, à esquerda e à frente. É ela que
+                desenha o rasgo especular que corre o comprimento da pilha */}
             <Lightformer
-              intensity={1.6}
-              position={[-6, 1, 3]}
+              intensity={4.2}
+              position={[-4.2, 0, 5]}
               rotation={[0, Math.PI / 2, 0]}
-              scale={[6, 8, 1]}
+              scale={[1.4, 16, 1]}
             />
+            {/* Segunda fresta, mais fraca e mais atrás: separa a silhueta do
+                fundo preto da página sem preencher o lado escuro */}
             <Lightformer
-              intensity={1.1}
-              position={[6, -1, 2]}
+              intensity={1.4}
+              position={[5.2, 1, -2.5]}
               rotation={[0, -Math.PI / 2, 0]}
-              scale={[6, 8, 1]}
+              scale={[0.9, 14, 1]}
+            />
+            {/* Piso de ambiente, largo e quase apagado: tira o preto morto
+                das costas sem devolver o achatamento */}
+            <Lightformer
+              intensity={0.18}
+              position={[0, -4, -6]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              scale={[14, 10, 1]}
             />
           </Environment>
 
