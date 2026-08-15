@@ -118,22 +118,40 @@ const FAIXA = 0.5
  */
 export const LARGURA_RETRATO = 1024
 
-/** Um ponto dentro do beat do painel 01, em fração dele */
-const aaEm = (f: number) => {
-  const b = beatPorId('produto-01')
+/** Um ponto dentro de um beat de painel, em fração dele */
+const painelEm = (id: string, f: number) => {
+  const b = beatPorId(id)
   return b.inicio + (b.fim - b.inicio) * f
 }
 
 /**
- * Onde a volta do painel 01 começa e termina.
+ * A VOLTA COMPLETA, de ponta a ponta.
  *
- * `AA_CHEGA` fica logo no começo do beat porque o produto já vem posto: o
- * chip o entrega na pose final. Se estivesse no centro, o trecho anterior
- * voltaria a ser uma viagem dentro do painel, que é justamente o defeito
- * que isto conserta.
+ * Ela começa logo na entrada do painel 01, porque o produto já vem posto:
+ * o chip o entrega na pose final. E termina só na chegada do painel 02.
+ *
+ * ------------------------------------------------------------------
+ * POR QUE UMA VOLTA SÓ, E NÃO UMA POR PAINEL
+ * ------------------------------------------------------------------
+ *
+ * Houve uma versão com a volta CONTIDA no painel 01, terminando de frente
+ * ainda dentro dele, e um segundo giro depois para esconder a troca de AA
+ * para palito. Não fecha: a fronteira entre os beats é 0,80 e aquele
+ * segundo giro só punha o produto de costas em 0,819. Sobravam 0,019 de
+ * progresso, uns 280 px de rolagem, com o painel 02 na tela e a AA ainda
+ * em cena — que foi exatamente o que o cliente viu.
+ *
+ * Espremer os 180 graus nos 0,012 que restavam transformaria a pilha num
+ * pião. A saída é uma volta só, longa, com o meio dela caindo EM CIMA da
+ * fronteira: ali o produto está de costas e a troca não tem como aparecer.
+ *
+ * O preço é que a volta atravessa a virada em vez de acabar antes dela.
+ * Vale: o que o cliente pediu foi chegar posto e só girar, e é o que
+ * acontece. A troca de formato passa a ser parte do gesto, não um evento
+ * separado espremido entre dois.
  */
-const AA_CHEGA = aaEm(0.12)
-const AA_VOLTA = aaEm(0.88)
+const AA_CHEGA = painelEm('produto-01', 0.12)
+const AAA_CHEGA = painelEm('produto-02', 0.88)
 
 /**
  * Qual formato está em cena.
@@ -143,17 +161,20 @@ const AA_VOLTA = aaEm(0.88)
  * é percebida como corte. Trocar com a face de frente entregaria o truque.
  */
 /**
- * O meio exato entre a ÚLTIMA âncora do painel 01 e a do 02.
+ * O MEIO DA VOLTA, que cai exatamente na fronteira entre os painéis.
  *
- * Com uma volta completa entre as duas, é ali que o produto está de costas
- * para a câmera, e é por isso que a troca de formato não aparece.
+ * Com uma volta completa entre as duas âncoras, o meio é onde o produto
+ * está de costas para a câmera — e é por isso que a substituição não
+ * aparece. Que esse meio coincida com a fronteira dos beats não é sorte,
+ * é o critério que escolheu as âncoras: "a seção deve trocar junto com a
+ * troca da pilha".
  *
- * Usa `AA_VOLTA` e não o centro do beat: o painel 01 ganhou duas âncoras
- * quando a volta completa mudou de lugar para dentro dele, e o centro
- * deixou de ser o ponto de partida da passagem para o 02. Medindo pelo
- * centro, a troca cairia a uns 45° de giro, com a marca ainda visível.
+ * Antes ela era medida entre os CENTROS dos dois beats, e depois entre o
+ * fim da volta do 01 e o centro do 02. As duas erravam o instante: a
+ * segunda punha a troca em 0,819 com a fronteira em 0,80, ou seja o painel
+ * 02 entrava na tela com uma AA em cena por uns 280 px de rolagem.
  */
-const TROCA_DE_FORMATO = (AA_VOLTA + centroDoBeat('produto-02')) / 2
+const TROCA_DE_FORMATO = (AA_CHEGA + AAA_CHEGA) / 2
 
 export function variantEm(progress: number): 'AA' | 'AAA' {
   return progress < TROCA_DE_FORMATO ? 'AA' : 'AAA'
@@ -171,24 +192,29 @@ export function variantEm(progress: number): 'AA' | 'AAA' {
  * composição, não a cena.
  */
 /**
- * A dissolução começa ANTES do painel do kit e termina na pose dele.
+ * O kit só começa a se formar NA FRONTEIRA, e nunca antes.
  *
- * O fim é o centro do beat 03, que é onde a pílula de navegação para: se
- * as oito ainda estivessem se formando ali, quem chegasse pela pílula veria
- * a cena montando em vez de montada.
+ * O começo entrava um quarto de beat mais cedo, ainda dentro do painel 02,
+ * para dar sobreposição entre a protagonista encolhendo e as oito
+ * crescendo. Com a volta do produto terminando em 0,888, aquilo punha as
+ * oito nascendo em 0,875 — ou seja ANTES de a palito acabar de se
+ * apresentar. É a mesma classe de defeito que o cliente pegou na troca
+ * de formato, e ele avisou: "não deixe que o mesmo bug aconteça com a
+ * seção do KIT".
  *
- * O começo entra um quarto de beat mais cedo, ainda dentro da passagem do
- * painel 02. É o que dá sobreposição entre a protagonista encolhendo e as
- * oito crescendo, e sobreposição é o que faz a troca ler como dissolução
- * em vez de corte.
+ * Agora a dissolução inteira mora dentro do beat do kit: começa na
+ * fronteira, quando a seção troca, e termina no centro dele, que é onde a
+ * pílula de navegação para. Se as oito ainda estivessem se formando ali,
+ * quem chegasse pela pílula veria a cena montando em vez de montada.
+ *
+ * A sobreposição não se perdeu: ela acontece DENTRO desta janela, entre a
+ * protagonista sumindo e as oito crescendo, que é onde ela sempre teve de
+ * estar.
  */
-const KIT = (() => {
-  const beat = beatPorId('produto-03')
-  return {
-    inicio: beat.inicio - (beat.fim - beat.inicio) * 0.25,
-    fim: centroDoBeat('produto-03'),
-  }
-})()
+const KIT = {
+  inicio: beatPorId('produto-03').inicio,
+  fim: centroDoBeat('produto-03'),
+}
 
 export function kitPresenca(progress: number): number {
   if (progress <= KIT.inicio) return 0
@@ -430,25 +456,25 @@ export const POSES: Pose[] = [
    * no rótulo. Mantido o desvio, o produto chegava torto sem motivo, e a
    * pílula de navegação entregava justamente essa pose.
    *
-   * O PAINEL 01 TEM DUAS ÂNCORAS: a chegada, que repete a pose com que o
-   * chip terminou, e a volta completa. Entre elas o produto não anda nem
-   * cresce, ele só gira — que é exatamente o pedido.
+   * ENTRE OS DOIS PRIMEIROS PAINÉIS HÁ UMA VOLTA SÓ, longa, e o meio dela
+   * cai em cima da fronteira. É lá que o produto está de costas e é lá que
+   * o formato troca, junto com a seção. Ver TROCA_DE_FORMATO.
    *
    * Uma volta INTEIRA e não meia: o eixo do cilindro é vertical, então
    * meia volta devolveria a mesma silhueta com o rótulo de trás para a
    * frente, e o olho não leria giro, leria a marca sumindo.
    *
-   * Das passagens 01 para 02 e 02 para 03 continua saindo uma volta cada,
-   * e é no MEIO delas, com o produto de costas, que o formato troca sem a
-   * substituição aparecer (ver TROCA_DE_FORMATO).
+   * DO PAINEL 02 PARA O 03 NÃO HÁ ROTAÇÃO. O ângulo se repete de
+   * propósito: ali o acontecimento é a protagonista se dissolvendo nas
+   * oito do kit, e um giro por baixo disso seria um segundo gesto
+   * disputando com o primeiro. As oito têm rotação própria (ver Kit).
    */
   { at: AA_CHEGA, ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA, 0] },
-  { at: AA_VOLTA, ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0] },
-  { at: centroDoBeat('produto-02'), ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 3, 0] },
+  { at: AAA_CHEGA, ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0] },
   // O centro EXATO do beat, e não um valor arredondado perto dele: é onde
   // a pílula de navegação para, e um centésimo de diferença já deixava o
   // kit chegando 5° girado.
-  { at: centroDoBeat('produto-03'), ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 4, 0] },
+  { at: centroDoBeat('produto-03'), ...POSE_DO_PAINEL, rotation: [0.04, FACE_FRONTAL - VOLTA * 2, 0] },
 ]
 
 /**
