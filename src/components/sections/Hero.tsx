@@ -107,7 +107,15 @@ export function Hero() {
        * O `bottom` do retrato reserva a altura da pílula, que é fixa e
        * mora no mesmo canto.
        */}
-      <div className="container-gutter absolute inset-x-0 bottom-[84px] z-2 flex flex-col items-start gap-1 md:bottom-6 md:flex-row md:items-end md:justify-between">
+      {/**
+       * As duas linhas descem para a base da tela.
+       *
+       * Elas estavam em `bottom-[84px]`, reserva feita para a pílula
+       * quando ela ainda aparecia no herói. A pílula cede lugar à barra
+       * agora, e a reserva virou um vão: o texto ficava colado na barra
+       * com 84 px de tela vazia embaixo dele.
+       */}
+      <div className="container-gutter absolute inset-x-0 bottom-6 z-2 flex flex-col items-start gap-1 md:flex-row md:items-end md:justify-between">
         <p className="max-w-[34ch] text-sm text-white/60">
           Disponível em AA e AAA, com cabo de recarga simultânea incluso.
         </p>

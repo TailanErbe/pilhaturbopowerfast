@@ -61,7 +61,20 @@ export function BarraDoHeroi() {
     >
       <nav
         aria-label="Nossas pilhas"
-        className="pointer-events-auto flex flex-row items-center justify-center gap-3 md:flex-col md:items-start md:justify-start md:gap-1"
+        /**
+         * No retrato a fileira alinha pelo TOPO, não pelo centro.
+         *
+         * Os itens de produto têm ícone em cima e nome embaixo, 76 px ao
+         * todo; o carrinho tem só o ícone. Centrados um contra o outro,
+         * as duas caixas ficam com o mesmo meio — e o olho não vê caixas,
+         * vê ÍCONES: o do carrinho aparecia 12 px abaixo da fileira dos
+         * outros três, e era esse degrau que denunciava o desalinho.
+         *
+         * Alinhando pelo topo e dando ao carrinho a mesma altura e o
+         * mesmo recuo dos ladrilhos, os quatro ícones caem na mesma linha
+         * e os nomes ficam pendurados só onde existem.
+         */
+        className="pointer-events-auto flex flex-row items-start justify-center gap-3 md:flex-col md:items-start md:justify-start md:gap-1"
       >
         <p className="hidden text-xs tracking-[0.22em] text-white/50 uppercase md:mb-3 md:block">
           Nossas pilhas
@@ -136,9 +149,11 @@ export function BarraDoHeroi() {
          */}
         {/* Na coluna a régua separa por cima; na linha, por um filete ao
             lado, que é o que "acima" quer dizer quando o eixo vira */}
+        {/* O filete acompanha a fileira de ícones: 40 px de altura com o
+            mesmo recuo de 6 px dos ladrilhos */}
         <span
           aria-hidden
-          className="h-8 w-px shrink-0 bg-white/15 md:mt-4 md:h-px md:w-full"
+          className="mt-1.5 h-10 w-px shrink-0 bg-white/15 md:mt-4 md:h-px md:w-full"
         />
 
         {/**
@@ -153,7 +168,7 @@ export function BarraDoHeroi() {
         <a
           href={CONTENT.buy.href}
           title={CONTENT.buy.cta}
-          className="pulsa-carrinho grid h-[50px] w-[92px] shrink-0 place-items-center self-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-4 md:w-[120px]"
+          className="pulsa-carrinho mt-1.5 grid h-10 w-[88px] shrink-0 place-items-center rounded-xl bg-brand-orange text-brand-black transition-colors hover:bg-orange-light md:mt-4 md:h-[50px] md:w-[120px] md:self-center"
         >
           <span className="sr-only">{CONTENT.buy.cta}</span>
           {/**
