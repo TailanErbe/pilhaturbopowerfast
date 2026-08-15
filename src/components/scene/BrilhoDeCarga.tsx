@@ -82,29 +82,32 @@ export function BrilhoDeCarga() {
     /** Um acumulador por brilho: ver o comentário no corpo de `aplicar` */
     let ultimaCarga = -1
     let ultimoHalo = -1
-    /** Guardado depois de achado; ver o comentário abaixo */
-    let alvo: HTMLElement | null = null
+    /** Guardados depois de achados; ver o comentário abaixo */
+    let heroi: HTMLElement | null = null
+    let carga: HTMLElement | null = null
 
     const aplicar = () => {
       agendado = 0
       /**
-       * O elemento é procurado A CADA aplicação, não uma vez na montagem.
+       * Os elementos são procurados A CADA aplicação, não uma vez na
+       * montagem.
        *
-       * `[data-cena]` pertence ao <Scene />, que entra por import dinâmico
-       * sem SSR: quando este efeito roda, ele ainda não existe no DOM.
-       * Buscando só na montagem, a referência saía nula e o halo nunca
-       * acendia — sem erro nenhum, que é o pior tipo de falha.
+       * Eles pertencem ao <Scene />, que entra por import dinâmico sem
+       * SSR: quando este efeito roda, ainda não existem no DOM. Buscando
+       * só na montagem, a referência saía nula e o halo nunca acendia —
+       * sem erro nenhum, que é o pior tipo de falha.
        */
-      alvo ??= document.querySelector<HTMLElement>('[data-cena]')
+      heroi ??= document.querySelector<HTMLElement>('.halo-do-heroi')
+      carga ??= document.querySelector<HTMLElement>('.halo-de-carga')
       const tl = obterTimeline()
       /**
-       * Nem o elemento nem a timeline existem no primeiro quadro: o
+       * Nem os elementos nem a timeline existem no primeiro quadro: o
        * <Scene /> entra por import dinâmico e a timeline se registra
        * depois da montagem do ato. Desistindo aqui, o halo do herói só
        * acendia no primeiro scroll — e quem abre a página e fica parado
        * via o produto sem contorno nenhum.
        */
-      if (!alvo || !tl) {
+      if (!heroi || !carga || !tl) {
         agendar()
         return
       }
@@ -117,10 +120,14 @@ export function BrilhoDeCarga() {
        * respiro, faixa do retrato e escala. Recalcular aqui seria manter
        * duas versões da mesma verdade — e foi exatamente o que produziu,
        * no celular, um produto no alto com o brilho parado no pé da tela.
+       *
+       * Vira DESLOCAMENTO em pixels, e não posição em porcentagem: o
+       * gradiente é fixo no elemento e quem se move é o elemento, por
+       * `transform`. Foi essa troca que tirou a rasterização do caminho.
        */
       const centro = sceneState.centroNaTela
-      const cx = `${(centro.x * 100).toFixed(1)}%`
-      const cy = `${(centro.y * 100).toFixed(1)}%`
+      const dx = `${Math.round((centro.x - 0.5) * window.innerWidth)}px`
+      const dy = `${Math.round((centro.y - 0.5) * window.innerHeight)}px`
 
       /* ------------------------------------------------ halo do herói */
       const noHeroi = 1 - suave(entre((p - HALO.some.de) / (HALO.some.ate - HALO.some.de)))
@@ -149,28 +156,35 @@ export function BrilhoDeCarga() {
        */
       if (halo !== ultimoHalo) {
         ultimoHalo = halo
-        alvo.style.setProperty('--halo-a', halo.toFixed(3))
-        alvo.style.setProperty('--halo-x', cx)
-        alvo.style.setProperty('--halo-y', cy)
+        heroi.style.setProperty('--halo-a', halo.toFixed(3))
+        heroi.style.setProperty('--halo-dx', dx)
+        heroi.style.setProperty('--halo-dy', dy)
       } else if (halo > 0) {
         // Aceso e parado: a posição ainda acompanha o respiro do produto
-        alvo.style.setProperty('--halo-x', cx)
-        alvo.style.setProperty('--halo-y', cy)
+        heroi.style.setProperty('--halo-dx', dx)
+        heroi.style.setProperty('--halo-dy', dy)
       }
 
       /* ------------------------------------------------ halo de carga */
-      const carga = suave(entre((p - FAIXA.nasce) / (FAIXA.enche - FAIXA.nasce)))
+      const enchendo = suave(entre((p - FAIXA.nasce) / (FAIXA.enche - FAIXA.nasce)))
       const saindo = suave(entre((p - FAIXA.enche) / (FAIXA.apaga - FAIXA.enche)))
-      const presenca = Math.round(carga * (1 - saindo) * 100) / 100
+      const presenca = Math.round(enchendo * (1 - saindo) * 100) / 100
 
       if (presenca !== ultimaCarga || presenca > 0) {
         ultimaCarga = presenca
-        alvo.style.setProperty('--carga-x', cx)
-        alvo.style.setProperty('--carga-y', cy)
-        alvo.style.setProperty('--carga-a', String(FORCA * presenca))
-        alvo.style.setProperty(
-          '--carga-h',
-          `${(ALTURA.minima + (ALTURA.maxima - ALTURA.minima) * carga).toFixed(1)}vh`,
+        carga.style.setProperty('--carga-dx', dx)
+        carga.style.setProperty('--carga-dy', dy)
+        carga.style.setProperty('--carga-a', String(FORCA * presenca))
+        /**
+         * A altura vira ESCALA da altura cheia, desenhada no CSS.
+         *
+         * Esticar o elemento verticalmente faz com a camada pronta o que
+         * aumentar o raio vertical da elipse fazia redesenhando-a.
+         */
+        const alturaVh = ALTURA.minima + (ALTURA.maxima - ALTURA.minima) * enchendo
+        carga.style.setProperty(
+          '--carga-escala',
+          (alturaVh / ALTURA.maxima).toFixed(3),
         )
       }
 
@@ -220,9 +234,8 @@ export function BrilhoDeCarga() {
       cancelAnimationFrame(agendado)
       window.removeEventListener('scroll', agendar)
       window.removeEventListener('resize', agendar)
-      alvo?.style.removeProperty('--carga-a')
-      alvo?.style.removeProperty('--carga-h')
-      alvo?.style.removeProperty('--carga-x')
+      heroi?.removeAttribute('style')
+      carga?.removeAttribute('style')
     }
   }, [])
 

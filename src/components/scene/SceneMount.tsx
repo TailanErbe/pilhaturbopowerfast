@@ -135,9 +135,20 @@ export function SceneMount() {
        * z-index, e é assim que se resolve aqui (ver a pose de retrato em
        * scene-state.ts).
        */}
+      {/**
+       * `overflow-hidden` por causa dos halos.
+       *
+       * Eles são maiores que a tela de propósito — precisam sobrar para
+       * poder acompanhar o produto sem mostrar a própria borda. Como o
+       * container é `fixed`, o Chrome não conta esse transbordo na área
+       * rolável, mas isso é detalhe de implementação, e um filete de
+       * rolagem horizontal aparecendo em outro navegador seria um defeito
+       * caro de achar. Cortar aqui é explícito e não custa nada: o canvas
+       * ocupa a caixa exata.
+       */}
       <Scene
         debug={debug}
-        className={`pointer-events-none fixed inset-0 ${debug ? 'z-[800] bg-surface-000' : 'z-1'}`}
+        className={`pointer-events-none fixed inset-0 overflow-hidden ${debug ? 'z-[800] bg-surface-000' : 'z-1'}`}
       />
       {/**
        * Acende o halo atrás do produto no beat do contador. Escreve

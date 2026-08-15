@@ -314,6 +314,19 @@ export function Scene({ className, debug }: { className?: string; debug?: boolea
 
   return (
     <div className={className} data-cena>
+      {/**
+       * Os dois halos, ANTES do canvas no documento.
+       *
+       * É a ordem que os põe atrás do produto: os três são posicionados e
+       * nenhum declara z-index, então quem pinta por último pinta por
+       * cima. O container do R3F vem depois e ganha a frente sem precisar
+       * de camada nomeada.
+       *
+       * Eles não têm conteúdo nem interação; o desenho inteiro está no
+       * CSS (ver .halo-do-heroi), e quem os acende é o <BrilhoDeCarga />.
+       */}
+      <div aria-hidden className="halo-do-heroi" />
+      <div aria-hidden className="halo-de-carga" />
       <Canvas
         /**
          * `pointer-events: none` PRECISA vir aqui também.
