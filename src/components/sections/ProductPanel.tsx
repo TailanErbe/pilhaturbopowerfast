@@ -90,14 +90,41 @@ const claro = (tema: Product['theme']) =>
 function Acordeao({
   titulo,
   t,
+  grupo,
   children,
 }: {
   titulo: string
   t: Tema
+  /** Nome do grupo exclusivo: abrir um FECHA o outro */
+  grupo: string
   children: React.ReactNode
 }) {
   return (
-    <details className={`group border-t ${t.rule}`}>
+    /**
+     * EXCLUSIVO: só um aberto por vez, e isso é requisito, não enfeite.
+     *
+     * A seção tem altura fixa e é recortada. Medido em 1600×820 com o painel
+     * do kit: fechados, transbordo zero; só a compatibilidade, zero; só a
+     * ficha, 97 px; OS DOIS, 221 px. Com os dois abertos as oito pilhas
+     * descem e são cortadas, as legendas "KIT AA / KIT AAA" somem e a última
+     * linha da ficha se perde.
+     *
+     * O atributo `name` do `<details>` é a forma NATIVA de acordeão
+     * exclusivo — o navegador fecha o irmão sozinho, sem JS, sem estado e
+     * sem piscar.
+     *
+     * E aqui é a ÚNICA forma. Cheguei a escrever um `onToggle` como rede
+     * para navegador antigo, e o runtime recusou: este painel é Server
+     * Component, então handler de evento não atravessa a fronteira. Não
+     * apareceu no `tsc` nem no `eslint`, só ao carregar a página. Fazer a
+     * rede exigiria marcar o painel inteiro como cliente, ou seja mandar
+     * para o navegador um componente que hoje é HTML puro — caro demais
+     * para cobrir navegador que o atributo não alcança.
+     *
+     * O grupo é POR PAINEL. Sem isso os três painéis compartilhariam o mesmo
+     * nome e abrir a ficha do kit fecharia a da AA, que está noutra tela.
+     */
+    <details name={grupo} className={`group border-t ${t.rule}`}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-bold md:py-4">
         {titulo}
         {/* Fechado é `+`, aberto é `×`: as duas barras FICAM e o par gira.
@@ -119,7 +146,7 @@ function Acordeao({
 function Fichas({ product, t }: { product: Product; t: Tema }) {
   return (
     <div>
-      <Acordeao titulo="Ficha técnica" t={t}>
+      <Acordeao titulo="Ficha técnica" t={t} grupo={`fichas-${product.index}`}>
         <dl className="mt-4 grid gap-2 pb-3 text-sm md:pb-4">
           {product.technicalSheet.map((row) => (
             <div key={row.label} className="flex justify-between gap-6">
@@ -130,7 +157,7 @@ function Fichas({ product, t }: { product: Product; t: Tema }) {
         </dl>
       </Acordeao>
 
-      <Acordeao titulo="Compatibilidade" t={t}>
+      <Acordeao titulo="Compatibilidade" t={t} grupo={`fichas-${product.index}`}>
         <ul className={`mt-4 grid gap-1 pb-3 text-sm md:pb-4 ${t.muted}`}>
           {product.compatibility.map((item) => (
             <li key={item}>{item}</li>
