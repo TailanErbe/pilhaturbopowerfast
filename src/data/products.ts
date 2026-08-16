@@ -87,6 +87,24 @@ export type Product = {
   cabos?: { pontas: string; imagem: string; alt: string }[]
   /** Foto do produto usada na pílula de navegação */
   miniatura: { src: string; alt: string }
+  /**
+   * Vídeo oficial do formato. LINK, e não player embutido.
+   *
+   * Três razões, e as três já custaram caro nesta página:
+   *
+   *   · o painel vive dentro do trecho pinado, e qualquer coisa que capture
+   *     gesto ali disputa com a rolagem — foi assim que a ficha técnica
+   *     aberta virou conteúdo perdido e que o `data-lenis-prevent` matou a
+   *     rolagem do beat 01 em diante;
+   *   · um `<iframe>` do YouTube traz centenas de kB de terceiro e cookies,
+   *     numa página que é export estático de 4,9 MB e cuja mediana de quadro
+   *     é 0,3 ms;
+   *   · são SHORTS, ou seja vertical, e não há onde encaixar 9:16 num painel
+   *     que já está cheio no celular.
+   *
+   * O kit não tem: os vídeos são por formato.
+   */
+  video?: string
   /** Parágrafo abaixo do produto. Máx. 4 linhas. */
   description: string
   /** Accordion 1 */
@@ -128,20 +146,58 @@ export const PROTECTIONS = [
 const SHARED_SPECS: SpecRow[] = [
   { label: 'Tensão nominal', value: '1,5 V' },
   { label: 'Ciclos de recarga', value: 'Até 1.200' },
-  { label: 'Tecnologia', value: 'Turbo PowerFast' },
+  /**
+   * A QUÍMICA, que estava faltando na página inteira.
+   *
+   * Esta linha dizia "Turbo PowerFast", ou seja repetia a marca — que já
+   * está no título do herói, no `<title>` e na descrição dos dois painéis —
+   * e era o único item da ficha que não informava nada.
+   *
+   * Enquanto isso, `lítio` não aparecia uma única vez em todo o dado da
+   * página, e a embalagem oficial o diz TRÊS vezes: no selo da frente
+   * ("1.5V LÍTIO"), na faixa do blister ("BATERIA DE LÍTIO RECARREGÁVEL VIA
+   * TIPO-C") e no rótulo impresso da própria pilha.
+   *
+   * É a linha que separa este produto de uma NiMH comum: célula de lítio de
+   * 1,5 V entrega tensão regulada até o fim, em vez de cair para 1,2 V.
+   */
+  { label: 'Tecnologia', value: 'Íons de lítio, 1,5 V constantes' },
   { label: 'Recarga', value: 'USB-C direto na pilha' },
   { label: 'Chip inteligente', value: `${PROTECTIONS.length} proteções integradas` },
   { label: 'Acabamento', value: 'Fosco' },
   { label: 'Garantia', value: '3 meses contra defeitos de fabricação' },
 ]
 
+/**
+ * A LISTA VEM DA EMBALAGEM, e não de suposição.
+ *
+ * A anterior tinha dois problemas e uma oportunidade perdida:
+ *
+ *   · "Câmeras digitais" era corrupção de "câmeras FLASH", que é o que a
+ *     caixa diz. São coisas diferentes, e a segunda é o argumento melhor —
+ *     flash é carga de pico, exatamente onde pilha fraca falha.
+ *   · "Lanternas" não consta em lugar nenhum da embalagem. Saiu.
+ *   · A caixa lista casos que ninguém tinha aproveitado, e são os mais
+ *     persuasivos: fechadura inteligente e esfigmomanômetro ficam anos em
+ *     espera, que é o caso em que trocar descartável mais incomoda.
+ *
+ * Texto de referência, no verso: "adequada para todos os dispositivos
+ * eletrônicos de 1,5V, como brinquedos, controles remotos, câmeras flash,
+ * instrumentos de beleza, mouse Bluetooth, teclado Bluetooth, barbeadores,
+ * fechaduras inteligentes, esfigmomanômetros, microfones, entre outros".
+ *
+ * Ordenada por reconhecimento: o que todo mundo tem primeiro, o caso que
+ * convence por último.
+ */
 const COMPATIBILITY = [
   'Controles remotos',
   'Brinquedos',
-  'Teclados',
-  'Mouses',
-  'Lanternas',
-  'Câmeras digitais',
+  'Mouse e teclado Bluetooth',
+  'Câmeras flash',
+  'Microfones',
+  'Barbeadores',
+  'Fechaduras inteligentes',
+  'Esfigmomanômetros',
 ]
 
 // ---------------------------------------------------------------------------
@@ -158,6 +214,9 @@ export const PRODUCTS: Product[] = [
       { rotulo: 'Tensão nominal', valor: '1,5 V' },
     ],
     dimensions: DIMENSIONS.AA,
+    /* Oficiais, entregues pelo cliente. Normalizados para www: o segundo
+       veio sem, e host inconsistente é redirecionamento a mais no clique */
+    video: 'https://www.youtube.com/shorts/YtXkbF7TFsQ',
     /**
      * A miniatura é um RENDER da cena, não uma foto de cartela.
      *
@@ -195,6 +254,7 @@ export const PRODUCTS: Product[] = [
       { rotulo: 'Tensão nominal', valor: '1,5 V' },
     ],
     dimensions: DIMENSIONS.AAA,
+    video: 'https://www.youtube.com/shorts/pg-YnIDmYqg',
     miniatura: { src: asset('/produto/mini-aaa.png'), alt: 'Pilha recarregável AAA, formato palito' },
     highlight: 'O mesmo padrão, no formato que cabe em tudo.',
     description:
@@ -488,7 +548,19 @@ export const CONTENT = {
   /** Beat 9 — footer */
   footer: {
     warranty: '3 meses contra defeitos de fabricação',
-    email: 'marketing@gorilashield.com.br',
+    /**
+     * ATENDIMENTO, e não marketing.
+     *
+     * Era `marketing@gorilashield.com.br`: quem chega ao rodapé de uma
+     * página de produto com uma dúvida quer suporte, não a caixa de quem
+     * anuncia. A embalagem oficial imprime, sob "ATENDIMENTO AO CLIENTE",
+     * exatamente este endereço.
+     *
+     * O domínio da loja continua `gorilashield.com.br` — confirmado pelo
+     * cliente — e é ele que segue em `LOJA`, na compra e nas políticas. O
+     * canal de atendimento é que mora no outro.
+     */
+    sac: 'sac.gshield.com.br',
     site: 'gorilashield.com.br',
     /**
      * Endereços confirmados pelo cliente em 13/08/2026.

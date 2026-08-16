@@ -34,9 +34,11 @@ export function Footer() {
           <div>
             <h2 className="texto-nota mb-3 text-white/50">Contato</h2>
             <ul className="texto-nota grid gap-1">
+              {/* O canal de atendimento vem antes da loja: quem chega ao
+                  rodapé com dúvida quer suporte, não a vitrine */}
               <li>
-                <a href={`mailto:${CONTENT.footer.email}`} className="hover:opacity-70">
-                  {CONTENT.footer.email}
+                <a href={`https://${CONTENT.footer.sac}`} className="hover:opacity-70">
+                  {CONTENT.footer.sac}
                 </a>
               </li>
               <li>

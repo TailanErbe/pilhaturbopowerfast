@@ -137,6 +137,35 @@ function Fichas({ product, t }: { product: Product; t: Tema }) {
           ))}
         </ul>
       </Acordeao>
+
+      {/**
+       * O vídeo oficial, como LINHA da mesma régua dos acordeões.
+       *
+       * Ele veste a mesma borda e o mesmo alvo de 56 px dos dois de cima,
+       * então a pilha de três lê como uma lista só — mas o sinal é uma seta
+       * de saída, e não o `+`: isto leva para fora da página, e prometer que
+       * abre no lugar seria o tipo de mentira que se paga com um clique
+       * perdido.
+       *
+       * `rel="noopener"` porque abre em aba nova; sem ele, a página de
+       * destino recebe uma referência para esta pelo `window.opener`.
+       */}
+      {product.video && (
+        <a
+          href={product.video}
+          target="_blank"
+          rel="noopener"
+          className={`flex items-center justify-between gap-4 border-t py-3 text-sm font-bold transition-opacity hover:opacity-70 md:py-4 ${t.rule}`}
+        >
+          Ver o vídeo do produto
+          <span aria-hidden className="grid size-6 shrink-0 place-items-center">
+            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <span className="sr-only">(abre no YouTube, em nova aba)</span>
+        </a>
+      )}
     </div>
   )
 }
