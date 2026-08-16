@@ -357,13 +357,24 @@ export function ProductPanel({ product }: { product: Product }) {
      * mais estreita que `md`. Custo pequeno, num canto raro. Zona morta de
      * roda do tamanho da tela, não.
      *
-     * `overscroll-contain` impede o encadeamento: chegando ao fim da ficha,
-     * o gesto para ali em vez de continuar rolando o ato por baixo.
+     * E o encadeamento fica LIVRE, de propósito. Estava em
+     * `overscroll-contain`, para o gesto parar no fim da ficha em vez de
+     * seguir rolando o ato por baixo — o que é bonito enquanto o painel
+     * cabe, e é uma armadilha quando ele não cabe. Medido num 375×812: com
+     * a ficha aberta o painel do kit pede 945 px numa tela de 812, então
+     * ele VIRA um rolante; e `contain` diz ao navegador que o gesto morre
+     * ali. No telefone, quem abrisse a ficha veria a página parar de rolar,
+     * e só sairia da seção fechando o acordeão de novo.
+     *
+     * É a mesma cara do bug do `data-lenis-prevent` aí em cima, e é o
+     * relato que já veio do cliente uma vez. O que se perde deixando
+     * encadear é o gesto continuar para o ato quando a ficha acaba, que é
+     * o comportamento normal de qualquer página que rola. Troca boa.
      */
     return (
       <section
         id={`produto-${product.index}`}
-        className={`relative flex h-full min-h-dvh overflow-x-hidden overflow-y-auto overscroll-contain md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
+        className={`relative flex h-full min-h-dvh overflow-x-hidden overflow-y-auto overscroll-y-auto md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
       >
         <SectionBg className={t.bg} noAto />
 
@@ -378,6 +389,7 @@ export function ProductPanel({ product }: { product: Product }) {
          *
          * Quem sobrava era o `py`. Aqui ele era `clamp(20px, 3.5vh, 96px)`,
          * que em 820 px de janela dá 28,7 px de cada lado.
+         *
          */}
         <div className="container-gutter relative z-2 flex w-full flex-col py-[clamp(14px,1.6vh,72px)]">
           {cabecalho}
@@ -390,7 +402,26 @@ export function ProductPanel({ product }: { product: Product }) {
            * única alavanca para elas ocuparem mais tela é dar mais largura.
            * Metade a metade sobrava um vazio grande acima delas.
            */}
-          <div className="mt-4 grid flex-1 gap-x-[4%] gap-y-8 md:grid-cols-[1.5fr_1fr]">
+          {/**
+           * O `pb` do retrato é RESERVA, não respiro: a pílula de navegação
+           * é fixa e flutua sobre o painel. Toda seção em retrato guarda
+           * 84 px para ela (`base-do-retrato`, no globals.css); este painel
+           * monta a própria coluna e ficou de fora dessa reserva. Medido num
+           * 375×812 com a ficha aberta: a pílula ocupa de 744 a 792, e as
+           * linhas "Kit AAA" e "Os dois formatos" terminavam em 780 e 808.
+           *
+           * E a reserva vai AQUI, no bloco que cresce, não no contêiner de
+           * fora. Tentei lá primeiro e a medição deu 945 → 945, com a última
+           * linha parada em 884: o contêiner é esticado pelo flex da seção e
+           * fica com 812 fixos, então o conteúdo transborda a caixa dele e o
+           * `padding-bottom` sobra ACIMA do transbordo, sem empurrar nada.
+           *
+           * Ela também só vale com acordeão ABERTO, que é quando o painel
+           * transborda. Fixa, ela custava 17 px de rolagem no painel fechado,
+           * que hoje fecha exato na tela — um solavanco no começo de todo
+           * gesto, num painel que não tinha nada escondido para mostrar.
+           */}
+          <div className="mt-4 grid flex-1 gap-x-[4%] gap-y-8 has-[details[open]]:pb-[84px] md:grid-cols-[1.5fr_1fr] md:has-[details[open]]:pb-0">
             {/* ESQUERDA: os dois kits em 3D, com o "OU" no vão */}
             <div className="flex min-h-0 flex-col justify-end">
               {/* A frase fica JUNTO das pilhas, não no topo do painel: lá
@@ -592,7 +623,7 @@ export function ProductPanel({ product }: { product: Product }) {
   return (
     <section
       id={`produto-${product.index}`}
-      className={`relative flex h-full min-h-dvh items-center overflow-x-hidden overflow-y-auto overscroll-contain md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
+      className={`relative flex h-full min-h-dvh items-center overflow-x-hidden overflow-y-auto overscroll-y-auto md:overflow-y-hidden ${t.section} ${claro(product.theme)}`}
     >
       <SectionBg className={t.bg} noAto />
 
