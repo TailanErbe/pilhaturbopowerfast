@@ -367,7 +367,19 @@ export function ProductPanel({ product }: { product: Product }) {
       >
         <SectionBg className={t.bg} noAto />
 
-        <div className="container-gutter relative z-2 flex w-full flex-col py-[clamp(20px,3.5vh,96px)]">
+        {/**
+         * O RESPIRO VERTICAL é o que decide se a ficha cabe, e não a imagem.
+         *
+         * Testei encolher o que parecia óbvio, e as duas medições deram
+         * ZERO: baixar as fotos dos cabos de 258 px não mudou a altura
+         * exigida (833 antes, 833 depois), e apertar a faixa das pilhas de
+         * 309 para 217 px também não. As duas colunas são igualadas pela
+         * grade, então encolher uma só deixa vazio dentro dela.
+         *
+         * Quem sobrava era o `py`. Aqui ele era `clamp(20px, 3.5vh, 96px)`,
+         * que em 820 px de janela dá 28,7 px de cada lado.
+         */}
+        <div className="container-gutter relative z-2 flex w-full flex-col py-[clamp(14px,1.6vh,72px)]">
           {cabecalho}
 
           {/**
@@ -587,7 +599,21 @@ export function ProductPanel({ product }: { product: Product }) {
       {/* Estrutura da referência: título em faixa larga no topo, régua de
           meta abaixo, e então DUAS colunas nas bordas — o vão central fica
           livre para o produto. */}
-      <div className="container-gutter base-do-retrato relative z-2 md:py-[clamp(80px,14vh,160px)]">
+      {/**
+       * O RESPIRO CAIU DE 14vh PARA 9vh, e é o que faz a ficha caber.
+       *
+       * Nestes dois painéis não há imagem nenhuma no DOM — o produto é o
+       * canvas, que é `fixed` e não ocupa espaço. A altura vinha só de texto
+       * mais espaçamento, e o espaçamento era 27% dela: em 820 px de janela,
+       * `clamp(80px, 14vh, 160px)` dava 114,8 px de cada lado, ou 230 px de
+       * vazio para 626 px de conteúdo.
+       *
+       * Medido: a altura de janela exigida com a ficha aberta cai de 860
+       * para 820. Em janela alta o teto de 130 px mantém a composição
+       * folgada; o que muda é o comportamento quando a tela é baixa, que era
+       * justamente onde o conteúdo se perdia.
+       */}
+      <div className="container-gutter base-do-retrato relative z-2 md:py-[clamp(48px,9vh,130px)]">
         {cabecalho}
 
         {/* No retrato o respiro entre os blocos é menor: com o produto
