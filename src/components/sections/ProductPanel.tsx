@@ -158,7 +158,25 @@ function Fichas({ product, t }: { product: Product; t: Tema }) {
       </Acordeao>
 
       <Acordeao titulo="Compatibilidade" t={t} grupo={`fichas-${product.index}`}>
-        <ul className={`mt-4 grid gap-1 pb-3 text-sm md:pb-4 ${t.muted}`}>
+        {/**
+         * DUAS COLUNAS no desktop, e só aqui.
+         *
+         * A lista cresceu de 6 para 8 itens quando passou a vir da
+         * embalagem, e virou o bloco mais alto dos dois: aberta, exigia 874
+         * px de altura de janela contra os 860 da ficha. Em duas colunas ela
+         * cai de 204 para 108 px e a exigência vai para 826.
+         *
+         * Funciona aqui e NÃO funcionou na ficha, e a diferença é a forma do
+         * conteúdo: estes são itens curtos de uma frase, enquanto a ficha é
+         * par rótulo/valor com `justify-between` — testei duas colunas lá e
+         * as oito linhas quebraram todas em duas alturas, devolvendo só 32
+         * dos 116 px esperados.
+         *
+         * No retrato fica em coluna única: 375 px não comportam duas.
+         */}
+        <ul
+          className={`mt-4 grid gap-1 pb-3 text-sm md:grid-cols-2 md:gap-x-10 md:pb-4 ${t.muted}`}
+        >
           {product.compatibility.map((item) => (
             <li key={item}>{item}</li>
           ))}

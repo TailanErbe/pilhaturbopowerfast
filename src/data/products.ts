@@ -143,8 +143,27 @@ export const PROTECTIONS = [
   { nome: 'Superaquecimento', icone: 'superaquecimento' },
 ] as const
 
+/**
+ * A ficha dos painéis 01 e 02, pelo mesmo critério do kit: o que o painel
+ * JÁ MOSTRA não se repete aqui dentro.
+ *
+ * Aberta, ela estourava a altura da seção em 82 px, e a seção é recortada —
+ * o excedente não vira rolagem, some. Saíram três linhas, e as três estavam
+ * visíveis a poucos centímetros dali:
+ *
+ *   Tensão nominal · 1,5 V        a régua de meta, sob o título, mostra
+ *                                 "1,5 V", com este mesmo rótulo no
+ *                                 `<dt>` escondido
+ *   Capacidade · 3400 mWh         idem, e a descrição repete o número
+ *   Recarga · USB-C direto        a descrição diz "Recarrega direto pela
+ *                                 porta USB-C, sem dock e sem carregador
+ *                                 dedicado"
+ *
+ * O que sobrou é o que não está em lugar nenhum: os ciclos, a química, as
+ * seis proteções, o acabamento, a garantia e o formato de cartela. Ficha
+ * técnica existe para dizer o que o texto não diz.
+ */
 const SHARED_SPECS: SpecRow[] = [
-  { label: 'Tensão nominal', value: '1,5 V' },
   { label: 'Ciclos de recarga', value: 'Até 1.200' },
   /**
    * A QUÍMICA, que estava faltando na página inteira.
@@ -162,7 +181,6 @@ const SHARED_SPECS: SpecRow[] = [
    * 1,5 V entrega tensão regulada até o fim, em vez de cair para 1,2 V.
    */
   { label: 'Tecnologia', value: 'Íons de lítio, 1,5 V constantes' },
-  { label: 'Recarga', value: 'USB-C direto na pilha' },
   { label: 'Chip inteligente', value: `${PROTECTIONS.length} proteções integradas` },
   { label: 'Acabamento', value: 'Fosco' },
   { label: 'Garantia', value: '3 meses contra defeitos de fabricação' },
@@ -236,7 +254,6 @@ export const PRODUCTS: Product[] = [
       'A AA entrega 3400 mWh de carga estável para dispositivos de alto consumo. ' +
       'Recarrega direto pela porta USB-C, sem dock e sem carregador dedicado.',
     technicalSheet: [
-      { label: 'Capacidade', value: '3400 mWh' },
       { label: 'Cartela', value: '2 ou 4 unidades' },
       ...SHARED_SPECS,
     ],
@@ -261,7 +278,6 @@ export const PRODUCTS: Product[] = [
       'A AAA, o palito, leva 1100 mWh e a mesma tecnologia Turbo PowerFast ' +
       'da irmã maior. Mesma porta USB-C, mesmas proteções, mesmos 1.200 ciclos.',
     technicalSheet: [
-      { label: 'Capacidade', value: '1100 mWh' },
       { label: 'Cartela', value: '2 ou 4 unidades' },
       ...SHARED_SPECS,
     ],
@@ -340,13 +356,31 @@ export const PRODUCTS: Product[] = [
       'USB-A de um lado, pontas Tipo-C do outro: duas pontas na cartela de 2, ' +
       'quatro na de 4. Cada cabo recarrega a cartela inteira de uma vez, ligado ' +
       'em adaptador de tomada, notebook ou powerbank.',
+    /**
+     * OITO LINHAS VIRARAM CINCO, e as três que saíram eram eco.
+     *
+     * A ficha aberta estourava a altura da seção em 97 px — e a seção é
+     * recortada, então o que passa não vira rolagem, some. Duas colunas foi
+     * testado e medido: as oito linhas quebram todas em duas alturas, a
+     * economia cai de 116 para 32 px e o estouro só vai a 65. Não serve.
+     *
+     * O que resolveu foi tirar o que já estava na tela. O parágrafo logo
+     * acima desta ficha diz, com estas palavras: "USB-A de um lado, pontas
+     * Tipo-C do outro: duas pontas na cartela de 2, quatro na de 4. Cada
+     * cabo recarrega a cartela inteira de uma vez, ligado em adaptador de
+     * tomada, notebook ou powerbank."
+     *
+     * Ou seja, "Cabo", "Recarga simultânea" e "Fontes compatíveis" eram a
+     * mesma frase escrita duas vezes, uma delas escondida atrás de um
+     * clique. Ficha técnica existe para dizer o que o texto NÃO diz.
+     *
+     * As capacidades ficam: são o único lugar do painel do kit onde os mWh
+     * aparecem — as legendas das ilhas dizem só "Quatro AA e o cabo".
+     */
     technicalSheet: [
       { label: 'Kit AA', value: '4 pilhas AA · 3400 mWh cada' },
       { label: 'Kit AAA (palito)', value: '4 pilhas AAA · 1100 mWh cada' },
       { label: 'Os dois formatos', value: 'Vendidos separadamente' },
-      { label: 'Cabo', value: 'USB-A com 4 conectores Tipo-C' },
-      { label: 'Recarga simultânea', value: 'As 4 de uma vez' },
-      { label: 'Fontes compatíveis', value: 'Adaptador, notebook ou powerbank' },
       { label: 'Também disponível', value: 'Cartela de 2 unidades, nos dois formatos' },
       { label: 'Embalagem', value: 'Blister com instruções no verso' },
     ],
